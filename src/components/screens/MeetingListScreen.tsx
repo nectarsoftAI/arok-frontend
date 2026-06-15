@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Calendar, Clock, Plus, X } from "lucide-react";
 import { useNavigate } from "react-router";
-import { meetings as initialMeetings, Meeting } from "../../data/meetings";
+import { meetings as initialMeetings, type Meeting } from "../../data/meetings";
 import { DeleteMeetingDialog } from "../DeleteMeetingDialog";
 
 const COLORS = ["#5B5FF5", "#22D3EE", "#818CF8"];

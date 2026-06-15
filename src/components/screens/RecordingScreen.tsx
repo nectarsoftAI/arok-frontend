@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { FileText, Download, CheckCircle2, Square, Upload, X } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { MeetingTitleDialog, MeetingMode } from "../MeetingTitleDialog";
+import { MeetingTitleDialog } from "../MeetingTitleDialog";
+import type { MeetingMode } from "../MeetingTitleDialog";
 import { RecordingOrb } from "../RecordingOrb";
 import meetingImg1 from "../../assets/images/meeting_scene_1.png";
 import meetingImg2 from "../../assets/images/meeting_scene_2.png";
