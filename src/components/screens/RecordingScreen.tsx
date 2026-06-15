@@ -3,10 +3,10 @@ import { FileText, Download, CheckCircle2, Square, Upload, X } from "lucide-reac
 import { motion, AnimatePresence } from "motion/react";
 import { MeetingTitleDialog, MeetingMode } from "../MeetingTitleDialog";
 import { RecordingOrb } from "../RecordingOrb";
-import meetingImg1 from "../../../assets/meetingIMG.png";
-import meetingImg2 from "../../../assets/meetingIMG2.png";
-import meetingImg3 from "../../../assets/meetingIMG3.png";
-import recodingLiveImg from "../../../assets/recoding_live.png";
+import meetingImg1 from "../../assets/images/meeting_scene_1.png";
+import meetingImg2 from "../../assets/images/meeting_scene_2.png";
+import meetingImg3 from "../../assets/images/meeting_scene_3.png";
+import recodingLiveImg from "../../assets/icons/recoding_live_icon.png";
 
 const MEETING_IMAGES = [meetingImg1, meetingImg2, meetingImg3];
 
