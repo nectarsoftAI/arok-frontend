@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useRef, useEffect, type ReactNode } from 'react';
 import { Download } from 'lucide-react';
 import type { MeetingMode } from '../MeetingTitleDialog';
 import type { TranscriptSegment } from '../../api/stt';
@@ -32,6 +32,14 @@ export function ConversationPanel({
   formatSec,
   controls,
 }: ConversationPanelProps) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [transcripts, segments]);
+
   return (
     <div className="bg-white rounded-lg border border-[#E5E7EB] shadow-sm flex flex-col h-full">
       <div className="px-5 py-3 border-b border-[#E5E7EB] flex items-center justify-between flex-shrink-0">
@@ -47,7 +55,7 @@ export function ConversationPanel({
         </button>
       </div>
 
-      <div className="overflow-auto p-5 space-y-4" style={{ height: 'calc(100% - 300px)' }}>
+      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto p-5 space-y-4">
         {!hasConversation ? (
           <div className="h-full flex flex-col items-center justify-center text-center px-8">
             <img src={recodingLiveImg} alt="녹음" className="w-20 h-20 object-contain mb-6 opacity-60" />

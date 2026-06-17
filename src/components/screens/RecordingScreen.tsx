@@ -102,7 +102,7 @@ export function RecordingScreen() {
             <h1 className="text-xl font-semibold text-[#1A1D2E]">{state.meetingTitle}</h1>
           </div>
 
-          <div className="grid grid-cols-[1fr_0.67fr] gap-6" style={{ height: 'calc(100vh - 200px)' }}>
+          <div className="grid grid-cols-[1fr_0.67fr] grid-rows-1 gap-6" style={{ height: 'calc(100vh - 200px)' }}>
             <ConversationPanel
               meetingMode={state.meetingMode}
               hasConversation={state.hasConversation}
