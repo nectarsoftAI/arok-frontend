@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { FileText, Download, CheckCircle2, Square, Upload, X } from "lucide-react";
+import { transcribeFile, type TranscriptSegment } from '../../api/stt';
 import { motion, AnimatePresence } from "motion/react";
 import { MeetingTitleDialog } from "../MeetingTitleDialog";
 import type { MeetingMode } from "../MeetingTitleDialog";
@@ -26,6 +27,9 @@ export function RecordingScreen() {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [meetingId, setMeetingId] = useState<string | null>(null);
+  const [transcripts, setTranscripts] = useState<TranscriptSegment[]>([]);
+  const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -37,7 +41,7 @@ export function RecordingScreen() {
   }, [meetingTitle]);
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: ReturnType<typeof setInterval>;
     if (recordingState === 'recording') {
       interval = setInterval(() => {
         setElapsedSeconds(prev => prev + 1);
@@ -61,6 +65,12 @@ export function RecordingScreen() {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const formatSec = (sec: number): string => {
+    const m = Math.floor(sec / 60);
+    const s = Math.floor(sec) % 60;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
   const handleTitleConfirm = (title: string, mode: MeetingMode) => {
@@ -102,15 +112,24 @@ export function RecordingScreen() {
     if (file) handleFileSelect(file);
   };
 
-  const handleProcessFile = () => {
+  const handleProcessFile = async () => {
     if (!uploadedFile) return;
     setIsProcessing(true);
-    setTimeout(() => {
-      setIsProcessing(false);
+    setError(null);
+    try {
+      const result = await transcribeFile(uploadedFile);
+      setMeetingId(result.meetingId);
+      setTranscripts(result.transcripts);
       setHasConversation(true);
-    }, 2000);
+    } catch (err) {
+      console.error(err);
+      setError('파일 분석 중 오류가 발생했습니다.');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
+  // live 모드 플레이스홀더 (실시간 STT 미구현)
   const messages = [
     { speaker: "A", text: "프로젝트 진행 상황을 먼저 논의해볼까요?", time: "10:23" },
     { speaker: "B", text: "네, 좋습니다. 현재 개발 진행률은 약 70% 정도입니다.", time: "10:24" },
@@ -119,6 +138,15 @@ export function RecordingScreen() {
     { speaker: "A", text: "좋습니다. 예산 관련해서 추가 논의가 필요할 것 같은데요.", time: "10:27" },
     { speaker: "B", text: "네, 예산 세부 내용은 별도 문서로 공유하겠습니다.", time: "10:28" },
   ];
+
+  const SPEAKER_PALETTE = ['bg-[#5B5FF5]', 'bg-[#22D3EE]', 'bg-[#F59E0B]', 'bg-[#EC4899]'];
+  const uniqueSpeakers = [...new Set(transcripts.map(s => s.speakerLabel))];
+  const speakerColorMap: Record<string, string> = Object.fromEntries(
+    uniqueSpeakers.map((label, i) => [label, SPEAKER_PALETTE[i % SPEAKER_PALETTE.length]])
+  );
+  const speakerIndexMap: Record<string, number> = Object.fromEntries(
+    uniqueSpeakers.map((label, i) => [label, i + 1])
+  );
 
   const keywords = ["프로젝트", "진행 상황", "개발", "마케팅", "예산", "일정", "회의"];
 
@@ -202,6 +230,21 @@ export function RecordingScreen() {
                         : "오디오 파일을 업로드하면 자동으로 분석됩니다."}
                     </p>
                   </div>
+                ) : meetingMode === "upload" ? (
+                  transcripts.map((seg, idx) => (
+                    <div key={idx} className="flex gap-3">
+                      <div
+                        className={`w-9 h-9 rounded-full flex items-center justify-center text-white font-medium text-sm flex-shrink-0 ${speakerColorMap[seg.speakerLabel]}`}
+                      >
+                        {speakerIndexMap[seg.speakerLabel]}
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-xs text-[#6B7280] mb-1">{seg.speakerDisplay}</div>
+                        <div className="bg-[#F3F4F6] rounded-xl px-4 py-2.5 text-sm text-[#1A1D2E]">{seg.content}</div>
+                        <div className="text-xs text-[#9CA3AF] mt-1 text-right">{formatSec(seg.startSec)}</div>
+                      </div>
+                    </div>
+                  ))
                 ) : (
                   messages.map((msg, idx) => (
                     <div key={idx} className="flex gap-3">
@@ -325,6 +368,9 @@ export function RecordingScreen() {
                         {isLoadingSummary ? '요약 중...' : '요약'}
                       </button>
                     </div>
+                    {error && (
+                      <p className="text-xs text-red-500 text-center w-full">{error}</p>
+                    )}
                   </div>
                 )}
               </div>
