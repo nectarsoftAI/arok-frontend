@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { FileText, Download, CheckCircle2, Square, Upload, X } from "lucide-react";
 import { transcribeFile, type TranscriptSegment } from '../../api/stt';
+import { useLiveSTT } from '../../hooks/useLiveSTT';
 import { motion, AnimatePresence } from "motion/react";
 import { MeetingTitleDialog } from "../MeetingTitleDialog";
 import type { MeetingMode } from "../MeetingTitleDialog";
@@ -31,6 +32,13 @@ export function RecordingScreen() {
   const [transcripts, setTranscripts] = useState<TranscriptSegment[]>([]);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const {
+    segments,
+    error: liveError,
+    start: liveStart,
+    stop: liveStop,
+  } = useLiveSTT();
 
   useEffect(() => {
     if (meetingTitle) return;
@@ -79,13 +87,25 @@ export function RecordingScreen() {
     setShowTitleDialog(false);
   };
 
-  const handleRecordingToggle = () => {
+  const handleRecordingToggle = async () => {
     if (recordingState === 'idle') {
-      setRecordingState('recording');
+      try {
+        await liveStart();
+        setRecordingState('recording');
+      } catch {
+        // liveError state is set inside useLiveSTT
+      }
     } else if (recordingState === 'recording') {
+      liveStop();
       setRecordingState('finished');
     }
   };
+
+  useEffect(() => {
+    if (liveError && recordingState === 'recording') {
+      setRecordingState('idle');
+    }
+  }, [liveError, recordingState]);
 
   const handleSummaryClick = () => {
     const canSummarize = meetingMode === "live" ? recordingState === 'finished' : !!uploadedFile;
@@ -129,23 +149,24 @@ export function RecordingScreen() {
     }
   };
 
-  // live 모드 플레이스홀더 (실시간 STT 미구현)
-  const messages = [
-    { speaker: "A", text: "프로젝트 진행 상황을 먼저 논의해볼까요?", time: "10:23" },
-    { speaker: "B", text: "네, 좋습니다. 현재 개발 진행률은 약 70% 정도입니다.", time: "10:24" },
-    { speaker: "A", text: "생각보다 빠르게 진행되고 있네요. 마케팅 계획은 어떤가요?", time: "10:25" },
-    { speaker: "B", text: "마케팅팀과 협의 중입니다. 다음 주까지 초안을 완료할 예정입니다.", time: "10:26" },
-    { speaker: "A", text: "좋습니다. 예산 관련해서 추가 논의가 필요할 것 같은데요.", time: "10:27" },
-    { speaker: "B", text: "네, 예산 세부 내용은 별도 문서로 공유하겠습니다.", time: "10:28" },
-  ];
-
   const SPEAKER_PALETTE = ['bg-[#5B5FF5]', 'bg-[#22D3EE]', 'bg-[#F59E0B]', 'bg-[#EC4899]'];
+
+  // upload 모드 화자 맵
   const uniqueSpeakers = [...new Set(transcripts.map(s => s.speakerLabel))];
   const speakerColorMap: Record<string, string> = Object.fromEntries(
     uniqueSpeakers.map((label, i) => [label, SPEAKER_PALETTE[i % SPEAKER_PALETTE.length]])
   );
   const speakerIndexMap: Record<string, number> = Object.fromEntries(
     uniqueSpeakers.map((label, i) => [label, i + 1])
+  );
+
+  // live 모드 화자 맵
+  const uniqueLiveSpeakers = [...new Set(segments.map(s => s.speaker_label))];
+  const liveColorMap: Record<string, string> = Object.fromEntries(
+    uniqueLiveSpeakers.map((label, i) => [label, SPEAKER_PALETTE[i % SPEAKER_PALETTE.length]])
+  );
+  const liveIndexMap: Record<string, number> = Object.fromEntries(
+    uniqueLiveSpeakers.map((label, i) => [label, i + 1])
   );
 
   const keywords = ["프로젝트", "진행 상황", "개발", "마케팅", "예산", "일정", "회의"];
@@ -246,19 +267,17 @@ export function RecordingScreen() {
                     </div>
                   ))
                 ) : (
-                  messages.map((msg, idx) => (
+                  segments.map((seg, idx) => (
                     <div key={idx} className="flex gap-3">
                       <div
-                        className={`w-9 h-9 rounded-full flex items-center justify-center text-white font-medium text-sm flex-shrink-0 ${
-                          msg.speaker === "A" ? "bg-[#5B5FF5]" : "bg-[#22D3EE]"
-                        }`}
+                        className={`w-9 h-9 rounded-full flex items-center justify-center text-white font-medium text-sm flex-shrink-0 ${liveColorMap[seg.speaker_label]}`}
                       >
-                        {msg.speaker}
+                        {liveIndexMap[seg.speaker_label]}
                       </div>
                       <div className="flex-1">
-                        <div className="text-xs text-[#6B7280] mb-1">화자 {msg.speaker}</div>
-                        <div className="bg-[#F3F4F6] rounded-xl px-4 py-2.5 text-sm text-[#1A1D2E]">{msg.text}</div>
-                        <div className="text-xs text-[#9CA3AF] mt-1 text-right">{msg.time}</div>
+                        <div className="text-xs text-[#6B7280] mb-1">화자 {liveIndexMap[seg.speaker_label]}</div>
+                        <div className="bg-[#F3F4F6] rounded-xl px-4 py-2.5 text-sm text-[#1A1D2E]">{seg.text}</div>
+                        <div className="text-xs text-[#9CA3AF] mt-1 text-right">{formatSec(seg.start_sec)}</div>
                       </div>
                     </div>
                   ))
@@ -296,6 +315,9 @@ export function RecordingScreen() {
                       <FileText className="w-4 h-4" />
                       {isLoadingSummary ? '요약 중...' : '요약'}
                     </button>
+                    {liveError && (
+                      <p className="text-xs text-red-500 text-center w-full max-w-xs">{liveError}</p>
+                    )}
                   </div>
                 ) : (
                   /* File upload controls */
