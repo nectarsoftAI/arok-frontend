@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { MeetingMode } from '../MeetingTitleDialog';
 import { transcribeFile, type TranscriptSegment } from '../../api/stt';
+import { postSummary, type SummaryResponse } from '../../api/summary';
 import { useLiveSTT } from '../../hooks/useLiveSTT';
 import type { SegmentMessage } from '../../services/live/types';
 
@@ -26,6 +27,9 @@ export interface MeetingStateReturn {
   isDragging: boolean;
   setIsDragging: (v: boolean) => void;
   isProcessing: boolean;
+  summaryData: SummaryResponse | null;
+  isSummaryLoading: boolean;
+  summaryError: string | null;
   segments: SegmentMessage[];
   liveError: string | null;
   handleTitleConfirm: (title: string, mode: MeetingMode) => void;
@@ -58,6 +62,9 @@ export function useMeetingState(): MeetingStateReturn {
   const [meetingId, setMeetingId] = useState<string | null>(null);
   const [transcripts, setTranscripts] = useState<TranscriptSegment[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [summaryData, setSummaryData] = useState<SummaryResponse | null>(null);
+  const [isSummaryLoading, setIsSummaryLoading] = useState(false);
+  const [summaryError, setSummaryError] = useState<string | null>(null);
 
   const { segments, error: liveError, start: liveStart, stop: liveStop } = useLiveSTT();
 
@@ -145,11 +152,23 @@ export function useMeetingState(): MeetingStateReturn {
     if (!uploadedFile) return;
     setIsProcessing(true);
     setError(null);
+    setSummaryError(null);
     try {
       const result = await transcribeFile(uploadedFile);
       setMeetingId(result.meetingId);
       setTranscripts(result.transcripts);
       setHasConversation(true);
+
+      setIsSummaryLoading(true);
+      try {
+        const summary = await postSummary(result);
+        setSummaryData(summary);
+        setShowSummary(true);
+      } catch {
+        setSummaryError('요약 생성에 실패했습니다.');
+      } finally {
+        setIsSummaryLoading(false);
+      }
     } catch (err) {
       console.error(err);
       setError('파일 분석 중 오류가 발생했습니다.');
@@ -198,6 +217,9 @@ export function useMeetingState(): MeetingStateReturn {
     isDragging,
     setIsDragging,
     isProcessing,
+    summaryData,
+    isSummaryLoading,
+    summaryError,
     segments,
     liveError,
     handleTitleConfirm,
