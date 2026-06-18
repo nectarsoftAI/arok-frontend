@@ -37,9 +37,9 @@ export interface MeetingStateReturn {
   formatTime: (seconds: number) => string;
   formatSec: (sec: number) => string;
   speakerColorMap: Record<string, string>;
-  speakerIndexMap: Record<string, number>;
+  speakerIndexMap: Record<string, string>;
   liveColorMap: Record<string, string>;
-  liveIndexMap: Record<string, number>;
+  liveIndexMap: Record<string, string>;
   canSummarize: boolean;
 }
 
@@ -163,8 +163,9 @@ export function useMeetingState(): MeetingStateReturn {
   const speakerColorMap: Record<string, string> = Object.fromEntries(
     uniqueSpeakers.map((label, i) => [label, SPEAKER_PALETTE[i % SPEAKER_PALETTE.length]])
   );
-  const speakerIndexMap: Record<string, number> = Object.fromEntries(
-    uniqueSpeakers.map((label, i) => [label, i + 1])
+
+  const speakerIndexMap: Record<string, string> = Object.fromEntries(
+    uniqueSpeakers.map((label, i) => [label, String.fromCharCode(65 + i)])
   );
 
   // live 모드 화자 맵
@@ -172,8 +173,9 @@ export function useMeetingState(): MeetingStateReturn {
   const liveColorMap: Record<string, string> = Object.fromEntries(
     uniqueLiveSpeakers.map((label, i) => [label, SPEAKER_PALETTE[i % SPEAKER_PALETTE.length]])
   );
-  const liveIndexMap: Record<string, number> = Object.fromEntries(
-    uniqueLiveSpeakers.map((label, i) => [label, i + 1])
+
+  const liveIndexMap: Record<string, string> = Object.fromEntries(
+    uniqueLiveSpeakers.map((label, i) => [label, String.fromCharCode(65 + i)])
   );
 
   const canSummarize = meetingMode === 'live' ? recordingState === 'finished' : !!uploadedFile;
