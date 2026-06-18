@@ -120,6 +120,9 @@ export function RecordingScreen() {
               meetingMode={state.meetingMode}
               showSummary={state.showSummary}
               isLoadingSummary={state.isLoadingSummary}
+              summaryData={state.summaryData}
+              isSummaryLoading={state.isSummaryLoading}
+              summaryError={state.summaryError}
             />
           </div>
         </>
