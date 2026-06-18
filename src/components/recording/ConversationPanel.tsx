@@ -12,9 +12,9 @@ interface ConversationPanelProps {
   transcripts: TranscriptSegment[];
   segments: SegmentMessage[];
   speakerColorMap: Record<string, string>;
-  speakerIndexMap: Record<string, number>;
+  speakerIndexMap: Record<string, string>;
   liveColorMap: Record<string, string>;
-  liveIndexMap: Record<string, number>;
+  liveIndexMap: Record<string, string>;
   formatSec: (sec: number) => string;
   controls: ReactNode;
 }

@@ -36,8 +36,8 @@ export function SpeakerChart() {
           const outerPath = arcPath(cx, cy, outerR, start, end);
           const innerPath = arcPath(cx, cy, innerR, end, start);
           const s = polarToCartesian(cx, cy, outerR, start);
-          const e = polarToCartesian(cx, cy, innerR, start);
-          const s2 = polarToCartesian(cx, cy, outerR, end);
+          // const e = polarToCartesian(cx, cy, innerR, start);
+          // const s2 = polarToCartesian(cx, cy, outerR, end);
           const e2 = polarToCartesian(cx, cy, innerR, end);
 
           return (
