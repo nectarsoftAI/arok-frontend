@@ -16,9 +16,10 @@ function extractApiError(err: unknown): ApiError {
 
 // ---- API ----
 
-export async function transcribeFile(file: File): Promise<TranscribeResponse> {
+export async function transcribeFile(file: File, title?: string): Promise<TranscribeResponse> {
   const form = new FormData();
   form.append('file', file);
+  if (title && title.trim()) form.append('title', title.trim());
 
   try {
     const { data } = await apiClient.post<TranscribeResponse>(

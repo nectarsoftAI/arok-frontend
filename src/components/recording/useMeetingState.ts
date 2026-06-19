@@ -155,7 +155,7 @@ export function useMeetingState(): MeetingStateReturn {
     setError(null);
     setSummaryError(null);
     try {
-      const result = await transcribeFile(uploadedFile);
+      const result = await transcribeFile(uploadedFile, meetingTitle || undefined);
       setMeetingId(result.meetingId);
       setTranscripts(result.transcripts);
       setHasConversation(true);
