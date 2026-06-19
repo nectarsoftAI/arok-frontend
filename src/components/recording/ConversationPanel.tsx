@@ -1,7 +1,7 @@
 import { useRef, useEffect, type ReactNode } from 'react';
 import { Download } from 'lucide-react';
 import type { MeetingMode } from '../MeetingTitleDialog';
-import type { TranscriptSegment } from '../../api/stt';
+import type { TranscriptSegment } from '../../api/types';
 import type { SegmentMessage } from '../../services/live/types';
 import recodingLiveImg from '../../assets/icons/recoding_live_icon.png';
 

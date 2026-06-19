@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { TranscribeResponse } from './stt';
+import type { TranscribeResponse } from './types';
 
 export interface SummaryResponse {
   summary: string[];

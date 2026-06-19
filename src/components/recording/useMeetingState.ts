@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { MeetingMode } from '../MeetingTitleDialog';
-import { transcribeFile, type TranscriptSegment } from '../../api/stt';
+import { transcribeFile } from '../../api/stt';
+import type { TranscriptSegment } from '../../api/types';
 import { postSummary, type SummaryResponse } from '../../api/summary';
 import { useLiveSTT } from '../../hooks/useLiveSTT';
 import type { SegmentMessage } from '../../services/live/types';
