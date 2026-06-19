@@ -1,13 +1,50 @@
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router";
 import { Download, CheckCircle2, Square } from "lucide-react";
-import { getMeetingById } from "../../data/meetings";
+import { meetingsApi, type MeetingDetail } from "../../api/meetings";
+
+const SPEAKER_COLORS = [
+  "bg-[#5B5FF5]",
+  "bg-[#22D3EE]",
+  "bg-[#F59E0B]",
+  "bg-[#EC4899]",
+];
+
+function formatSec(sec: number): string {
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec) % 60;
+  return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+}
+
+function formatDuration(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  return `${m}분`;
+}
 
 export function MeetingDetailScreen() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const meeting = getMeetingById(id!);
+  const [meeting, setMeeting] = useState<MeetingDetail | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
 
-  if (!meeting) {
+  useEffect(() => {
+    if (!id) return;
+
+    meetingsApi
+      .getById(id)
+      .then(({ data }) => {
+        console.log("회의 상세 응답", data);
+        setMeeting(data);
+      })
+      .catch((err) => {
+        console.error("회의 상세 조회 실패", err);
+        setHasError(true);
+      })
+      .finally(() => setIsLoading(false));
+  }, [id]);
+
+  if (hasError || !meeting) {
     return (
       <div className="h-full flex items-center justify-center">
         <div className="text-center">
@@ -23,7 +60,14 @@ export function MeetingDetailScreen() {
     );
   }
 
-  const keywords = meeting.keywords || [];
+  const uniqueSpeakers = [...new Set(meeting.transcripts.map((t) => t.speakerLabel))];
+  const speakerColorMap = Object.fromEntries(
+    uniqueSpeakers.map((lbl, i) => [lbl, SPEAKER_COLORS[i % SPEAKER_COLORS.length]])
+  );
+  const speakerLetterMap = Object.fromEntries(
+    uniqueSpeakers.map((lbl, i) => [lbl, String.fromCharCode(65 + i)])
+  );
+  const uniqueSpeakerDisplays = [...new Set(meeting.transcripts.map((t) => t.speakerDisplay))];
 
   return (
     <div className="h-full p-6">
@@ -31,16 +75,15 @@ export function MeetingDetailScreen() {
       <div className="mb-4">
         <h1 className="text-xl font-semibold text-[#1A1D2E]">{meeting.title}</h1>
         <div className="flex items-center gap-2 mt-1">
-          <span className="text-sm text-[#6B7280]">{meeting.date}</span>
+          <span className="text-sm text-[#6B7280]">{meeting.meetingDate}</span>
           <span className="text-sm text-[#9CA3AF]">•</span>
-          <span className="text-sm text-[#6B7280]">{meeting.duration}</span>
+          <span className="text-sm text-[#6B7280]">{formatDuration(meeting.durationSeconds)}</span>
         </div>
       </div>
 
-      <div className="grid grid-cols-[1fr_0.67fr] gap-6" style={{ height: 'calc(100% - 3rem)' }}>
+      <div className="grid grid-cols-[1fr_0.67fr] gap-6" style={{ height: "calc(100% - 3rem)" }}>
         {/* Left Column - Conversation */}
         <div className="bg-white rounded-lg shadow-sm flex flex-col border-2 border-[#5B5FF5]/20 bg-[#5B5FF5]/[0.02]">
-          {/* Header */}
           <div className="px-5 py-4 border-b border-[#E5E7EB] flex items-center justify-between">
             <h2 className="font-semibold text-[#1A1D2E]">대화 내용</h2>
             <button className="px-3 py-1.5 text-sm text-[#6B7280] border border-[#E5E7EB] rounded-lg hover:bg-[#F3F4F6] transition-colors flex items-center gap-2">
@@ -49,42 +92,46 @@ export function MeetingDetailScreen() {
             </button>
           </div>
 
-          {/* Messages */}
           <div className="flex-1 overflow-auto p-5 space-y-4">
-            {meeting.messages.map((msg, idx) => (
-              <div key={idx} className="flex gap-3">
-                <div
-                  className={`w-9 h-9 rounded-full flex items-center justify-center text-white font-medium text-sm flex-shrink-0 ${
-                    msg.speaker === "A" ? "bg-[#5B5FF5]" : "bg-[#22D3EE]"
-                  }`}
-                >
-                  {msg.speaker}
-                </div>
-                <div className="flex-1">
-                  <div className="text-xs text-[#6B7280] mb-1">화자 {msg.speaker}</div>
-                  <div className="bg-[#F3F4F6] rounded-xl px-4 py-2.5 text-sm text-[#1A1D2E]">
-                    {msg.text}
-                  </div>
-                  <div className="text-xs text-[#9CA3AF] mt-1 text-right">{msg.time}</div>
-                </div>
+            {meeting.transcripts.length === 0 ? (
+              <div className="h-full flex items-center justify-center text-sm text-[#6B7280]">
+                대화 내용이 없습니다.
               </div>
-            ))}
+            ) : (
+              meeting.transcripts.map((seg, idx) => (
+                <div key={idx} className="flex gap-3">
+                  <div
+                    className={`w-9 h-9 rounded-full flex items-center justify-center text-white font-medium text-sm flex-shrink-0 ${speakerColorMap[seg.speakerLabel]}`}
+                  >
+                    {speakerLetterMap[seg.speakerLabel]}
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-xs text-[#6B7280] mb-1">{seg.speakerDisplay}</div>
+                    <div className="bg-[#F3F4F6] rounded-xl px-4 py-2.5 text-sm text-[#1A1D2E]">
+                      {seg.content}
+                    </div>
+                    <div className="text-xs text-[#9CA3AF] mt-1 text-right">
+                      {formatSec(seg.startSec)}
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
 
         {/* Right Column - Summary */}
         <div className="bg-white rounded-lg shadow-sm flex flex-col border-2 border-[#5B5FF5]/20 bg-[#5B5FF5]/[0.02]">
-          {/* Header */}
           <div className="px-5 py-4 border-b border-[#E5E7EB] flex items-center justify-between">
             <div className="flex-1">
               <h2 className="font-semibold text-[#1A1D2E]">대화 요약</h2>
-              <div className="flex items-center gap-1.5 mt-1">
-                {meeting.participants.map((p, idx) => (
+              <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                {uniqueSpeakerDisplays.map((display, idx) => (
                   <span
                     key={idx}
                     className="px-2 py-0.5 bg-[#F3F4F6] text-[#6B7280] text-xs rounded"
                   >
-                    화자 {p}
+                    {display}
                   </span>
                 ))}
               </div>
@@ -95,7 +142,6 @@ export function MeetingDetailScreen() {
             </button>
           </div>
 
-          {/* Summary Content */}
           <div className="flex-1 overflow-auto p-5 space-y-5">
             {/* Main Points */}
             <div className="space-y-3">
@@ -157,21 +203,6 @@ export function MeetingDetailScreen() {
                   </li>
                 ))}
               </ul>
-            </div>
-
-            {/* Keywords */}
-            <div className="space-y-3 pt-5 border-t border-[#E5E7EB]">
-              <h3 className="font-semibold text-[#1A1D2E] text-sm">키워드</h3>
-              <div className="flex flex-wrap gap-2">
-                {keywords.map((keyword, idx) => (
-                  <span
-                    key={idx}
-                    className="px-3 py-1 bg-[#EEF2FF] text-[#5B5FF5] text-xs rounded-md"
-                  >
-                    {keyword}
-                  </span>
-                ))}
-              </div>
             </div>
           </div>
         </div>

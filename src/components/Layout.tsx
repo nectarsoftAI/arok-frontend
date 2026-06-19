@@ -1,34 +1,40 @@
 import { Outlet, Link, useLocation, useParams } from "react-router";
 import { Mic, FileText, BarChart3, Search, Bell, User, ChevronDown, ChevronRight, X } from "lucide-react";
-import { getMeetingById } from "../data/meetings";
+import { meetingsApi } from "../api/meetings";
 import { useState, useEffect } from "react";
+
+interface OpenedMeeting {
+  id: string;
+  title: string;
+}
 
 export function Layout() {
   const location = useLocation();
   const params = useParams();
   const [isMeetingsExpanded, setIsMeetingsExpanded] = useState(true);
-  const [openedMeetings, setOpenedMeetings] = useState<number[]>([]);
+  const [openedMeetings, setOpenedMeetings] = useState<OpenedMeeting[]>([]);
 
-  // Get current meeting if viewing one
   const currentMeetingId = params.id;
-  const currentMeeting = currentMeetingId ? getMeetingById(currentMeetingId) : null;
 
-  // Add meeting to opened list when viewing
   useEffect(() => {
-    if (currentMeeting && !openedMeetings.includes(currentMeeting.id)) {
-      setOpenedMeetings(prev => [...prev, currentMeeting.id]);
-      setIsMeetingsExpanded(true);
-    }
-  }, [currentMeeting]);
+    if (!currentMeetingId) return;
+    if (openedMeetings.some((m) => m.id === currentMeetingId)) return;
 
-  const handleRemoveMeeting = (meetingId: number, e: React.MouseEvent) => {
+    meetingsApi.getById(currentMeetingId).then(({ data }) => {
+      setOpenedMeetings((prev) => [...prev, { id: data.meetingId, title: data.title }]);
+      setIsMeetingsExpanded(true);
+    }).catch(() => {
+      // 사이드바 목록 추가 실패는 무시
+    });
+  }, [currentMeetingId]);
+
+  const handleRemoveMeeting = (meetingId: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setOpenedMeetings(prev => prev.filter(id => id !== meetingId));
+    setOpenedMeetings((prev) => prev.filter((m) => m.id !== meetingId));
 
-    // If removing current meeting, navigate to meetings list
-    if (currentMeeting?.id === meetingId) {
-      window.location.href = '/meetings';
+    if (currentMeetingId === meetingId) {
+      window.location.href = "/meetings";
     }
   };
 
@@ -56,8 +62,8 @@ export function Layout() {
                 className={`
                   flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all relative
                   ${location.pathname === "/"
-                    ? 'bg-[#5B5FF5] text-white'
-                    : 'text-gray-400 hover:text-white hover:bg-white/5'
+                    ? "bg-[#5B5FF5] text-white"
+                    : "text-gray-400 hover:text-white hover:bg-white/5"
                   }
                 `}
               >
@@ -69,7 +75,7 @@ export function Layout() {
               </Link>
             </li>
 
-            {/* 회의록 목록 - Tree Structure */}
+            {/* 회의록 목록 */}
             <li>
               <div className="flex items-center gap-1">
                 <Link
@@ -77,8 +83,8 @@ export function Layout() {
                   className={`
                     flex-1 flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all relative
                     ${location.pathname === "/meetings"
-                      ? 'bg-[#5B5FF5] text-white'
-                      : 'text-gray-400 hover:text-white hover:bg-white/5'
+                      ? "bg-[#5B5FF5] text-white"
+                      : "text-gray-400 hover:text-white hover:bg-white/5"
                     }
                   `}
                 >
@@ -89,7 +95,6 @@ export function Layout() {
                   <span className="text-sm">회의록 목록</span>
                 </Link>
 
-                {/* Toggle button - only show when there are opened meetings */}
                 {openedMeetings.length > 0 && (
                   <button
                     onClick={() => setIsMeetingsExpanded(!isMeetingsExpanded)}
@@ -104,40 +109,36 @@ export function Layout() {
                 )}
               </div>
 
-              {/* Sub-items - All Opened Meetings */}
               {isMeetingsExpanded && openedMeetings.length > 0 && (
                 <ul className="ml-4 mt-1 space-y-1">
-                  {openedMeetings.map((meetingId) => {
-                    const meeting = getMeetingById(meetingId.toString());
-                    if (!meeting) return null;
-
-                    return (
-                      <li key={meetingId}>
-                        <div className="flex items-center gap-1 group pr-2">
-                          <Link
-                            to={`/meetings/${meeting.id}`}
-                            className={`
-                              flex items-center gap-2 px-4 py-2 rounded-lg transition-all text-sm relative flex-1 min-w-0
-                              ${location.pathname === `/meetings/${meeting.id}`
-                                ? 'bg-white/10 text-white'
-                                : 'text-gray-400 hover:text-white hover:bg-white/5'
-                              }
-                            `}
-                          >
-                            <div className="w-1.5 h-1.5 rounded-full bg-current ml-1 flex-shrink-0" />
-                            <span className="truncate block" style={{ maxWidth: '120px' }}>{meeting.title}</span>
-                          </Link>
-                          <button
-                            onClick={(e) => handleRemoveMeeting(meeting.id, e)}
-                            className="p-1.5 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-white transition-all flex-shrink-0"
-                            title="닫기"
-                          >
-                            <X className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </li>
-                    );
-                  })}
+                  {openedMeetings.map((meeting) => (
+                    <li key={meeting.id}>
+                      <div className="flex items-center gap-1 group pr-2">
+                        <Link
+                          to={`/meetings/${meeting.id}`}
+                          className={`
+                            flex items-center gap-2 px-4 py-2 rounded-lg transition-all text-sm relative flex-1 min-w-0
+                            ${location.pathname === `/meetings/${meeting.id}`
+                              ? "bg-white/10 text-white"
+                              : "text-gray-400 hover:text-white hover:bg-white/5"
+                            }
+                          `}
+                        >
+                          <div className="w-1.5 h-1.5 rounded-full bg-current ml-1 flex-shrink-0" />
+                          <span className="truncate block" style={{ maxWidth: "120px" }}>
+                            {meeting.title}
+                          </span>
+                        </Link>
+                        <button
+                          onClick={(e) => handleRemoveMeeting(meeting.id, e)}
+                          className="p-1.5 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-white transition-all flex-shrink-0"
+                          title="닫기"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </li>
+                  ))}
                 </ul>
               )}
             </li>
@@ -149,8 +150,8 @@ export function Layout() {
                 className={`
                   flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all relative
                   ${location.pathname === "/insights"
-                    ? 'bg-[#5B5FF5] text-white'
-                    : 'text-gray-400 hover:text-white hover:bg-white/5'
+                    ? "bg-[#5B5FF5] text-white"
+                    : "text-gray-400 hover:text-white hover:bg-white/5"
                   }
                 `}
               >
