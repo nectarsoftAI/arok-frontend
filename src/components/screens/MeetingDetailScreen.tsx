@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router";
 import { Download, CheckCircle2, Square } from "lucide-react";
 import { meetingsApi, type MeetingDetail } from "../../api/meetings";
+import { Skeleton } from "../ui/skeleton";
 
 const SPEAKER_COLORS = [
   "bg-[#5B5FF5]",
@@ -30,7 +31,6 @@ export function MeetingDetailScreen() {
 
   useEffect(() => {
     if (!id) return;
-
     meetingsApi
       .getById(id)
       .then(({ data }) => {
@@ -44,14 +44,98 @@ export function MeetingDetailScreen() {
       .finally(() => setIsLoading(false));
   }, [id]);
 
+  /* ── Loading ─────────────────────────────────────────── */
+  if (isLoading) {
+    return (
+      <div className="h-full p-6">
+        {/* 제목 영역 */}
+        <div className="mb-4">
+          <Skeleton className="h-7 w-72 bg-gray-200 mb-2" />
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-4 w-24 bg-gray-200" />
+            <Skeleton className="h-4 w-1 bg-gray-200" />
+            <Skeleton className="h-4 w-12 bg-gray-200" />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-[1fr_0.67fr] gap-6" style={{ height: "calc(100% - 3rem)" }}>
+          {/* 왼쪽: 대화 내용 */}
+          <div className="bg-white rounded-lg shadow-sm flex flex-col border-2 border-[#E5E7EB]">
+            <div className="px-5 py-4 border-b border-[#E5E7EB] flex items-center justify-between">
+              <Skeleton className="h-5 w-20 bg-gray-200" />
+              <Skeleton className="h-8 w-28 bg-gray-200" />
+            </div>
+            <div className="flex-1 overflow-auto p-5 space-y-5">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="flex gap-3">
+                  <Skeleton className="w-9 h-9 rounded-full bg-gray-200 flex-shrink-0" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-3 w-16 bg-gray-200" />
+                    <Skeleton className={`h-10 bg-gray-200 rounded-xl ${i % 2 === 0 ? "w-full" : "w-4/5"}`} />
+                    <Skeleton className="h-3 w-10 bg-gray-200 ml-auto" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* 오른쪽: 요약 */}
+          <div className="bg-white rounded-lg shadow-sm flex flex-col border-2 border-[#E5E7EB]">
+            <div className="px-5 py-4 border-b border-[#E5E7EB] flex items-center justify-between">
+              <div className="space-y-2">
+                <Skeleton className="h-5 w-20 bg-gray-200" />
+                <div className="flex gap-1.5">
+                  <Skeleton className="h-5 w-14 bg-gray-200" />
+                  <Skeleton className="h-5 w-14 bg-gray-200" />
+                </div>
+              </div>
+              <Skeleton className="h-8 w-28 bg-gray-200" />
+            </div>
+            <div className="flex-1 overflow-auto p-5 space-y-5">
+              <div className="space-y-3">
+                <Skeleton className="h-4 w-20 bg-gray-200" />
+                <Skeleton className="h-3 w-full bg-gray-200" />
+                <Skeleton className="h-3 w-5/6 bg-gray-200" />
+                <Skeleton className="h-3 w-full bg-gray-200" />
+                <Skeleton className="h-3 w-4/5 bg-gray-200" />
+              </div>
+              <div className="space-y-3 pt-5 border-t border-[#E5E7EB]">
+                <Skeleton className="h-4 w-20 bg-gray-200" />
+                <Skeleton className="h-3 w-full bg-gray-200" />
+                <Skeleton className="h-3 w-3/4 bg-gray-200" />
+                <Skeleton className="h-3 w-5/6 bg-gray-200" />
+              </div>
+              <div className="space-y-3 pt-5 border-t border-[#E5E7EB]">
+                <Skeleton className="h-4 w-20 bg-gray-200" />
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="space-y-1.5">
+                    <Skeleton className="h-4 w-3/4 bg-gray-200" />
+                    <div className="flex gap-2">
+                      <Skeleton className="h-5 w-16 bg-gray-200" />
+                      <Skeleton className="h-5 w-10 bg-gray-200" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  /* ── 데이터 없음 / 오류 ───────────────────────────────── */
   if (hasError || !meeting) {
     return (
       <div className="h-full flex items-center justify-center">
         <div className="text-center">
-          <h3 className="font-semibold text-[#1A1D2E] mb-2">회의를 찾을 수 없습니다</h3>
+          <h3 className="font-semibold text-[#1A1D2E] mb-2">회의 정보를 찾을 수 없습니다</h3>
+          <p className="text-sm text-[#6B7280] mb-4">
+            요청한 회의가 존재하지 않거나 삭제되었습니다.
+          </p>
           <button
             onClick={() => navigate("/meetings")}
-            className="mt-4 px-4 py-2 bg-[#5B5FF5] text-white rounded-lg"
+            className="px-4 py-2 bg-[#5B5FF5] text-white rounded-lg text-sm"
           >
             목록으로 돌아가기
           </button>
@@ -60,6 +144,7 @@ export function MeetingDetailScreen() {
     );
   }
 
+  /* ── 정상 렌더 ───────────────────────────────────────── */
   const uniqueSpeakers = [...new Set(meeting.transcripts.map((t) => t.speakerLabel))];
   const speakerColorMap = Object.fromEntries(
     uniqueSpeakers.map((lbl, i) => [lbl, SPEAKER_COLORS[i % SPEAKER_COLORS.length]])
@@ -71,7 +156,6 @@ export function MeetingDetailScreen() {
 
   return (
     <div className="h-full p-6">
-      {/* Meeting Title Header */}
       <div className="mb-4">
         <h1 className="text-xl font-semibold text-[#1A1D2E]">{meeting.title}</h1>
         <div className="flex items-center gap-2 mt-1">
@@ -82,7 +166,7 @@ export function MeetingDetailScreen() {
       </div>
 
       <div className="grid grid-cols-[1fr_0.67fr] gap-6" style={{ height: "calc(100% - 3rem)" }}>
-        {/* Left Column - Conversation */}
+        {/* 왼쪽: 대화 내용 */}
         <div className="bg-white rounded-lg shadow-sm flex flex-col border-2 border-[#5B5FF5]/20 bg-[#5B5FF5]/[0.02]">
           <div className="px-5 py-4 border-b border-[#E5E7EB] flex items-center justify-between">
             <h2 className="font-semibold text-[#1A1D2E]">대화 내용</h2>
@@ -120,7 +204,7 @@ export function MeetingDetailScreen() {
           </div>
         </div>
 
-        {/* Right Column - Summary */}
+        {/* 오른쪽: 요약 */}
         <div className="bg-white rounded-lg shadow-sm flex flex-col border-2 border-[#5B5FF5]/20 bg-[#5B5FF5]/[0.02]">
           <div className="px-5 py-4 border-b border-[#E5E7EB] flex items-center justify-between">
             <div className="flex-1">
@@ -143,7 +227,6 @@ export function MeetingDetailScreen() {
           </div>
 
           <div className="flex-1 overflow-auto p-5 space-y-5">
-            {/* Main Points */}
             <div className="space-y-3">
               <h3 className="font-semibold text-[#1A1D2E] text-sm">주요 내용</h3>
               <ul className="space-y-2">
@@ -161,7 +244,6 @@ export function MeetingDetailScreen() {
               </ul>
             </div>
 
-            {/* Decisions */}
             <div className="space-y-3 pt-5 border-t border-[#E5E7EB]">
               <h3 className="font-semibold text-[#1A1D2E] text-sm">결정 사항</h3>
               <ul className="space-y-2">
@@ -178,7 +260,6 @@ export function MeetingDetailScreen() {
               </ul>
             </div>
 
-            {/* Action Items */}
             <div className="space-y-3 pt-5 border-t border-[#E5E7EB]">
               <h3 className="font-semibold text-[#1A1D2E] text-sm">후속 조치</h3>
               <ul className="space-y-3">
