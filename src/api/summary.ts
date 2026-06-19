@@ -1,5 +1,6 @@
 import axios from 'axios';
 import type { TranscribeResponse } from './types';
+import type { MeetingDetail } from './meetings';
 
 export interface SummaryResponse {
   summary: string[];
@@ -18,6 +19,17 @@ const summaryClient = axios.create({
 });
 
 export async function postSummary(body: TranscribeResponse): Promise<SummaryResponse> {
+  const { data } = await summaryClient.post<SummaryResponse>('/api/summary', body);
+  return data;
+}
+
+export async function postSummaryFromDetail(meeting: MeetingDetail): Promise<SummaryResponse> {
+  const body = {
+    meetingId: meeting.meetingId,
+    engineUsed: 'unknown',
+    segmentCount: meeting.transcripts.length,
+    transcripts: meeting.transcripts,
+  };
   const { data } = await summaryClient.post<SummaryResponse>('/api/summary', body);
   return data;
 }

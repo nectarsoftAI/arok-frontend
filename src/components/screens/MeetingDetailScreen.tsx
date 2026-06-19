@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router";
 import { Download, CheckCircle2, Square } from "lucide-react";
 import { meetingsApi, type MeetingDetail } from "../../api/meetings";
+import { postSummaryFromDetail, type SummaryResponse } from "../../api/summary";
 import { Skeleton } from "../ui/skeleton";
 
 const SPEAKER_COLORS = [
@@ -28,6 +29,9 @@ export function MeetingDetailScreen() {
   const [meeting, setMeeting] = useState<MeetingDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
+  const [summaryData, setSummaryData] = useState<SummaryResponse | null>(null);
+  const [isSummaryLoading, setIsSummaryLoading] = useState(false);
+  const [summaryError, setSummaryError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -43,6 +47,15 @@ export function MeetingDetailScreen() {
       })
       .finally(() => setIsLoading(false));
   }, [id]);
+
+  useEffect(() => {
+    if (!meeting || meeting.transcripts.length === 0) return;
+    setIsSummaryLoading(true);
+    postSummaryFromDetail(meeting)
+      .then(setSummaryData)
+      .catch(() => setSummaryError("요약 생성에 실패했습니다."))
+      .finally(() => setIsSummaryLoading(false));
+  }, [meeting]);
 
   /* ── Loading ─────────────────────────────────────────── */
   if (isLoading) {
@@ -227,64 +240,87 @@ export function MeetingDetailScreen() {
           </div>
 
           <div className="flex-1 overflow-auto p-5 space-y-5">
-            <div className="space-y-3">
-              <h3 className="font-semibold text-[#1A1D2E] text-sm">주요 내용</h3>
-              <ul className="space-y-2">
-                {[
-                  "프로젝트 진행 상황 (70% 완료)",
-                  "개발 진행 순조로움",
-                  "마케팅 계획 (다음 주까지 초안 완료 예정)",
-                  "예산 관련 추가 논의 필요",
-                ].map((item, idx) => (
-                  <li key={idx} className="flex gap-2 text-sm text-[#1A1D2E]">
-                    <div className="w-1.5 h-1.5 rounded-full bg-[#5B5FF5] mt-1.5 flex-shrink-0" />
-                    <span>{item}</span>
-                  </li>
+            {isSummaryLoading ? (
+              <div className="space-y-4 animate-pulse">
+                <p className="text-sm text-center text-[#6B7280]">회의 내용을 분석하고 있습니다...</p>
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="space-y-3">
+                    <div className="h-4 bg-gray-200 rounded w-24" />
+                    <div className="h-3 bg-gray-200 rounded" />
+                    <div className="h-3 bg-gray-200 rounded w-5/6" />
+                  </div>
                 ))}
-              </ul>
-            </div>
+              </div>
+            ) : summaryError ? (
+              <div className="h-full flex items-center justify-center text-sm text-red-500 text-center px-4">
+                {summaryError}
+              </div>
+            ) : summaryData ? (
+              <>
+                <div className="space-y-3">
+                  <h3 className="font-semibold text-[#1A1D2E] text-sm">주요 내용</h3>
+                  <ul className="space-y-2">
+                    {summaryData.summary.map((item, idx) => (
+                      <li key={idx} className="flex gap-2 text-sm text-[#1A1D2E]">
+                        <div className="w-1.5 h-1.5 rounded-full bg-[#5B5FF5] mt-1.5 flex-shrink-0" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
 
-            <div className="space-y-3 pt-5 border-t border-[#E5E7EB]">
-              <h3 className="font-semibold text-[#1A1D2E] text-sm">결정 사항</h3>
-              <ul className="space-y-2">
-                {[
-                  "마케팅 계획 초안 공유",
-                  "예산 내용 별도 문서 공유",
-                  "다음 회의에서 세부 계획 논의",
-                ].map((item, idx) => (
-                  <li key={idx} className="flex gap-2 text-sm text-[#1A1D2E]">
-                    <CheckCircle2 className="w-4 h-4 text-[#10B981] flex-shrink-0 mt-0.5" />
-                    <span>{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
+                <div className="space-y-3 pt-5 border-t border-[#E5E7EB]">
+                  <h3 className="font-semibold text-[#1A1D2E] text-sm">결정 사항</h3>
+                  <ul className="space-y-2">
+                    {summaryData.decisions.map((item, idx) => (
+                      <li key={idx} className="flex gap-2 text-sm text-[#1A1D2E]">
+                        <CheckCircle2 className="w-4 h-4 text-[#10B981] flex-shrink-0 mt-0.5" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
 
-            <div className="space-y-3 pt-5 border-t border-[#E5E7EB]">
-              <h3 className="font-semibold text-[#1A1D2E] text-sm">후속 조치</h3>
-              <ul className="space-y-3">
-                {[
-                  { task: "마케팅 초안 작성", assignee: "화자 A", due: "6/10" },
-                  { task: "예산 문서 준비", assignee: "화자 B", due: "6/08" },
-                  { task: "다음 회의 일정 조율", assignee: "화자 A", due: "6/12" },
-                ].map((item, idx) => (
-                  <li key={idx} className="flex items-start gap-2 text-sm">
-                    <Square className="w-4 h-4 text-[#6B7280] flex-shrink-0 mt-0.5" />
-                    <div className="flex-1">
-                      <div className="text-[#1A1D2E]">{item.task}</div>
-                      <div className="flex gap-2 mt-1">
-                        <span className="px-2 py-0.5 bg-[#EEF2FF] text-[#5B5FF5] text-xs rounded">
-                          {item.assignee}
+                <div className="space-y-3 pt-5 border-t border-[#E5E7EB]">
+                  <h3 className="font-semibold text-[#1A1D2E] text-sm">후속 조치</h3>
+                  <ul className="space-y-3">
+                    {summaryData.action_items.map((item, idx) => (
+                      <li key={idx} className="flex items-start gap-2 text-sm">
+                        <Square className="w-4 h-4 text-[#6B7280] flex-shrink-0 mt-0.5" />
+                        <div className="flex-1">
+                          <div className="text-[#1A1D2E]">{item.task}</div>
+                          <div className="flex gap-2 mt-1">
+                            <span className="px-2 py-0.5 bg-[#EEF2FF] text-[#5B5FF5] text-xs rounded">
+                              {item.assignee}
+                            </span>
+                            <span className="px-2 py-0.5 bg-[#FEF3C7] text-[#92400E] text-xs rounded">
+                              {item.due_date}
+                            </span>
+                          </div>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {summaryData.keywords.length > 0 && (
+                  <div className="space-y-3 pt-5 border-t border-[#E5E7EB]">
+                    <h3 className="font-semibold text-[#1A1D2E] text-sm">키워드</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {summaryData.keywords.map((kw, idx) => (
+                        <span key={idx} className="px-3 py-1 bg-[#EEF2FF] text-[#5B5FF5] text-xs rounded-md">
+                          {kw}
                         </span>
-                        <span className="px-2 py-0.5 bg-[#FEF3C7] text-[#92400E] text-xs rounded">
-                          {item.due}
-                        </span>
-                      </div>
+                      ))}
                     </div>
-                  </li>
-                ))}
-              </ul>
-            </div>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="h-full flex items-center justify-center text-sm text-[#6B7280]">
+                요약 정보가 없습니다.
+              </div>
+            )}
           </div>
         </div>
       </div>
