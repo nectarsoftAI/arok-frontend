@@ -3,12 +3,14 @@ import { Download } from 'lucide-react';
 import type { MeetingMode } from '../MeetingTitleDialog';
 import type { TranscriptSegment } from '../../api/types';
 import type { SegmentMessage } from '../../services/live/types';
-import recodingLiveImg from '../../assets/icons/recoding_live_icon.png';
+import analyzingAudioIcon from '../../assets/icons/analyzing_audio_icon.png';
+import analyzingSceneImg from '../../assets/images/analyzing_scene.png';
 
 interface ConversationPanelProps {
   meetingMode: MeetingMode;
   hasConversation: boolean;
   canSummarize: boolean;
+  isProcessing?: boolean;
   transcripts: TranscriptSegment[];
   segments: SegmentMessage[];
   speakerColorMap: Record<string, string>;
@@ -23,6 +25,7 @@ export function ConversationPanel({
   meetingMode,
   hasConversation,
   canSummarize,
+  isProcessing = false,
   transcripts,
   segments,
   speakerColorMap,
@@ -57,15 +60,22 @@ export function ConversationPanel({
 
       <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto p-5 space-y-4">
         {!hasConversation ? (
-          <div className="h-full flex flex-col items-center justify-center text-center px-8">
-            <img src={recodingLiveImg} alt="녹음" className="w-20 h-20 object-contain mb-6 opacity-60" />
-            <h3 className="font-semibold text-[#1A1D2E] mb-2">대화를 시작해보세요</h3>
-            <p className="text-sm text-[#6B7280]">
-              {meetingMode === 'live'
-                ? '녹음 버튼을 눌러 회의를 시작하세요.'
-                : '오디오 파일을 업로드하면 자동으로 분석됩니다.'}
-            </p>
-          </div>
+          isProcessing ? (
+            <div className="h-full flex flex-col items-center justify-center text-center px-8">
+              <img src={analyzingSceneImg} alt="분석 중" className="w-48 object-contain mb-6" />
+              <p className="text-sm text-[#6B7280]">대화를 분석하고 있습니다...</p>
+            </div>
+          ) : (
+            <div className="h-full flex flex-col items-center justify-center text-center px-8">
+              <img src={analyzingAudioIcon} alt="대기" className="w-20 h-20 object-contain mb-6 opacity-60" />
+              <h3 className="font-semibold text-[#1A1D2E] mb-2">대화를 시작해보세요</h3>
+              <p className="text-sm text-[#6B7280]">
+                {meetingMode === 'live'
+                  ? '녹음 버튼을 눌러 회의를 시작하세요.'
+                  : '오디오 파일을 업로드하면 자동으로 분석됩니다.'}
+              </p>
+            </div>
+          )
         ) : meetingMode === 'upload' ? (
           transcripts.map((seg, idx) => (
             <div key={idx} className="flex gap-3">
@@ -99,12 +109,14 @@ export function ConversationPanel({
         )}
       </div>
 
-      <div
-        className="border-t border-[#E5E7EB] flex flex-col items-center justify-center flex-shrink-0"
-        style={{ height: '280px' }}
-      >
-        {controls}
-      </div>
+      {!isProcessing && (
+        <div
+          className="border-t border-[#E5E7EB] flex flex-col items-center justify-center flex-shrink-0"
+          style={{ height: '280px' }}
+        >
+          {controls}
+        </div>
+      )}
     </div>
   );
 }

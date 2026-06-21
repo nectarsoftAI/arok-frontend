@@ -42,13 +42,10 @@ export function RecordingScreen() {
       setIsDragging={state.setIsDragging}
       isProcessing={state.isProcessing}
       hasConversation={state.hasConversation}
-      canSummarize={state.canSummarize}
-      isLoadingSummary={state.isLoadingSummary}
       error={state.error}
       handleDrop={state.handleDrop}
       handleFileSelect={state.handleFileSelect}
       handleProcessFile={state.handleProcessFile}
-      handleSummaryClick={state.handleSummaryClick}
     />
   );
 
@@ -107,6 +104,7 @@ export function RecordingScreen() {
               meetingMode={state.meetingMode}
               hasConversation={state.hasConversation}
               canSummarize={state.canSummarize}
+              isProcessing={state.isProcessing}
               transcripts={state.transcripts}
               segments={state.segments}
               speakerColorMap={state.speakerColorMap}

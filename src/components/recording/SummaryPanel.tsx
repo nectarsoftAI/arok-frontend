@@ -1,6 +1,8 @@
-import { Download, FileText, CheckCircle2, Square } from 'lucide-react';
+import { Download, CheckCircle2, Square } from 'lucide-react';
 import type { MeetingMode } from '../MeetingTitleDialog';
 import type { SummaryResponse } from '../../api/summary';
+import generatingSceneImg from '../../assets/images/generating_scene.png';
+import generatingMinutesIcon from '../../assets/icons/generating_minutes_icon.png';
 
 interface SummaryPanelProps {
   meetingMode: MeetingMode;
@@ -25,38 +27,32 @@ export function SummaryPanel({
     <div className="bg-white rounded-lg border border-[#E5E7EB] shadow-sm flex flex-col h-full">
       <div className="px-5 py-3 border-b border-[#E5E7EB] flex items-center justify-between flex-shrink-0">
         <h2 className="font-semibold text-[#1A1D2E]">대화 요약</h2>
-        <button
-          disabled={!showSummary && !summaryData}
-          className={`px-3 py-1.5 text-sm border border-[#E5E7EB] rounded-lg transition-colors flex items-center gap-2 ${
-            showSummary || summaryData ? 'text-[#6B7280] hover:bg-[#F3F4F6] cursor-pointer' : 'text-gray-300 cursor-not-allowed'
-          }`}
-        >
-          <Download className="w-4 h-4" />
-          요약 내보내기
-        </button>
+        <div className="flex gap-2">
+          {summaryData && (
+            <button
+              // TODO: 재요약 기능 구현 필요
+              className="px-3 py-1.5 text-sm border border-[#5B5FF5] text-[#5B5FF5] rounded-lg transition-colors hover:bg-[#EEF2FF]"
+            >
+              재요약
+            </button>
+          )}
+          <button
+            disabled={!showSummary && !summaryData}
+            className={`px-3 py-1.5 text-sm border border-[#E5E7EB] rounded-lg transition-colors flex items-center gap-2 ${
+              showSummary || summaryData ? 'text-[#6B7280] hover:bg-[#F3F4F6] cursor-pointer' : 'text-gray-300 cursor-not-allowed'
+            }`}
+          >
+            <Download className="w-4 h-4" />
+            요약 내보내기
+          </button>
+        </div>
       </div>
 
       <div className="overflow-auto p-5 space-y-5 flex-1">
         {isLoading ? (
-          <div className="space-y-4">
-            <p className="text-sm text-center text-[#6B7280]">회의 내용을 분석하고 있습니다...</p>
-            <div className="space-y-5 animate-pulse">
-              <div className="space-y-3">
-                <div className="h-4 bg-gray-200 rounded w-24"></div>
-                <div className="space-y-2">
-                  <div className="h-3 bg-gray-200 rounded"></div>
-                  <div className="h-3 bg-gray-200 rounded w-5/6"></div>
-                  <div className="h-3 bg-gray-200 rounded w-4/6"></div>
-                </div>
-              </div>
-              <div className="space-y-3 pt-5 border-t border-[#E5E7EB]">
-                <div className="h-4 bg-gray-200 rounded w-24"></div>
-                <div className="space-y-2">
-                  <div className="h-3 bg-gray-200 rounded w-5/6"></div>
-                  <div className="h-3 bg-gray-200 rounded w-4/6"></div>
-                </div>
-              </div>
-            </div>
+          <div className="h-full flex flex-col items-center justify-center text-center px-8">
+            <img src={generatingSceneImg} alt="생성 중" className="w-48 object-contain mb-6" />
+            <p className="text-sm text-[#6B7280]">회의록을 생성하고 있습니다...</p>
           </div>
         ) : summaryError ? (
           <div className="h-full flex flex-col items-center justify-center text-center px-8">
@@ -114,14 +110,12 @@ export function SummaryPanel({
           </>
         ) : (
           <div className="h-full flex flex-col items-center justify-center text-center px-8">
-            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#22D3EE]/10 to-[#22D3EE]/20 flex items-center justify-center mb-6">
-              <FileText className="w-10 h-10 text-[#22D3EE]" />
-            </div>
+            <img src={generatingMinutesIcon} alt="요약 없음" className="w-20 h-20 object-contain mb-6 opacity-60" />
             <h3 className="font-semibold text-[#1A1D2E] mb-2">요약이 준비되지 않았습니다</h3>
             <p className="text-sm text-[#6B7280]">
               {meetingMode === 'live'
                 ? '대화를 진행한 후 요약 버튼을 눌러주세요.'
-                : '파일을 업로드한 후 요약 버튼을 눌러주세요.'}
+                : '파일을 업로드한 후 분석이 완료되면 자동으로 생성됩니다.'}
             </p>
           </div>
         )}

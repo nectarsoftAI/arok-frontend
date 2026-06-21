@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { FileText, Upload, X } from 'lucide-react';
+import { Upload, X } from 'lucide-react';
 
 interface UploadControlsProps {
   uploadedFile: File | null;
@@ -8,13 +8,10 @@ interface UploadControlsProps {
   setIsDragging: (v: boolean) => void;
   isProcessing: boolean;
   hasConversation: boolean;
-  canSummarize: boolean;
-  isLoadingSummary: boolean;
   error: string | null;
   handleDrop: (e: React.DragEvent) => void;
   handleFileSelect: (file: File) => void;
   handleProcessFile: () => Promise<void>;
-  handleSummaryClick: () => void;
 }
 
 export function UploadControls({
@@ -24,15 +21,14 @@ export function UploadControls({
   setIsDragging,
   isProcessing,
   hasConversation,
-  canSummarize,
-  isLoadingSummary,
   error,
   handleDrop,
   handleFileSelect,
   handleProcessFile,
-  handleSummaryClick,
 }: UploadControlsProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  if (isProcessing) return null;
 
   return (
     <div className="flex flex-col items-center gap-4 w-full px-6">
@@ -79,31 +75,15 @@ export function UploadControls({
         </div>
       )}
 
-      <div className="flex gap-2 w-full">
-        {uploadedFile && !hasConversation && (
-          <button
-            onClick={handleProcessFile}
-            disabled={isProcessing}
-            className={`flex-1 px-4 py-2 rounded-lg font-medium flex items-center justify-center gap-2 text-sm transition-all ${
-              isProcessing ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-[#5B5FF5] hover:bg-[#5B5FF5]/90 text-white'
-            }`}
-          >
-            {isProcessing ? '분석 중...' : '파일 분석하기'}
-          </button>
-        )}
+      {uploadedFile && !hasConversation && (
         <button
-          onClick={handleSummaryClick}
-          disabled={!canSummarize || isLoadingSummary}
-          className={`flex-1 px-4 py-2 rounded-lg font-medium flex items-center justify-center gap-2 text-sm transition-all ${
-            canSummarize && !isLoadingSummary
-              ? 'bg-[#22D3EE] hover:bg-[#22D3EE]/90 text-white cursor-pointer'
-              : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-          }`}
+          onClick={handleProcessFile}
+          className="w-full px-4 py-2 rounded-lg font-medium flex items-center justify-center gap-2 text-sm bg-[#5B5FF5] hover:bg-[#5B5FF5]/90 text-white transition-all"
         >
-          <FileText className="w-4 h-4" />
-          {isLoadingSummary ? '요약 중...' : '요약'}
+          파일 분석하기
         </button>
-      </div>
+      )}
+
       {error && (
         <p className="text-xs text-red-500 text-center w-full">{error}</p>
       )}
