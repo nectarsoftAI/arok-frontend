@@ -168,8 +168,8 @@ export function MeetingDetailScreen() {
   const uniqueSpeakerDisplays = [...new Set(meeting.transcripts.map((t) => t.speakerDisplay))];
 
   return (
-    <div className="h-full p-6">
-      <div className="mb-4">
+    <div className="h-full flex flex-col p-6">
+      <div className="mb-4 flex-shrink-0">
         <h1 className="text-xl font-semibold text-[#1A1D2E]">{meeting.title}</h1>
         <div className="flex items-center gap-2 mt-1">
           <span className="text-sm text-[#6B7280]">{meeting.meetingDate}</span>
@@ -178,9 +178,9 @@ export function MeetingDetailScreen() {
         </div>
       </div>
 
-      <div className="grid grid-cols-[1fr_0.67fr] gap-6" style={{ height: "calc(100% - 3rem)" }}>
+      <div className="grid grid-cols-[1fr_0.67fr] grid-rows-1 gap-6 flex-1 min-h-0">
         {/* 왼쪽: 대화 내용 */}
-        <div className="bg-white rounded-lg shadow-sm flex flex-col border-2 border-[#5B5FF5]/20 bg-[#5B5FF5]/[0.02]">
+        <div className="bg-white rounded-lg shadow-sm flex flex-col min-h-0 border-2 border-[#5B5FF5]/20 bg-[#5B5FF5]/[0.02]">
           <div className="px-5 py-4 border-b border-[#E5E7EB] flex items-center justify-between">
             <h2 className="font-semibold text-[#1A1D2E]">대화 내용</h2>
             <button className="px-3 py-1.5 text-sm text-[#6B7280] border border-[#E5E7EB] rounded-lg hover:bg-[#F3F4F6] transition-colors flex items-center gap-2">
@@ -189,7 +189,7 @@ export function MeetingDetailScreen() {
             </button>
           </div>
 
-          <div className="flex-1 overflow-auto p-5 space-y-4">
+          <div className="flex-1 min-h-0 overflow-y-auto p-5 space-y-4">
             {meeting.transcripts.length === 0 ? (
               <div className="h-full flex items-center justify-center text-sm text-[#6B7280]">
                 대화 내용이 없습니다.
@@ -218,7 +218,7 @@ export function MeetingDetailScreen() {
         </div>
 
         {/* 오른쪽: 요약 */}
-        <div className="bg-white rounded-lg shadow-sm flex flex-col border-2 border-[#5B5FF5]/20 bg-[#5B5FF5]/[0.02]">
+        <div className="bg-white rounded-lg shadow-sm flex flex-col min-h-0 border-2 border-[#5B5FF5]/20 bg-[#5B5FF5]/[0.02]">
           <div className="px-5 py-4 border-b border-[#E5E7EB] flex items-center justify-between">
             <div className="flex-1">
               <h2 className="font-semibold text-[#1A1D2E]">대화 요약</h2>
@@ -239,7 +239,7 @@ export function MeetingDetailScreen() {
             </button>
           </div>
 
-          <div className="flex-1 overflow-auto p-5 space-y-5">
+          <div className="flex-1 min-h-0 overflow-y-auto p-5 space-y-5">
             {isSummaryLoading ? (
               <div className="space-y-4 animate-pulse">
                 <p className="text-sm text-center text-[#6B7280]">회의 내용을 분석하고 있습니다...</p>
