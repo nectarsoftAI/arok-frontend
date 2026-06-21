@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
-import { Calendar, Clock, Plus, X } from "lucide-react";
+import { Calendar, Clock, Plus, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router";
 import { meetingsApi, type MeetingListItem } from "../../api/meetings";
 import { DeleteMeetingDialog } from "../DeleteMeetingDialog";
+import { Skeleton } from "../ui/skeleton";
 
+const PAGE_SIZE = 6;
 const COLORS = ["#5B5FF5", "#22D3EE", "#818CF8"];
-
 const DEFAULT_PARTICIPANTS = ["A", "B"];
 
 function formatDate(dateStr: string): string {
@@ -20,12 +21,41 @@ function formatDuration(seconds: number): string {
   return s > 0 ? `${m}분 ${s}초` : `${m}분`;
 }
 
+function SkeletonCard() {
+  return (
+    <div className="bg-white rounded-lg border border-[#E5E7EB] shadow-sm p-5 relative">
+      {/* Date badge */}
+      <Skeleton className="h-6 w-28 bg-gray-200 mb-3" />
+      {/* Title */}
+      <Skeleton className="h-5 w-4/5 bg-gray-200 mb-3" />
+      {/* Participants */}
+      <div className="flex items-center gap-2 mb-3">
+        <div className="flex -space-x-2">
+          <Skeleton className="w-8 h-8 rounded-full bg-gray-200" />
+          <Skeleton className="w-8 h-8 rounded-full bg-gray-200" />
+        </div>
+        <Skeleton className="h-3 w-14 bg-gray-200" />
+      </div>
+      {/* Duration */}
+      <Skeleton className="h-3 w-20 bg-gray-200 mb-3" />
+      {/* Keywords */}
+      <div className="flex gap-1.5 mb-4">
+        <Skeleton className="h-5 w-16 bg-gray-200" />
+        <Skeleton className="h-5 w-14 bg-gray-200" />
+      </div>
+      {/* Button */}
+      <Skeleton className="h-9 w-full bg-gray-200" />
+    </div>
+  );
+}
+
 export function MeetingListScreen() {
   const navigate = useNavigate();
   const [meetings, setMeetings] = useState<MeetingListItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<MeetingListItem | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     meetingsApi
@@ -33,6 +63,7 @@ export function MeetingListScreen() {
       .then(({ data }) => {
         console.log("회의 목록 응답", data);
         setMeetings(data.meetings);
+        setCurrentPage(1);
       })
       .catch(() => setFetchError("회의 목록을 불러오지 못했습니다."))
       .finally(() => setIsLoading(false));
@@ -49,8 +80,14 @@ export function MeetingListScreen() {
     setDeleteTarget(null);
   };
 
+  const totalPages = Math.ceil(meetings.length / PAGE_SIZE);
+  const pagedMeetings = meetings.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE,
+  );
+
   return (
-    <div className="h-full p-6">
+    <div className="h-full p-6 pb-12">
       <DeleteMeetingDialog
         isOpen={!!deleteTarget}
         meetingTitle={deleteTarget?.title ?? ""}
@@ -97,8 +134,10 @@ export function MeetingListScreen() {
 
         {/* States */}
         {isLoading ? (
-          <div className="flex items-center justify-center py-20 text-[#6B7280] text-sm">
-            로딩 중...
+          <div className="grid grid-cols-3 gap-5">
+            {Array.from({ length: PAGE_SIZE }).map((_, i) => (
+              <SkeletonCard key={i} />
+            ))}
           </div>
         ) : fetchError ? (
           <div className="flex items-center justify-center py-20 text-red-500 text-sm">
@@ -109,12 +148,13 @@ export function MeetingListScreen() {
             저장된 회의록이 없습니다.
           </div>
         ) : (
-          <div className="grid grid-cols-3 gap-5">
-            {meetings.map((meeting) => (
-              <div
-                key={meeting.meetingId}
-                className="bg-white rounded-lg border border-[#E5E7EB] shadow-sm p-5 transition-all hover:shadow-md hover:border-[#5B5FF5] hover:scale-[1.01] cursor-pointer group relative"
-              >
+          <>
+            <div className="grid grid-cols-3 gap-5">
+              {pagedMeetings.map((meeting) => (
+                <div
+                  key={meeting.meetingId}
+                  className="bg-white rounded-lg border border-[#E5E7EB] shadow-sm p-5 transition-all hover:shadow-md hover:border-[#5B5FF5] hover:scale-[1.01] cursor-pointer group relative"
+                >
                   {/* Delete button */}
                   <button
                     onClick={(e) => {
@@ -173,8 +213,44 @@ export function MeetingListScreen() {
                     열기
                   </button>
                 </div>
-            ))}
-          </div>
+              ))}
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-1 mt-8 pb-8">
+                <button
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="p-2 rounded-lg border border-[#E5E7EB] text-[#6B7280] hover:bg-[#F3F4F6] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    className={`w-9 h-9 rounded-lg text-sm font-medium transition-colors ${
+                      page === currentPage
+                        ? "bg-[#5B5FF5] text-white"
+                        : "border border-[#E5E7EB] text-[#6B7280] hover:bg-[#F3F4F6]"
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+
+                <button
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="p-2 rounded-lg border border-[#E5E7EB] text-[#6B7280] hover:bg-[#F3F4F6] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
