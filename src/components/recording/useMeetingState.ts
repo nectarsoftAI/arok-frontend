@@ -64,7 +64,7 @@ export function useMeetingState(): MeetingStateReturn {
   const [transcripts, setTranscripts] = useState<TranscriptSegment[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [summaryData, setSummaryData] = useState<SummaryResponse | null>(null);
-  const [isSummaryLoading, setIsSummaryLoading] = useState(false);
+
   const [summaryError, setSummaryError] = useState<string | null>(null);
 
   const { segments, error: liveError, start: liveStart, stop: liveStop } = useLiveSTT();

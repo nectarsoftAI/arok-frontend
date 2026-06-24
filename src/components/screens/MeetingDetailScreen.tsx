@@ -18,7 +18,8 @@ function formatSec(sec: number): string {
   return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
 }
 
-function formatDuration(seconds: number): string {
+function formatDuration(seconds: number | null): string {
+  if (!seconds) return "-";
   const m = Math.floor(seconds / 60);
   return `${m}분`;
 }

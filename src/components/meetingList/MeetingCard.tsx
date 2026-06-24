@@ -9,7 +9,7 @@ function formatDate(dateStr: string): string {
   return dateStr.slice(0, 10);
 }
 
-function formatDuration(seconds: number): string {
+function formatDuration(seconds: number | null): string {
   if (!seconds) return "-";
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
