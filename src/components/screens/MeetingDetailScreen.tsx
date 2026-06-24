@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router";
 import { Download, CheckCircle2, Square } from "lucide-react";
 import { meetingsApi, type MeetingDetail } from "../../api/meetings";
-import { parseSummaryDto, type SummaryResponse } from "../../api/summary";
+import { parseSummaryDto, exportSummaryDocx, type SummaryResponse } from "../../api/summary";
 import { Skeleton } from "../ui/skeleton";
 
 const SPEAKER_COLORS = [
@@ -32,6 +32,7 @@ export function MeetingDetailScreen() {
   const [hasError, setHasError] = useState(false);
   const [summaryData, setSummaryData] = useState<SummaryResponse | null>(null);
   const [summaryError] = useState<string | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -231,9 +232,25 @@ export function MeetingDetailScreen() {
                 ))}
               </div>
             </div>
-            <button className="px-3 py-1.5 text-sm text-[#6B7280] border border-[#E5E7EB] rounded-lg hover:bg-[#F3F4F6] transition-colors flex items-center gap-2">
+            <button
+              onClick={async () => {
+                setIsExporting(true);
+                try {
+                  await exportSummaryDocx(meeting.meetingId);
+                } catch (err) {
+                  console.error('요약 내보내기 실패', err);
+                  alert('요약 내보내기에 실패했습니다. 다시 시도해주세요.');
+                } finally {
+                  setIsExporting(false);
+                }
+              }}
+              disabled={isExporting}
+              className={`px-3 py-1.5 text-sm border border-[#E5E7EB] rounded-lg transition-colors flex items-center gap-2 ${
+                isExporting ? 'text-gray-300 cursor-not-allowed' : 'text-[#6B7280] hover:bg-[#F3F4F6]'
+              }`}
+            >
               <Download className="w-4 h-4" />
-              요약 내보내기
+              {isExporting ? '내보내는 중...' : '요약 내보내기'}
             </button>
           </div>
 
