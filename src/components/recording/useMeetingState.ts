@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import type { MeetingMode } from '../MeetingTitleDialog';
 import { transcribeFile } from '../../api/stt';
 import type { TranscriptSegment } from '../../api/types';
@@ -66,10 +66,6 @@ export function useMeetingState(): MeetingStateReturn {
   const [summaryData, setSummaryData] = useState<SummaryResponse | null>(null);
 
   const [summaryError, setSummaryError] = useState<string | null>(null);
-  const pollingCancelRef = useRef(false);
-
-  // 언마운트 시 폴링 루프 강제 종료
-  useEffect(() => () => { pollingCancelRef.current = true; }, []);
 
   const { meetingId: liveMeetingId, segments, error: liveError, isEnded: liveIsEnded, start: liveStart, stop: liveStop } = useLiveSTT();
 
@@ -90,12 +86,38 @@ export function useMeetingState(): MeetingStateReturn {
     }
   }, [recordingState, hasConversation]);
 
-  // 서버가 session_ended 전송 → finished 전환
+  // 서버가 session_ended 전송 → finished 전환 + 요약 자동 호출
   useEffect(() => {
-    if (liveIsEnded && (recordingState === 'recording' || recordingState === 'stopping')) {
+    if (!liveIsEnded || !liveMeetingId) return;
+    if (recordingState === 'recording' || recordingState === 'stopping') {
       setRecordingState('finished');
     }
-  }, [liveIsEnded, recordingState]);
+
+    const controller = new AbortController();
+    setIsLoadingSummary(true);
+    setSummaryError(null);
+    meetingsApi.summarize(liveMeetingId, controller.signal)
+      .then(({ data }) => {
+        const parsed = parseSummaryDto(data);
+        if (parsed) {
+          setSummaryData(parsed);
+          setShowSummary(true);
+          setHasConversation(true);
+        } else {
+          setSummaryError('요약 데이터 파싱에 실패했습니다.');
+        }
+      })
+      .catch((err: unknown) => {
+        const aborted = err instanceof Error && err.name === 'CanceledError';
+        if (!aborted) setSummaryError('요약 생성에 실패했습니다. 다시 시도해 주세요.');
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setIsLoadingSummary(false);
+      });
+
+    return () => controller.abort();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [liveIsEnded, liveMeetingId]);
 
   useEffect(() => {
     if (liveError && (recordingState === 'recording' || recordingState === 'stopping')) {
@@ -123,7 +145,6 @@ export function useMeetingState(): MeetingStateReturn {
 
   const handleRecordingToggle = async () => {
     if (recordingState === 'idle') {
-      pollingCancelRef.current = true; // 이전 폴링 루프 취소
       try {
         await liveStart(meetingTitle);
         setRecordingState('recording');
@@ -136,40 +157,27 @@ export function useMeetingState(): MeetingStateReturn {
     }
   };
 
+  // 요약 버튼: 자동 호출 실패 시 수동 재시도용
   const handleSummaryClick = async () => {
     if (showSummary || isLoadingSummary) return;
-
     if (meetingMode === 'live') {
       if (recordingState !== 'finished' || !liveMeetingId) return;
-
-      pollingCancelRef.current = false;
       setIsLoadingSummary(true);
       setSummaryError(null);
-
-      const MAX_ATTEMPTS = 20;
-      for (let i = 0; i < MAX_ATTEMPTS; i++) {
-        if (pollingCancelRef.current) break; // 언마운트 또는 외부 취소
-        try {
-          const { data } = await meetingsApi.getById(liveMeetingId);
-          const parsed = parseSummaryDto(data.summary);
-          if (parsed) {
-            if (!pollingCancelRef.current) {
-              setSummaryData(parsed);
-              setShowSummary(true);
-              setHasConversation(true);
-              setIsLoadingSummary(false);
-            }
-            return;
-          }
-        } catch {
-          // 일시적 오류 재시도
+      try {
+        const { data } = await meetingsApi.summarize(liveMeetingId);
+        const parsed = parseSummaryDto(data);
+        if (parsed) {
+          setSummaryData(parsed);
+          setShowSummary(true);
+          setHasConversation(true);
+        } else {
+          setSummaryError('요약 데이터 파싱에 실패했습니다.');
         }
-        await new Promise(r => setTimeout(r, 3000));
-      }
-
-      if (!pollingCancelRef.current) {
+      } catch {
+        setSummaryError('요약 생성에 실패했습니다. 다시 시도해 주세요.');
+      } finally {
         setIsLoadingSummary(false);
-        setSummaryError('요약 생성 시간이 초과됐습니다. 잠시 후 다시 시도해주세요.');
       }
     }
   };
