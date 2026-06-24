@@ -125,6 +125,23 @@ export class LiveSTTService {
     }
   }
 
+  // 컴포넌트 언마운트(페이지 이동) 시 강제 정리 — 콜백 차단 후 WS 즉시 닫음
+  destroy(): void {
+    this.intentionalStop = true;
+    this.stopMedia();
+
+    if (this.ws) {
+      this.ws.onmessage = null;
+      this.ws.onclose = null;
+      this.ws.onerror = null;
+      if (this.ws.readyState === WebSocket.OPEN) {
+        try { this.ws.send(JSON.stringify({ type: 'end' } as EndMessage)); } catch {}
+        this.ws.close();
+      }
+      this.ws = null;
+    }
+  }
+
   private stopMedia(): void {
     if (this.mediaRecorder) {
       this.mediaRecorder.ondataavailable = null; // 큐에 남은 이벤트 차단

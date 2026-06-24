@@ -25,7 +25,7 @@ export function useLiveSTT(): UseLiveSTTReturn {
 
   useEffect(() => {
     return () => {
-      serviceRef.current?.stop();
+      serviceRef.current?.destroy(); // 페이지 이동 등 언마운트 시 강제 정리
     };
   }, []);
 
