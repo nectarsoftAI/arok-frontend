@@ -19,6 +19,7 @@ export class LiveSTTService {
   private stream: MediaStream | null = null;
   private meetingId: string | null = null;
   private readonly callbacks: Callbacks;
+  private intentionalStop = false;
 
   constructor(callbacks: Callbacks) {
     this.callbacks = callbacks;
@@ -61,6 +62,11 @@ export class LiveSTTService {
 
       ws.onclose = (e) => {
         console.log('[WS] 닫힘:', e.code, e.reason);
+        if (!this.intentionalStop) {
+          // 서버 측 또는 네트워크 문제로 예상치 못한 종료
+          this.stopMedia();
+          this.callbacks.onError('서버 연결이 끊어졌습니다.');
+        }
       };
 
       this.ws = ws;
@@ -109,14 +115,18 @@ export class LiveSTTService {
   }
 
   stop(): void {
-    this.mediaRecorder?.stop();
-    this.stream?.getTracks().forEach((t) => t.stop());
+    this.intentionalStop = true;
+    this.stopMedia();
 
     if (this.ws?.readyState === WebSocket.OPEN) {
       const endMsg: EndMessage = { type: 'end' };
       this.ws.send(JSON.stringify(endMsg));
     }
+  }
 
+  private stopMedia(): void {
+    this.mediaRecorder?.stop();
+    this.stream?.getTracks().forEach((t) => t.stop());
     this.mediaRecorder = null;
     this.stream = null;
   }
