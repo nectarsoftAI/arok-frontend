@@ -7,7 +7,7 @@ import { meetingsApi } from '../../api/meetings';
 import { useLiveSTT } from '../../hooks/useLiveSTT';
 import type { SegmentMessage } from '../../services/live/types';
 
-export type RecordingState = 'idle' | 'recording' | 'finished';
+export type RecordingState = 'idle' | 'recording' | 'stopping' | 'finished';
 
 const SPEAKER_PALETTE = ['bg-[#5B5FF5]', 'bg-[#22D3EE]', 'bg-[#F59E0B]', 'bg-[#EC4899]'];
 
@@ -67,13 +67,13 @@ export function useMeetingState(): MeetingStateReturn {
 
   const [summaryError, setSummaryError] = useState<string | null>(null);
 
-  const { meetingId: liveMeetingId, segments, error: liveError, start: liveStart, stop: liveStop } = useLiveSTT();
+  const { meetingId: liveMeetingId, segments, error: liveError, isEnded: liveIsEnded, start: liveStart, stop: liveStop } = useLiveSTT();
 
   useEffect(() => {
     let interval: ReturnType<typeof setInterval>;
     if (recordingState === 'recording') {
       interval = setInterval(() => setElapsedSeconds(prev => prev + 1), 1000);
-    } else if (recordingState === 'finished') {
+    } else if (recordingState === 'stopping' || recordingState === 'finished') {
       setElapsedSeconds(0);
     }
     return () => clearInterval(interval);
@@ -86,8 +86,15 @@ export function useMeetingState(): MeetingStateReturn {
     }
   }, [recordingState, hasConversation]);
 
+  // 서버가 session_ended 전송 → finished 전환
   useEffect(() => {
-    if (liveError && recordingState === 'recording') {
+    if (liveIsEnded && (recordingState === 'recording' || recordingState === 'stopping')) {
+      setRecordingState('finished');
+    }
+  }, [liveIsEnded, recordingState]);
+
+  useEffect(() => {
+    if (liveError && (recordingState === 'recording' || recordingState === 'stopping')) {
       setRecordingState('idle');
     }
   }, [liveError, recordingState]);
@@ -119,8 +126,8 @@ export function useMeetingState(): MeetingStateReturn {
         // liveError state is set inside useLiveSTT
       }
     } else if (recordingState === 'recording') {
-      liveStop();
-      setRecordingState('finished');
+      liveStop(); // {"type":"end"} 전송 — server가 session_ended 보내면 'finished'로 전환
+      setRecordingState('stopping');
     }
   };
 
@@ -128,7 +135,7 @@ export function useMeetingState(): MeetingStateReturn {
     if (showSummary || isLoadingSummary) return;
 
     if (meetingMode === 'live') {
-      if (recordingState !== 'finished' || !liveMeetingId) return;
+      if (recordingState !== 'finished' || !liveMeetingId) return; // stopping/recording 중엔 차단
       setIsLoadingSummary(true);
       setSummaryError(null);
 

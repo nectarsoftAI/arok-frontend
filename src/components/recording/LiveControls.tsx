@@ -1,4 +1,4 @@
-import { FileText, CheckCircle2 } from 'lucide-react';
+import { FileText, CheckCircle2, Loader2 } from 'lucide-react';
 import { RecordingOrb } from '../RecordingOrb';
 import type { RecordingState } from './useMeetingState';
 
@@ -29,6 +29,13 @@ export function LiveControls({
             <CheckCircle2 className="w-6 h-6 text-[#10B981]" />
           </div>
           <div className="text-sm text-[#10B981] font-medium text-center mb-0.5">녹음 완료</div>
+        </div>
+      ) : recordingState === 'stopping' ? (
+        <div className="flex flex-col items-center gap-2">
+          <div className="w-12 h-12 rounded-full bg-[#6B7280]/10 flex items-center justify-center">
+            <Loader2 className="w-6 h-6 text-[#6B7280] animate-spin" />
+          </div>
+          <div className="text-sm text-[#6B7280] font-medium text-center mb-0.5">처리 중...</div>
         </div>
       ) : (
         <RecordingOrb

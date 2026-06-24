@@ -118,13 +118,10 @@ export class LiveSTTService {
     this.intentionalStop = true;
     this.stopMedia();
 
-    if (this.ws) {
-      if (this.ws.readyState === WebSocket.OPEN) {
-        const endMsg: EndMessage = { type: 'end' };
-        this.ws.send(JSON.stringify(endMsg));
-      }
-      this.ws.close(); // 버퍼에 남은 메시지는 onmessage로 처리 후 onclose 발생
-      this.ws = null;
+    if (this.ws?.readyState === WebSocket.OPEN) {
+      const endMsg: EndMessage = { type: 'end' };
+      this.ws.send(JSON.stringify(endMsg));
+      // ws.close()는 호출하지 않음 — 서버가 session_ended 후 closeAll() 호출
     }
   }
 

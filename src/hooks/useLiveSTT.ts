@@ -7,6 +7,7 @@ interface UseLiveSTTReturn {
   segments: SegmentMessage[];
   isConnected: boolean;
   isRecording: boolean;
+  isEnded: boolean;
   error: string | null;
   start: (title: string) => Promise<void>;
   stop: () => void;
@@ -17,6 +18,7 @@ export function useLiveSTT(): UseLiveSTTReturn {
   const [segments, setSegments] = useState<SegmentMessage[]>([]);
   const [isConnected, setIsConnected] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
+  const [isEnded, setIsEnded] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const serviceRef = useRef<LiveSTTService | null>(null);
@@ -31,6 +33,7 @@ export function useLiveSTT(): UseLiveSTTReturn {
     setError(null);
     setSegments([]);
     setMeetingId(null);
+    setIsEnded(false);
 
     const service = new LiveSTTService({
       onSessionCreated: (id) => {
@@ -44,6 +47,7 @@ export function useLiveSTT(): UseLiveSTTReturn {
         setMeetingId(id);
         setIsConnected(false);
         setIsRecording(false);
+        setIsEnded(true); // 서버가 session_ended 전송 → UI 전환 트리거
       },
       onError: (message) => {
         setError(message);
@@ -60,9 +64,9 @@ export function useLiveSTT(): UseLiveSTTReturn {
   }, []);
 
   const stop = useCallback(() => {
+    // MediaRecorder 중단 + {"type":"end"} 전송만 — isRecording은 서버 session_ended 후 변경
     serviceRef.current?.stop();
-    setIsRecording(false);
   }, []);
 
-  return { meetingId, segments, isConnected, isRecording, error, start, stop };
+  return { meetingId, segments, isConnected, isRecording, isEnded, error, start, stop };
 }
