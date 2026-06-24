@@ -62,8 +62,8 @@ export class LiveSTTService {
 
       ws.onclose = (e) => {
         console.log('[WS] 닫힘:', e.code, e.reason);
+        ws.onmessage = null; // 버퍼에 남은 메시지 처리 차단
         if (!this.intentionalStop) {
-          // 서버 측 또는 네트워크 문제로 예상치 못한 종료
           this.stopMedia();
           this.callbacks.onError('서버 연결이 끊어졌습니다.');
         }
