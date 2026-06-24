@@ -119,7 +119,7 @@ export function RecordingScreen() {
               showSummary={state.showSummary}
               isLoadingSummary={state.isLoadingSummary}
               summaryData={state.summaryData}
-              isSummaryLoading={state.isSummaryLoading}
+              isSummaryLoading={false}
               summaryError={state.summaryError}
             />
           </div>

@@ -29,7 +29,6 @@ export interface MeetingStateReturn {
   setIsDragging: (v: boolean) => void;
   isProcessing: boolean;
   summaryData: SummaryResponse | null;
-  isSummaryLoading: boolean;
   summaryError: string | null;
   segments: SegmentMessage[];
   liveError: string | null;
@@ -217,7 +216,6 @@ export function useMeetingState(): MeetingStateReturn {
     setIsDragging,
     isProcessing,
     summaryData,
-    isSummaryLoading,
     summaryError,
     segments,
     liveError,
