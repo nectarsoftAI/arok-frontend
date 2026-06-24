@@ -126,9 +126,12 @@ export class LiveSTTService {
   }
 
   private stopMedia(): void {
-    this.mediaRecorder?.stop();
+    if (this.mediaRecorder) {
+      this.mediaRecorder.ondataavailable = null; // 큐에 남은 이벤트 차단
+      this.mediaRecorder.stop();
+      this.mediaRecorder = null;
+    }
     this.stream?.getTracks().forEach((t) => t.stop());
-    this.mediaRecorder = null;
     this.stream = null;
   }
 

@@ -30,6 +30,9 @@ export function useLiveSTT(): UseLiveSTTReturn {
   }, []);
 
   const start = useCallback(async (title: string) => {
+    serviceRef.current?.stop(); // 이전 서비스 잔존 시 정리
+    serviceRef.current = null;
+
     setError(null);
     setSegments([]);
     setMeetingId(null);
