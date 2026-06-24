@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { MeetingMode } from '../MeetingTitleDialog';
 import { transcribeFile } from '../../api/stt';
 import type { TranscriptSegment } from '../../api/types';
@@ -66,6 +66,10 @@ export function useMeetingState(): MeetingStateReturn {
   const [summaryData, setSummaryData] = useState<SummaryResponse | null>(null);
 
   const [summaryError, setSummaryError] = useState<string | null>(null);
+  const pollingCancelRef = useRef(false);
+
+  // 언마운트 시 폴링 루프 강제 종료
+  useEffect(() => () => { pollingCancelRef.current = true; }, []);
 
   const { meetingId: liveMeetingId, segments, error: liveError, isEnded: liveIsEnded, start: liveStart, stop: liveStop } = useLiveSTT();
 
@@ -119,6 +123,7 @@ export function useMeetingState(): MeetingStateReturn {
 
   const handleRecordingToggle = async () => {
     if (recordingState === 'idle') {
+      pollingCancelRef.current = true; // 이전 폴링 루프 취소
       try {
         await liveStart(meetingTitle);
         setRecordingState('recording');
@@ -135,31 +140,37 @@ export function useMeetingState(): MeetingStateReturn {
     if (showSummary || isLoadingSummary) return;
 
     if (meetingMode === 'live') {
-      if (recordingState !== 'finished' || !liveMeetingId) return; // stopping/recording 중엔 차단
+      if (recordingState !== 'finished' || !liveMeetingId) return;
+
+      pollingCancelRef.current = false;
       setIsLoadingSummary(true);
       setSummaryError(null);
 
-      // 서버 LLM 처리 완료까지 폴링 (3초 간격, 최대 60초)
       const MAX_ATTEMPTS = 20;
       for (let i = 0; i < MAX_ATTEMPTS; i++) {
+        if (pollingCancelRef.current) break; // 언마운트 또는 외부 취소
         try {
           const { data } = await meetingsApi.getById(liveMeetingId);
           const parsed = parseSummaryDto(data.summary);
           if (parsed) {
-            setSummaryData(parsed);
-            setShowSummary(true);
-            setHasConversation(true);
-            setIsLoadingSummary(false);
+            if (!pollingCancelRef.current) {
+              setSummaryData(parsed);
+              setShowSummary(true);
+              setHasConversation(true);
+              setIsLoadingSummary(false);
+            }
             return;
           }
         } catch {
-          // 일시적 오류는 무시하고 재시도
+          // 일시적 오류 재시도
         }
         await new Promise(r => setTimeout(r, 3000));
       }
 
-      setIsLoadingSummary(false);
-      setSummaryError('요약 생성 시간이 초과됐습니다. 잠시 후 다시 시도해주세요.');
+      if (!pollingCancelRef.current) {
+        setIsLoadingSummary(false);
+        setSummaryError('요약 생성 시간이 초과됐습니다. 잠시 후 다시 시도해주세요.');
+      }
     }
   };
 
