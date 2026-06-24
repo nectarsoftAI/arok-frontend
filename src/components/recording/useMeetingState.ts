@@ -183,12 +183,14 @@ export function useMeetingState(): MeetingStateReturn {
     setSummaryError(null);
     try {
       const result = await transcribeFile(uploadedFile, meetingTitle || undefined);
-      setMeetingId(result.meetingId);
+      const newMeetingId = result.meetingId;
+      setMeetingId(newMeetingId);
       setTranscripts(result.transcripts);
       setHasConversation(true);
 
-      // STT 응답에 summary가 포함됨 (02f1909) — Python 별도 호출 불필요
-      const parsed = parseSummaryDto(result.summary);
+      // 요약은 GET /api/v1/meetings/{id}로 DB에서 조회 (Java가 Python 요약 완료 후 저장)
+      const { data } = await meetingsApi.getById(newMeetingId);
+      const parsed = parseSummaryDto(data.summary);
       if (parsed) {
         setSummaryData(parsed);
         setShowSummary(true);
