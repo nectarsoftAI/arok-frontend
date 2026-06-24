@@ -119,12 +119,11 @@ export class LiveSTTService {
     this.stopMedia();
 
     if (this.ws) {
-      this.ws.onmessage = null; // 이후 수신 차단
       if (this.ws.readyState === WebSocket.OPEN) {
         const endMsg: EndMessage = { type: 'end' };
         this.ws.send(JSON.stringify(endMsg));
       }
-      this.ws.close();
+      this.ws.close(); // 버퍼에 남은 메시지는 onmessage로 처리 후 onclose 발생
       this.ws = null;
     }
   }
