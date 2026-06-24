@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router";
 import { Download, CheckCircle2, Square } from "lucide-react";
 import { meetingsApi, type MeetingDetail } from "../../api/meetings";
-import { postSummaryFromDetail, type SummaryResponse } from "../../api/summary";
+import { parseSummaryDto, type SummaryResponse } from "../../api/summary";
 import { Skeleton } from "../ui/skeleton";
 
 const SPEAKER_COLORS = [
@@ -30,8 +30,7 @@ export function MeetingDetailScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [summaryData, setSummaryData] = useState<SummaryResponse | null>(null);
-  const [isSummaryLoading, setIsSummaryLoading] = useState(false);
-  const [summaryError, setSummaryError] = useState<string | null>(null);
+  const [summaryError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -49,12 +48,10 @@ export function MeetingDetailScreen() {
   }, [id]);
 
   useEffect(() => {
-    if (!meeting || meeting.transcripts.length === 0) return;
-    setIsSummaryLoading(true);
-    postSummaryFromDetail(meeting)
-      .then(setSummaryData)
-      .catch(() => setSummaryError("요약 생성에 실패했습니다."))
-      .finally(() => setIsSummaryLoading(false));
+    if (!meeting) return;
+    // 요약은 DB에서 조회 (Python 재호출 불필요 — 백엔드가 저장 담당)
+    const parsed = parseSummaryDto(meeting.summary);
+    setSummaryData(parsed);
   }, [meeting]);
 
   /* ── Loading ─────────────────────────────────────────── */
@@ -240,18 +237,7 @@ export function MeetingDetailScreen() {
           </div>
 
           <div className="flex-1 min-h-0 overflow-y-auto p-5 space-y-5">
-            {isSummaryLoading ? (
-              <div className="space-y-4 animate-pulse">
-                <p className="text-sm text-center text-[#6B7280]">회의 내용을 분석하고 있습니다...</p>
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="space-y-3">
-                    <div className="h-4 bg-gray-200 rounded w-24" />
-                    <div className="h-3 bg-gray-200 rounded" />
-                    <div className="h-3 bg-gray-200 rounded w-5/6" />
-                  </div>
-                ))}
-              </div>
-            ) : summaryError ? (
+            {summaryError ? (
               <div className="h-full flex items-center justify-center text-sm text-red-500 text-center px-4">
                 {summaryError}
               </div>

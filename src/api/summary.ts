@@ -1,35 +1,29 @@
-import axios from 'axios';
-import type { TranscribeResponse } from './types';
-import type { MeetingDetail } from './meetings';
+import type { SummaryDto } from './types';
+
+export interface ActionItem {
+  assignee: string;
+  task: string;
+  due_date: string;
+}
 
 export interface SummaryResponse {
   summary: string[];
   decisions: string[];
-  action_items: {
-    assignee: string;
-    task: string;
-    due_date: string;
-  }[];
+  action_items: ActionItem[];
   keywords: string[];
 }
 
-const summaryClient = axios.create({
-  baseURL: import.meta.env.VITE_API_LLM_URL,
-  headers: { 'Content-Type': 'application/json' },
-});
-
-export async function postSummary(body: TranscribeResponse): Promise<SummaryResponse> {
-  const { data } = await summaryClient.post<SummaryResponse>('/api/summary', body);
-  return data;
-}
-
-export async function postSummaryFromDetail(meeting: MeetingDetail): Promise<SummaryResponse> {
-  const body = {
-    meetingId: meeting.meetingId,
-    engineUsed: 'unknown',
-    segmentCount: meeting.transcripts.length,
-    transcripts: meeting.transcripts,
-  };
-  const { data } = await summaryClient.post<SummaryResponse>('/api/summary', body);
-  return data;
+// 백엔드 SummaryDto(JSON 문자열 필드) → 프론트 SummaryResponse(배열) 변환
+export function parseSummaryDto(dto: SummaryDto | null): SummaryResponse | null {
+  if (!dto) return null;
+  try {
+    return {
+      summary: JSON.parse(dto.keyPoints || '[]'),
+      decisions: JSON.parse(dto.decisions || '[]'),
+      action_items: JSON.parse(dto.actionItems || '[]'),
+      keywords: JSON.parse(dto.keywords || '[]'),
+    };
+  } catch {
+    return null;
+  }
 }

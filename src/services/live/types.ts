@@ -1,7 +1,8 @@
 // Server → Client
 
-export interface SessionCreatedMessage {
-  type: "session_created";
+// 백엔드가 WS 연결 후 전송하는 세션 준비 메시지 (ec7fec5: session_created → session_ready)
+export interface SessionReadyMessage {
+  type: "session_ready";
   meeting_id: string;
 }
 
@@ -24,7 +25,7 @@ export interface ErrorMessage {
 }
 
 export type ServerMessage =
-  | SessionCreatedMessage
+  | SessionReadyMessage
   | SegmentMessage
   | SessionEndedMessage
   | ErrorMessage;

@@ -1,7 +1,7 @@
 import apiClient from './apiClient';
-import type { MeetingResult } from './types';
+import type { MeetingListItem, MeetingResult } from './types';
 
-export type MeetingListItem = Omit<MeetingResult, 'transcripts'>;
+export type { MeetingListItem };
 export type MeetingDetail = MeetingResult;
 
 export const meetingsApi = {

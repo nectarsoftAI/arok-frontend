@@ -1,6 +1,8 @@
 import type { ServerMessage, SegmentMessage, EndMessage } from './types';
 
-const WS_URL = 'wss://backend-production-894a3.up.railway.app/api/v1/live/ws';
+const API_BASE = import.meta.env.VITE_API_BASE_URL as string;
+const WS_BASE = (import.meta.env.VITE_WS_BASE_URL as string) || API_BASE.replace(/^http/, 'ws');
+
 const CHUNK_INTERVAL_MS = 5000;
 const MIME_CANDIDATES = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg'] as const;
 
@@ -22,27 +24,43 @@ export class LiveSTTService {
     this.callbacks = callbacks;
   }
 
-  connect(): Promise<void> {
+  // 1단계: REST로 세션 생성, 2단계: WS 연결
+  async createSessionAndConnect(title: string): Promise<void> {
+    const resp = await fetch(`${API_BASE}/api/v1/live/sessions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title }),
+    });
+    if (!resp.ok) throw new Error('라이브 세션 생성에 실패했습니다.');
+
+    const { meetingId } = await resp.json() as { meetingId: string };
+    this.meetingId = meetingId;
+    this.callbacks.onSessionCreated(meetingId);
+
+    await this.connectWs(meetingId);
+  }
+
+  private connectWs(meetingId: string): Promise<void> {
     return new Promise((resolve, reject) => {
-      const ws = new WebSocket(WS_URL);
+      const ws = new WebSocket(`${WS_BASE}/api/v1/live/ws/${meetingId}`);
 
       ws.onopen = () => {
-        console.log('WebSocket 연결됨');
+        console.log('[WS] 연결됨 — meetingId:', meetingId);
         resolve();
       };
 
       ws.onerror = (e) => {
-        console.error('WebSocket 에러:', e);
+        console.error('[WS] 에러:', e);
         reject(new Error('WebSocket 연결에 실패했습니다.'));
       };
 
       ws.onmessage = (event) => {
-        console.log('서버 메시지 raw:', event.data);
+        console.log('[WS] 수신:', event.data);
         this.handleMessage(event);
       };
 
       ws.onclose = (e) => {
-        console.log('WebSocket 닫힘:', e.code, e.reason);
+        console.log('[WS] 닫힘:', e.code, e.reason);
       };
 
       this.ws = ws;
@@ -53,9 +71,8 @@ export class LiveSTTService {
     try {
       const msg: ServerMessage = JSON.parse(event.data as string);
       switch (msg.type) {
-        case 'session_created':
-          this.meetingId = msg.meeting_id;
-          this.callbacks.onSessionCreated(msg.meeting_id);
+        case 'session_ready':
+          // 세션은 이미 REST로 생성됨 — 여기선 WS 준비 확인용
           break;
         case 'segment':
           this.callbacks.onSegment(msg);
@@ -68,7 +85,7 @@ export class LiveSTTService {
           break;
       }
     } catch {
-      // ignore malformed messages
+      // malformed message 무시
     }
   }
 
@@ -82,10 +99,9 @@ export class LiveSTTService {
     );
 
     this.mediaRecorder.ondataavailable = (event) => {
-      console.log('청크 발생:', event.data.size, 'bytes', new Date().toISOString());
+      console.log('[녹음] 청크:', event.data.size, 'bytes');
       if (event.data.size > 0 && this.ws?.readyState === WebSocket.OPEN) {
         this.ws.send(event.data);
-        console.log('청크 전송 완료');
       }
     };
 

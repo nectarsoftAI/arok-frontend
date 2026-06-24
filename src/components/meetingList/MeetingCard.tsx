@@ -3,7 +3,6 @@ import type { MeetingListItem } from "../../api/meetings";
 import { Skeleton } from "../ui/skeleton";
 
 const COLORS = ["#5B5FF5", "#22D3EE", "#818CF8"];
-const DEFAULT_PARTICIPANTS = ["A", "B"];
 
 function formatDate(dateStr: string): string {
   if (!dateStr) return "-";
@@ -47,20 +46,22 @@ export function MeetingCard({ meeting, onDelete, onOpen }: MeetingCardProps) {
       {/* Title */}
       <h3 className="font-semibold text-[#1A1D2E] mb-3 pr-6">{meeting.title}</h3>
 
-      {/* Participants (임시 기본값: A, B) */}
+      {/* Participants */}
       <div className="flex items-center gap-2 mb-3">
         <div className="flex -space-x-2">
-          {DEFAULT_PARTICIPANTS.map((participant, pIdx) => (
+          {meeting.participants.slice(0, 4).map((p, pIdx) => (
             <div
-              key={pIdx}
+              key={p.speakerLabel}
               className="w-8 h-8 rounded-full border-2 border-white flex items-center justify-center text-white text-xs font-medium"
               style={{ backgroundColor: COLORS[pIdx % COLORS.length] }}
             >
-              {participant}
+              {p.speakerDisplay.charAt(0)}
             </div>
           ))}
         </div>
-        <span className="text-xs text-[#6B7280]">{DEFAULT_PARTICIPANTS.length}명 참여</span>
+        <span className="text-xs text-[#6B7280]">
+          {meeting.participants.length > 0 ? `${meeting.participants.length}명 참여` : "-"}
+        </span>
       </div>
 
       {/* Duration */}
@@ -69,11 +70,19 @@ export function MeetingCard({ meeting, onDelete, onOpen }: MeetingCardProps) {
         {formatDuration(meeting.durationSeconds)}
       </div>
 
-      {/* Keywords placeholder */}
+      {/* Keywords */}
       <div className="flex flex-wrap gap-1.5 mb-4 min-h-[22px]">
-        <span className="px-2 py-0.5 bg-[#F3F4F6] text-[#9CA3AF] text-xs rounded">
-          키워드 없음
-        </span>
+        {meeting.keywords.length > 0 ? (
+          meeting.keywords.slice(0, 3).map((kw, idx) => (
+            <span key={idx} className="px-2 py-0.5 bg-[#F3F4F6] text-[#6B7280] text-xs rounded">
+              {kw}
+            </span>
+          ))
+        ) : (
+          <span className="px-2 py-0.5 bg-[#F3F4F6] text-[#9CA3AF] text-xs rounded">
+            키워드 없음
+          </span>
+        )}
       </div>
 
       {/* Open Button */}

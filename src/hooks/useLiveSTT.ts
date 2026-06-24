@@ -8,7 +8,7 @@ interface UseLiveSTTReturn {
   isConnected: boolean;
   isRecording: boolean;
   error: string | null;
-  start: () => Promise<void>;
+  start: (title: string) => Promise<void>;
   stop: () => void;
 }
 
@@ -27,7 +27,7 @@ export function useLiveSTT(): UseLiveSTTReturn {
     };
   }, []);
 
-  const start = useCallback(async () => {
+  const start = useCallback(async (title: string) => {
     setError(null);
     setSegments([]);
     setMeetingId(null);
@@ -54,8 +54,7 @@ export function useLiveSTT(): UseLiveSTTReturn {
 
     serviceRef.current = service;
 
-    await service.connect();
-    setIsConnected(true);
+    await service.createSessionAndConnect(title);
     await service.startRecording();
     setIsRecording(true);
   }, []);

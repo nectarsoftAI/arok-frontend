@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import type { MeetingMode } from '../MeetingTitleDialog';
 import { transcribeFile } from '../../api/stt';
 import type { TranscriptSegment } from '../../api/types';
-import { postSummary, type SummaryResponse } from '../../api/summary';
+import { parseSummaryDto, type SummaryResponse } from '../../api/summary';
 import { useLiveSTT } from '../../hooks/useLiveSTT';
 import type { SegmentMessage } from '../../services/live/types';
 
@@ -113,7 +113,7 @@ export function useMeetingState(): MeetingStateReturn {
   const handleRecordingToggle = async () => {
     if (recordingState === 'idle') {
       try {
-        await liveStart();
+        await liveStart(meetingTitle);
         setRecordingState('recording');
       } catch {
         // liveError state is set inside useLiveSTT
@@ -160,15 +160,13 @@ export function useMeetingState(): MeetingStateReturn {
       setTranscripts(result.transcripts);
       setHasConversation(true);
 
-      setIsSummaryLoading(true);
-      try {
-        const summary = await postSummary(result);
-        setSummaryData(summary);
+      // STT 응답에 summary가 포함됨 (02f1909) — Python 별도 호출 불필요
+      const parsed = parseSummaryDto(result.summary);
+      if (parsed) {
+        setSummaryData(parsed);
         setShowSummary(true);
-      } catch {
+      } else {
         setSummaryError('요약 생성에 실패했습니다.');
-      } finally {
-        setIsSummaryLoading(false);
       }
     } catch (err) {
       console.error(err);
