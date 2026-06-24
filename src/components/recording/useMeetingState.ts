@@ -3,6 +3,7 @@ import type { MeetingMode } from '../MeetingTitleDialog';
 import { transcribeFile } from '../../api/stt';
 import type { TranscriptSegment } from '../../api/types';
 import { parseSummaryDto, type SummaryResponse } from '../../api/summary';
+import { meetingsApi } from '../../api/meetings';
 import { useLiveSTT } from '../../hooks/useLiveSTT';
 import type { SegmentMessage } from '../../services/live/types';
 
@@ -34,7 +35,7 @@ export interface MeetingStateReturn {
   liveError: string | null;
   handleTitleConfirm: (title: string, mode: MeetingMode) => void;
   handleRecordingToggle: () => Promise<void>;
-  handleSummaryClick: () => void;
+  handleSummaryClick: () => Promise<void>;
   handleFileSelect: (file: File) => void;
   handleDrop: (e: React.DragEvent) => void;
   handleProcessFile: () => Promise<void>;
@@ -66,7 +67,7 @@ export function useMeetingState(): MeetingStateReturn {
 
   const [summaryError, setSummaryError] = useState<string | null>(null);
 
-  const { segments, error: liveError, start: liveStart, stop: liveStop } = useLiveSTT();
+  const { meetingId: liveMeetingId, segments, error: liveError, start: liveStart, stop: liveStop } = useLiveSTT();
 
   useEffect(() => {
     let interval: ReturnType<typeof setInterval>;
@@ -123,15 +124,35 @@ export function useMeetingState(): MeetingStateReturn {
     }
   };
 
-  const handleSummaryClick = () => {
-    const can = meetingMode === 'live' ? recordingState === 'finished' : !!uploadedFile;
-    if (can && !showSummary) {
+  const handleSummaryClick = async () => {
+    if (showSummary || isLoadingSummary) return;
+
+    if (meetingMode === 'live') {
+      if (recordingState !== 'finished' || !liveMeetingId) return;
       setIsLoadingSummary(true);
-      setTimeout(() => {
-        setIsLoadingSummary(false);
-        setShowSummary(true);
-        setHasConversation(true);
-      }, 1500);
+      setSummaryError(null);
+
+      // 서버 LLM 처리 완료까지 폴링 (3초 간격, 최대 60초)
+      const MAX_ATTEMPTS = 20;
+      for (let i = 0; i < MAX_ATTEMPTS; i++) {
+        try {
+          const { data } = await meetingsApi.getById(liveMeetingId);
+          const parsed = parseSummaryDto(data.summary);
+          if (parsed) {
+            setSummaryData(parsed);
+            setShowSummary(true);
+            setHasConversation(true);
+            setIsLoadingSummary(false);
+            return;
+          }
+        } catch {
+          // 일시적 오류는 무시하고 재시도
+        }
+        await new Promise(r => setTimeout(r, 3000));
+      }
+
+      setIsLoadingSummary(false);
+      setSummaryError('요약 생성 시간이 초과됐습니다. 잠시 후 다시 시도해주세요.');
     }
   };
 
