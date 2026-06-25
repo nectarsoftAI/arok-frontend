@@ -1,4 +1,5 @@
 export interface TranscriptSegment {
+  transcriptId?: number;
   speakerLabel: string;
   speakerDisplay: string;
   startSec: number;
@@ -6,6 +7,12 @@ export interface TranscriptSegment {
   content: string;
   confidence: number;
   lowConfidence: boolean;
+}
+
+export interface TranscriptUpdate {
+  transcriptId: number;
+  speakerDisplay?: string;
+  content?: string;
 }
 
 // 백엔드 SummaryDto — 각 필드는 Python 배열/객체를 JSON 직렬화한 문자열
@@ -29,6 +36,14 @@ export interface TranscribeResponse {
   segmentCount: number;
   transcripts: TranscriptSegment[];
   summary: SummaryDto | null;
+}
+
+export interface MeetingListResponse {
+  meetings: MeetingListItem[];
+  totalCount: number;
+  page: number;
+  size: number;
+  totalPages: number;
 }
 
 // GET /api/v1/meetings — 목록 아이템 (participants, keywords 포함)

@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router";
-import { Download, CheckCircle2, Square } from "lucide-react";
+import { Download, CheckCircle2, Square, Loader2 } from "lucide-react";
 import { meetingsApi, type MeetingDetail } from "../../api/meetings";
 import { parseSummaryDto, type SummaryResponse } from "../../api/summary";
+import type { TranscriptSegment, TranscriptUpdate } from "../../api/types";
 import { Skeleton } from "../ui/skeleton";
 
 const SPEAKER_COLORS = [
@@ -33,13 +34,18 @@ export function MeetingDetailScreen() {
   const [summaryData, setSummaryData] = useState<SummaryResponse | null>(null);
   const [summaryError] = useState<string | null>(null);
 
+  const [editedTranscripts, setEditedTranscripts] = useState<TranscriptSegment[]>([]);
+  const [isDirty, setIsDirty] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
   useEffect(() => {
     if (!id) return;
     meetingsApi
       .getById(id)
       .then(({ data }) => {
-        console.log("회의 상세 응답", data);
         setMeeting(data);
+        setEditedTranscripts(data.transcripts);
       })
       .catch((err) => {
         console.error("회의 상세 조회 실패", err);
@@ -50,10 +56,53 @@ export function MeetingDetailScreen() {
 
   useEffect(() => {
     if (!meeting) return;
-    // 요약은 DB에서 조회 (Python 재호출 불필요 — 백엔드가 저장 담당)
     const parsed = parseSummaryDto(meeting.summary);
     setSummaryData(parsed);
   }, [meeting]);
+
+  const handleTranscriptChange = (idx: number, field: 'content' | 'speakerDisplay', value: string) => {
+    setEditedTranscripts((prev) => {
+      const next = [...prev];
+      next[idx] = { ...next[idx], [field]: value };
+      return next;
+    });
+    setIsDirty(true);
+    setSaveError(null);
+  };
+
+  const handleSave = async () => {
+    if (!meeting) return;
+    setIsSaving(true);
+    setSaveError(null);
+    try {
+      const updates: TranscriptUpdate[] = editedTranscripts
+        .filter((t, i) => {
+          const orig = meeting.transcripts[i];
+          return t.content !== orig.content || t.speakerDisplay !== orig.speakerDisplay;
+        })
+        .filter((t) => t.transcriptId != null)
+        .map((t) => ({
+          transcriptId: t.transcriptId!,
+          content: t.content,
+          speakerDisplay: t.speakerDisplay,
+        }));
+
+      await meetingsApi.updateTranscripts(meeting.meetingId, updates);
+      setMeeting((prev) => prev ? { ...prev, transcripts: editedTranscripts } : null);
+      setIsDirty(false);
+    } catch {
+      setSaveError('저장에 실패했습니다. 다시 시도해 주세요.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCancel = () => {
+    if (!meeting) return;
+    setEditedTranscripts(meeting.transcripts);
+    setIsDirty(false);
+    setSaveError(null);
+  };
 
   /* ── Loading ─────────────────────────────────────────── */
   if (isLoading) {
@@ -181,19 +230,44 @@ export function MeetingDetailScreen() {
         <div className="bg-white rounded-lg shadow-sm flex flex-col min-h-0 border-2 border-[#5B5FF5]/20 bg-[#5B5FF5]/[0.02]">
           <div className="px-5 py-4 border-b border-[#E5E7EB] flex items-center justify-between">
             <h2 className="font-semibold text-[#1A1D2E]">대화 내용</h2>
-            <button className="px-3 py-1.5 text-sm text-[#6B7280] border border-[#E5E7EB] rounded-lg hover:bg-[#F3F4F6] transition-colors flex items-center gap-2">
-              <Download className="w-4 h-4" />
-              대화 내보내기
-            </button>
+            <div className="flex items-center gap-2">
+              {isDirty && (
+                <>
+                  <button
+                    onClick={handleCancel}
+                    disabled={isSaving}
+                    className="px-3 py-1.5 text-sm text-[#6B7280] border border-[#E5E7EB] rounded-lg hover:bg-[#F3F4F6] transition-colors"
+                  >
+                    취소
+                  </button>
+                  <button
+                    onClick={handleSave}
+                    disabled={isSaving}
+                    className="px-3 py-1.5 text-sm text-white bg-[#5B5FF5] rounded-lg hover:bg-[#5B5FF5]/90 transition-colors flex items-center gap-1.5"
+                  >
+                    {isSaving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                    저장
+                  </button>
+                </>
+              )}
+              <button className="px-3 py-1.5 text-sm text-[#6B7280] border border-[#E5E7EB] rounded-lg hover:bg-[#F3F4F6] transition-colors flex items-center gap-2">
+                <Download className="w-4 h-4" />
+                대화 내보내기
+              </button>
+            </div>
           </div>
 
+          {saveError && (
+            <div className="px-5 pt-3 text-xs text-red-500">{saveError}</div>
+          )}
+
           <div className="flex-1 min-h-0 overflow-y-auto p-5 space-y-4">
-            {meeting.transcripts.length === 0 ? (
+            {editedTranscripts.length === 0 ? (
               <div className="h-full flex items-center justify-center text-sm text-[#6B7280]">
                 대화 내용이 없습니다.
               </div>
             ) : (
-              meeting.transcripts.map((seg, idx) => (
+              editedTranscripts.map((seg, idx) => (
                 <div key={idx} className="flex gap-3">
                   <div
                     className={`w-9 h-9 rounded-full flex items-center justify-center text-white font-medium text-sm flex-shrink-0 ${speakerColorMap[seg.speakerLabel]}`}
@@ -201,10 +275,17 @@ export function MeetingDetailScreen() {
                     {speakerLetterMap[seg.speakerLabel]}
                   </div>
                   <div className="flex-1">
-                    <div className="text-xs text-[#6B7280] mb-1">{seg.speakerDisplay}</div>
-                    <div className="bg-[#F3F4F6] rounded-xl px-4 py-2.5 text-sm text-[#1A1D2E]">
-                      {seg.content}
-                    </div>
+                    <input
+                      value={seg.speakerDisplay}
+                      onChange={(e) => handleTranscriptChange(idx, 'speakerDisplay', e.target.value)}
+                      className="text-xs text-[#6B7280] mb-1 bg-transparent border-none outline-none w-full hover:bg-[#F3F4F6] focus:bg-[#F3F4F6] rounded px-1 -mx-1 cursor-text"
+                    />
+                    <textarea
+                      value={seg.content}
+                      onChange={(e) => handleTranscriptChange(idx, 'content', e.target.value)}
+                      rows={Math.max(1, Math.ceil(seg.content.length / 50))}
+                      className="w-full bg-[#F3F4F6] rounded-xl px-4 py-2.5 text-sm text-[#1A1D2E] resize-none border-2 border-transparent focus:border-[#5B5FF5]/30 outline-none transition-colors"
+                    />
                     <div className="text-xs text-[#9CA3AF] mt-1 text-right">
                       {formatSec(seg.startSec)}
                     </div>

@@ -12,39 +12,43 @@ const PAGE_SIZE = 6;
 export function MeetingListScreen() {
   const navigate = useNavigate();
   const [meetings, setMeetings] = useState<MeetingListItem[]>([]);
+  const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<MeetingListItem | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
+    setIsLoading(true);
+    setFetchError(null);
     meetingsApi
-      .getAll()
+      .getAll(currentPage - 1, PAGE_SIZE)
       .then(({ data }) => {
-        console.log("회의 목록 응답", data);
         setMeetings(data.meetings);
-        setCurrentPage(1);
+        setTotalPages(data.totalPages);
       })
       .catch(() => setFetchError("회의 목록을 불러오지 못했습니다."))
       .finally(() => setIsLoading(false));
-  }, []);
+  }, [currentPage, refreshKey]);
 
   const handleDeleteConfirm = async () => {
     if (!deleteTarget) return;
     try {
       await meetingsApi.delete(deleteTarget.meetingId);
-      setMeetings((prev) => prev.filter((m) => m.meetingId !== deleteTarget.meetingId));
+      // 현재 페이지 마지막 아이템 삭제 시 이전 페이지로 이동
+      if (meetings.length === 1 && currentPage > 1) {
+        setCurrentPage((p) => p - 1);
+      } else {
+        setRefreshKey((k) => k + 1);
+      }
     } catch {
-      // 삭제 실패 시 목록 유지
+      // 삭제 실패 시 유지
     }
     setDeleteTarget(null);
   };
 
-  const totalPages = Math.ceil(meetings.length / PAGE_SIZE);
-  const pagedMeetings = meetings.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE,
-  );
+  const pagedMeetings = meetings;
 
   return (
     <div className="h-full p-6 pb-12">
