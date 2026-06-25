@@ -1,4 +1,11 @@
+import axios from 'axios';
 import type { SummaryDto } from './types';
+
+const summaryClient = axios.create({
+  baseURL: import.meta.env.VITE_API_LLM_URL,
+  headers: { 'Content-Type': 'application/json' },
+});
+
 
 export interface ActionItem {
   assignee: string;
@@ -26,4 +33,18 @@ export function parseSummaryDto(dto: SummaryDto | null): SummaryResponse | null 
   } catch {
     return null;
   }
+}
+
+export async function exportSummaryDocx(meetingId: string): Promise<void> {
+  console.log('[exportSummaryDocx] 요청 시작 meetingId:', meetingId);
+  const response = await summaryClient.get(`/api/summary/${meetingId}/export`, {
+    responseType: 'blob',
+  });
+  console.log('[exportSummaryDocx] 응답 수신 status:', response.status, 'data:', response.data);
+  const url = URL.createObjectURL(response.data);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `summary_${meetingId}.docx`;
+  a.click();
+  URL.revokeObjectURL(url);
 }
