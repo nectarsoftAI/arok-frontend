@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
+import { useBlocker } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
 import { MeetingTitleDialog } from '../MeetingTitleDialog';
+import { LeaveConfirmDialog } from '../LeaveConfirmDialog';
 import { useMeetingState } from '../recording/useMeetingState';
 import { ConversationPanel } from '../recording/ConversationPanel';
 import { SummaryPanel } from '../recording/SummaryPanel';
@@ -15,6 +17,9 @@ const MEETING_IMAGES = [meetingImg1, meetingImg2, meetingImg3];
 export function RecordingScreen() {
   const [imgIndex, setImgIndex] = useState(0);
   const state = useMeetingState();
+
+  // 회의가 진행 중(제목 입력 후 ~ 요약 완료 전)일 때 탭 이동 차단
+  const blocker = useBlocker(!!state.meetingTitle && !state.showSummary);
 
   useEffect(() => {
     if (state.meetingTitle) return;
@@ -55,6 +60,14 @@ export function RecordingScreen() {
         isOpen={state.showTitleDialog}
         onConfirm={state.handleTitleConfirm}
         onClose={() => state.setShowTitleDialog(false)}
+      />
+
+      <LeaveConfirmDialog
+        isOpen={blocker.state === 'blocked'}
+        recordingState={state.recordingState}
+        isProcessing={state.isProcessing}
+        onConfirm={() => blocker.proceed?.()}
+        onClose={() => blocker.reset?.()}
       />
 
       {!state.meetingTitle ? (
