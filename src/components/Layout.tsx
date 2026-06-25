@@ -1,4 +1,4 @@
-import { Outlet, Link, useLocation, useParams } from "react-router";
+import { Outlet, Link, useLocation, useParams, useNavigate } from "react-router";
 import { Mic, FileText, BarChart3, Search, Bell, User, ChevronDown, ChevronRight, X } from "lucide-react";
 import { meetingsApi } from "../api/meetings";
 import { useState, useEffect } from "react";
@@ -11,6 +11,7 @@ interface OpenedMeeting {
 export function Layout() {
   const location = useLocation();
   const params = useParams();
+  const navigate = useNavigate();
   const [isMeetingsExpanded, setIsMeetingsExpanded] = useState(true);
   const [openedMeetings, setOpenedMeetings] = useState<OpenedMeeting[]>([]);
 
@@ -34,7 +35,7 @@ export function Layout() {
     setOpenedMeetings((prev) => prev.filter((m) => m.id !== meetingId));
 
     if (currentMeetingId === meetingId) {
-      window.location.href = "/meetings";
+      navigate("/meetings");
     }
   };
 
