@@ -145,10 +145,11 @@ export function useMeetingState(): MeetingStateReturn {
 
   const handleRecordingToggle = async () => {
     if (recordingState === 'idle') {
+      setRecordingState('recording'); // 즉시 상태 전환 → 중복 클릭 차단
       try {
         await liveStart(meetingTitle);
-        setRecordingState('recording');
       } catch {
+        setRecordingState('idle'); // 실패 시 롤백
         // liveError state is set inside useLiveSTT
       }
     } else if (recordingState === 'recording') {
