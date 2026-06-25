@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { CheckCircle2, Download } from 'lucide-react';
+import { CheckCircle2 } from 'lucide-react';
 import type { MeetingStateReturn } from './useMeetingState';
 import { TranscriptSection } from './TranscriptSection';
 import { SummarySection } from './SummarySection';
@@ -17,9 +17,6 @@ export function UploadFlow({ state, onComplete }: UploadFlowProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isComplete = state.hasConversation && !state.isProcessing;
 
-  const canExportTranscript = state.transcripts.length > 0;
-  const canExportSummary = !!state.summaryData;
-
   const steps: StepDef[] = [
     {
       label: '대화 내용',
@@ -35,21 +32,8 @@ export function UploadFlow({ state, onComplete }: UploadFlowProps) {
           liveIndexMap={state.liveIndexMap}
           formatSec={state.formatSec}
           isRecording={false}
-          canExport={canExportTranscript}
+          canExport={false}
         />
-      ),
-      actions: (
-        <button
-          disabled={!canExportTranscript}
-          className={`px-3 py-1.5 text-sm border border-[#E5E7EB] rounded-lg transition-colors flex items-center gap-2 ${
-            canExportTranscript
-              ? 'text-[#6B7280] hover:bg-[#F3F4F6] cursor-pointer'
-              : 'text-gray-300 cursor-not-allowed'
-          }`}
-        >
-          <Download className="w-4 h-4" />
-          대화 내보내기
-        </button>
       ),
     },
     {
@@ -60,26 +44,6 @@ export function UploadFlow({ state, onComplete }: UploadFlowProps) {
           summaryData={state.summaryData}
           summaryError={state.summaryError}
         />
-      ),
-      actions: (
-        <div className="flex items-center gap-2">
-          {canExportSummary && (
-            <button className="px-3 py-1.5 text-sm border border-[#5B5FF5] text-[#5B5FF5] rounded-lg transition-colors hover:bg-[#EEF2FF]">
-              재요약
-            </button>
-          )}
-          <button
-            disabled={!canExportSummary}
-            className={`px-3 py-1.5 text-sm border border-[#E5E7EB] rounded-lg transition-colors flex items-center gap-2 ${
-              canExportSummary
-                ? 'text-[#6B7280] hover:bg-[#F3F4F6] cursor-pointer'
-                : 'text-gray-300 cursor-not-allowed'
-            }`}
-          >
-            <Download className="w-4 h-4" />
-            요약 내보내기
-          </button>
-        </div>
       ),
     },
   ];

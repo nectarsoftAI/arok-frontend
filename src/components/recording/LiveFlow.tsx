@@ -1,5 +1,4 @@
 import { motion, AnimatePresence } from 'motion/react';
-import { Download } from 'lucide-react';
 import type { MeetingStateReturn } from './useMeetingState';
 import { LiveControls } from './LiveControls';
 import { TranscriptSection } from './TranscriptSection';
@@ -26,8 +25,6 @@ export function LiveFlow({ state, onComplete }: LiveFlowProps) {
     state.recordingState === 'stopping' ||
     (state.recordingState === 'finished' && state.isLoadingSummary);
 
-  const canExportSummary = !!state.summaryData;
-
   const steps: StepDef[] = [
     {
       label: '대화 내용',
@@ -43,21 +40,8 @@ export function LiveFlow({ state, onComplete }: LiveFlowProps) {
           liveIndexMap={state.liveIndexMap}
           formatSec={state.formatSec}
           isRecording={false}
-          canExport={hasSegments}
+          canExport={false}
         />
-      ),
-      actions: (
-        <button
-          disabled={!hasSegments}
-          className={`px-3 py-1.5 text-sm border border-[#E5E7EB] rounded-lg transition-colors flex items-center gap-2 ${
-            hasSegments
-              ? 'text-[#6B7280] hover:bg-[#F3F4F6] cursor-pointer'
-              : 'text-gray-300 cursor-not-allowed'
-          }`}
-        >
-          <Download className="w-4 h-4" />
-          대화 내보내기
-        </button>
       ),
     },
     {
@@ -68,26 +52,6 @@ export function LiveFlow({ state, onComplete }: LiveFlowProps) {
           summaryData={state.summaryData}
           summaryError={state.summaryError}
         />
-      ),
-      actions: (
-        <div className="flex items-center gap-2">
-          {canExportSummary && (
-            <button className="px-3 py-1.5 text-sm border border-[#5B5FF5] text-[#5B5FF5] rounded-lg transition-colors hover:bg-[#EEF2FF]">
-              재요약
-            </button>
-          )}
-          <button
-            disabled={!canExportSummary}
-            className={`px-3 py-1.5 text-sm border border-[#E5E7EB] rounded-lg transition-colors flex items-center gap-2 ${
-              canExportSummary
-                ? 'text-[#6B7280] hover:bg-[#F3F4F6] cursor-pointer'
-                : 'text-gray-300 cursor-not-allowed'
-            }`}
-          >
-            <Download className="w-4 h-4" />
-            요약 내보내기
-          </button>
-        </div>
       ),
     },
   ];
