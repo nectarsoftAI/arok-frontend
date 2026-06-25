@@ -1,13 +1,11 @@
 import { useState, useEffect } from 'react';
-import { useBlocker } from 'react-router';
+import { useBlocker, useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
 import { MeetingTitleDialog } from '../MeetingTitleDialog';
 import { LeaveConfirmDialog } from '../LeaveConfirmDialog';
 import { useMeetingState } from '../recording/useMeetingState';
-import { ConversationPanel } from '../recording/ConversationPanel';
-import { SummaryPanel } from '../recording/SummaryPanel';
-import { LiveControls } from '../recording/LiveControls';
-import { UploadControls } from '../recording/UploadControls';
+import { UploadFlow } from '../recording/UploadFlow';
+import { LiveFlow } from '../recording/LiveFlow';
 import meetingImg1 from '../../assets/images/meeting_scene_1.png';
 import meetingImg2 from '../../assets/images/meeting_scene_2.png';
 import meetingImg3 from '../../assets/images/meeting_scene_3.png';
@@ -16,9 +14,9 @@ const MEETING_IMAGES = [meetingImg1, meetingImg2, meetingImg3];
 
 export function RecordingScreen() {
   const [imgIndex, setImgIndex] = useState(0);
+  const navigate = useNavigate();
   const state = useMeetingState();
 
-  // 회의가 진행 중(제목 입력 후 ~ 요약 완료 전)일 때 탭 이동 차단
   const blocker = useBlocker(!!state.meetingTitle && !state.showSummary);
 
   useEffect(() => {
@@ -29,33 +27,15 @@ export function RecordingScreen() {
     return () => clearInterval(interval);
   }, [state.meetingTitle]);
 
-  const controls = state.meetingMode === 'live' ? (
-    <LiveControls
-      recordingState={state.recordingState}
-      elapsedSeconds={state.elapsedSeconds}
-      isLoadingSummary={state.isLoadingSummary}
-      liveError={state.liveError}
-      handleRecordingToggle={state.handleRecordingToggle}
-      handleSummaryClick={state.handleSummaryClick}
-      formatTime={state.formatTime}
-    />
-  ) : (
-    <UploadControls
-      uploadedFile={state.uploadedFile}
-      setUploadedFile={state.setUploadedFile}
-      isDragging={state.isDragging}
-      setIsDragging={state.setIsDragging}
-      isProcessing={state.isProcessing}
-      hasConversation={state.hasConversation}
-      error={state.error}
-      handleDrop={state.handleDrop}
-      handleFileSelect={state.handleFileSelect}
-      handleProcessFile={state.handleProcessFile}
-    />
-  );
+  const activeMeetingId =
+    state.meetingMode === 'upload' ? state.meetingId : state.liveMeetingId;
+
+  const handleMeetingEnd = () => {
+    if (activeMeetingId) navigate(`/meetings/${activeMeetingId}`);
+  };
 
   return (
-    <div className="h-full p-6">
+    <div className="h-full overflow-y-auto">
       <MeetingTitleDialog
         isOpen={state.showTitleDialog}
         onConfirm={state.handleTitleConfirm}
@@ -107,36 +87,17 @@ export function RecordingScreen() {
           </div>
         </div>
       ) : (
-        <>
-          <div className="mb-4">
-            <h1 className="text-xl font-semibold text-[#1A1D2E]">{state.meetingTitle}</h1>
-          </div>
+        <div className="px-6 py-6 pb-16 space-y-6">
+          {/* Header: meeting title */}
+          <h1 className="text-xl font-semibold text-[#1A1D2E]">{state.meetingTitle}</h1>
 
-          <div className="grid grid-cols-[1fr_0.67fr] grid-rows-1 gap-6" style={{ height: 'calc(100vh - 200px)' }}>
-            <ConversationPanel
-              meetingMode={state.meetingMode}
-              hasConversation={state.hasConversation}
-              canSummarize={state.canSummarize}
-              isProcessing={state.isProcessing}
-              transcripts={state.transcripts}
-              segments={state.segments}
-              speakerColorMap={state.speakerColorMap}
-              speakerIndexMap={state.speakerIndexMap}
-              liveColorMap={state.liveColorMap}
-              liveIndexMap={state.liveIndexMap}
-              formatSec={state.formatSec}
-              controls={controls}
-            />
-            <SummaryPanel
-              meetingMode={state.meetingMode}
-              showSummary={state.showSummary}
-              isLoadingSummary={state.isLoadingSummary}
-              summaryData={state.summaryData}
-              isSummaryLoading={false}
-              summaryError={state.summaryError}
-            />
-          </div>
-        </>
+          {/* Mode-specific sequential flow */}
+          {state.meetingMode === 'upload' ? (
+            <UploadFlow state={state} onMeetingEnd={handleMeetingEnd} />
+          ) : (
+            <LiveFlow state={state} onMeetingEnd={handleMeetingEnd} />
+          )}
+        </div>
       )}
     </div>
   );

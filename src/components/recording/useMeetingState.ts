@@ -22,6 +22,7 @@ export interface MeetingStateReturn {
   showSummary: boolean;
   isLoadingSummary: boolean;
   meetingId: string | null;
+  liveMeetingId: string | null;
   transcripts: TranscriptSegment[];
   error: string | null;
   uploadedFile: File | null;
@@ -258,6 +259,7 @@ export function useMeetingState(): MeetingStateReturn {
     showSummary,
     isLoadingSummary,
     meetingId,
+    liveMeetingId,
     transcripts,
     error,
     uploadedFile,
