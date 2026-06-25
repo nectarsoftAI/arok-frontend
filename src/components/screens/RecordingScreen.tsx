@@ -3,6 +3,7 @@ import { useBlocker, useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
 import { MeetingTitleDialog } from '../MeetingTitleDialog';
 import { LeaveConfirmDialog } from '../LeaveConfirmDialog';
+import { MeetingEndDialog } from '../MeetingEndDialog';
 import { useMeetingState } from '../recording/useMeetingState';
 import { UploadFlow } from '../recording/UploadFlow';
 import { LiveFlow } from '../recording/LiveFlow';
@@ -14,6 +15,7 @@ const MEETING_IMAGES = [meetingImg1, meetingImg2, meetingImg3];
 
 export function RecordingScreen() {
   const [imgIndex, setImgIndex] = useState(0);
+  const [showEndDialog, setShowEndDialog] = useState(false);
   const navigate = useNavigate();
   const state = useMeetingState();
 
@@ -30,12 +32,16 @@ export function RecordingScreen() {
   const activeMeetingId =
     state.meetingMode === 'upload' ? state.meetingId : state.liveMeetingId;
 
+  const isComplete =
+    state.showSummary || (!!state.summaryError && !!activeMeetingId);
+
   const handleMeetingEnd = () => {
+    setShowEndDialog(false);
     if (activeMeetingId) navigate(`/meetings/${activeMeetingId}`);
   };
 
   return (
-    <div className="h-full overflow-y-auto">
+    <div className="h-full flex flex-col">
       <MeetingTitleDialog
         isOpen={state.showTitleDialog}
         onConfirm={state.handleTitleConfirm}
@@ -50,8 +56,15 @@ export function RecordingScreen() {
         onClose={() => blocker.reset?.()}
       />
 
+      <MeetingEndDialog
+        isOpen={showEndDialog}
+        onConfirm={handleMeetingEnd}
+        onClose={() => setShowEndDialog(false)}
+      />
+
       {!state.meetingTitle ? (
-        <div className="h-full flex items-center justify-center">
+        /* ── 시작 화면 슬라이드쇼 ── */
+        <div className="flex-1 flex items-center justify-center">
           <div className="text-center flex flex-col items-center">
             <div className="relative w-72 h-48 mb-8 overflow-hidden rounded-2xl">
               <AnimatePresence mode="wait">
@@ -87,15 +100,22 @@ export function RecordingScreen() {
           </div>
         </div>
       ) : (
-        <div className="px-6 py-6 pb-16 space-y-6">
-          {/* Header: meeting title */}
-          <h1 className="text-xl font-semibold text-[#1A1D2E]">{state.meetingTitle}</h1>
+        /* ── 회의 진행 화면 ── */
+        <div className="flex flex-col flex-1 min-h-0 px-6 py-6 gap-5">
+          <div className="flex items-center flex-shrink-0">
+            <h1 className="text-2xl font-bold text-[#1A1D2E]">{state.meetingTitle}</h1>
+          </div>
 
-          {/* Mode-specific sequential flow */}
           {state.meetingMode === 'upload' ? (
-            <UploadFlow state={state} onMeetingEnd={handleMeetingEnd} />
+            <UploadFlow
+              state={state}
+              onComplete={isComplete ? () => setShowEndDialog(true) : undefined}
+            />
           ) : (
-            <LiveFlow state={state} onMeetingEnd={handleMeetingEnd} />
+            <LiveFlow
+              state={state}
+              onComplete={isComplete ? () => setShowEndDialog(true) : undefined}
+            />
           )}
         </div>
       )}
