@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router";
 import { Download, Loader2 } from "lucide-react";
 import { Button } from "../common/Button";
 import { SpeakerAvatar, SPEAKER_PALETTE } from "../common/SpeakerAvatar";
+import { Badge } from "../common/Badge";
 import { ConversationBubble } from "../common/ConversationBubble";
 import { meetingsApi, type MeetingDetail } from "../../api/meetings";
 import { parseSummaryDto, exportSummaryDocx, type SummaryResponse } from "../../api/summary";
@@ -287,12 +288,7 @@ export function MeetingDetailScreen() {
               <h2 className="font-semibold text-[#1A1D2E]">대화 요약</h2>
               <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                 {uniqueSpeakerDisplays.map((display, idx) => (
-                  <span
-                    key={idx}
-                    className="px-2 py-0.5 bg-[#F3F4F6] text-[#6B7280] text-xs rounded"
-                  >
-                    {display}
-                  </span>
+                  <Badge key={idx}>{display}</Badge>
                 ))}
               </div>
             </div>

@@ -1,5 +1,6 @@
 import { CheckCircle2, Square } from 'lucide-react';
 import type { SummaryResponse } from '../../api/summary';
+import { Badge } from './Badge';
 
 interface SummaryDisplayProps {
   summaryData: SummaryResponse;
@@ -39,8 +40,8 @@ export function SummaryDisplay({ summaryData }: SummaryDisplayProps) {
               <div className="flex-1">
                 <div className="text-[#1A1D2E]">{item.task}</div>
                 <div className="flex gap-2 mt-1">
-                  <span className="px-2 py-0.5 bg-[#EEF2FF] text-[#5B5FF5] text-xs rounded">{item.assignee}</span>
-                  <span className="px-2 py-0.5 bg-[#FEF3C7] text-[#92400E] text-xs rounded">{item.due_date}</span>
+                  <Badge variant="primary">{item.assignee}</Badge>
+                  <Badge variant="warning">{item.due_date}</Badge>
                 </div>
               </div>
             </li>
@@ -52,7 +53,7 @@ export function SummaryDisplay({ summaryData }: SummaryDisplayProps) {
           <h3 className="font-semibold text-[#1A1D2E] text-sm">키워드</h3>
           <div className="flex flex-wrap gap-2">
             {summaryData.keywords.map((keyword, idx) => (
-              <span key={idx} className="px-3 py-1 bg-[#EEF2FF] text-[#5B5FF5] text-xs rounded-md">{keyword}</span>
+              <Badge key={idx} variant="primary" size="md">{keyword}</Badge>
             ))}
           </div>
         </div>
