@@ -1,4 +1,4 @@
-import { cn } from '../ui/utils';
+import { cn } from './utils';
 
 type BadgeVariant = 'primary' | 'neutral' | 'warning';
 type BadgeSize = 'sm' | 'md';

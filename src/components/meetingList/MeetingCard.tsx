@@ -1,6 +1,6 @@
 import { Calendar, Clock, X } from "lucide-react";
 import type { MeetingListItem } from "../../api/meetings";
-import { Skeleton } from "../ui/skeleton";
+import { Skeleton } from "../common/Skeleton";
 import { Button } from "../common/Button";
 import { SpeakerAvatar, SPEAKER_PALETTE } from "../common/SpeakerAvatar";
 import { Badge } from "../common/Badge";

@@ -1,4 +1,4 @@
-import { cn } from '../ui/utils';
+import { cn } from './utils';
 
 type ConversationBubbleProps = {
   className?: string;

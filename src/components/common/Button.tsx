@@ -1,5 +1,5 @@
 import { type ButtonHTMLAttributes } from 'react';
-import { cn } from '../ui/utils';
+import { cn } from './utils';
 
 type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'dark' | 'outline' | 'hero';
 type ButtonSize = 'sm' | 'md' | 'lg';

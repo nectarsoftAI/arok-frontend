@@ -1,5 +1,5 @@
 import { type InputHTMLAttributes } from 'react';
-import { cn } from '../ui/utils';
+import { cn } from './utils';
 
 type InputVariant = 'default' | 'filled';
 type InputSize = 'sm' | 'md';

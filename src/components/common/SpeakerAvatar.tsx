@@ -1,4 +1,4 @@
-import { cn } from '../ui/utils';
+import { cn } from './utils';
 
 export const SPEAKER_PALETTE = ['#5B5FF5', '#22D3EE', '#F59E0B', '#EC4899'];
 

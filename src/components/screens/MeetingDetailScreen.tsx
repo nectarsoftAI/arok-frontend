@@ -8,7 +8,7 @@ import { ConversationBubble } from "../common/ConversationBubble";
 import { meetingsApi, type MeetingDetail } from "../../api/meetings";
 import { parseSummaryDto, exportSummaryDocx, type SummaryResponse } from "../../api/summary";
 import type { TranscriptSegment, TranscriptUpdate } from "../../api/types";
-import { Skeleton } from "../ui/skeleton";
+import { Skeleton } from "../common/Skeleton";
 import { SummaryDisplay } from "../common/SummaryDisplay";
 
 
