@@ -1,4 +1,5 @@
-import { X, LogOut, PenLine, RefreshCw, Download } from 'lucide-react';
+import { LogOut, PenLine, RefreshCw, Download } from 'lucide-react';
+import { DialogShell } from './DialogShell';
 
 interface MeetingEndDialogProps {
   isOpen: boolean;
@@ -25,72 +26,51 @@ const FEATURES = [
 ];
 
 export function MeetingEndDialog({ isOpen, onConfirm, onClose }: MeetingEndDialogProps) {
-  if (!isOpen) return null;
-
   return (
-    <div
-      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-      onClick={onClose}
+    <DialogShell
+      isOpen={isOpen}
+      onClose={onClose}
+      icon={<LogOut className="w-4 h-4 text-[#EF4444]" />}
+      iconBg="bg-[#EF4444]/10"
+      title="회의 종료"
     >
-      <div
-        className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="px-6 py-4 border-b border-[#E5E7EB] flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-[#EF4444]/10 flex items-center justify-center">
-              <LogOut className="w-4 h-4 text-[#EF4444]" />
+      <div className="p-6">
+        <p className="text-sm font-medium text-[#1A1D2E] mb-1">
+          회의를 종료하고 상세 화면으로 이동할까요?
+        </p>
+        <p className="text-xs text-[#6B7280] mb-5">
+          상세 화면에서 다음 기능을 이용할 수 있어요
+        </p>
+
+        <div className="space-y-2.5 mb-6">
+          {FEATURES.map(({ icon: Icon, label, desc }) => (
+            <div key={label} className="flex items-start gap-3 p-3.5 rounded-lg bg-[#F9FAFB]">
+              <div className="w-7 h-7 rounded-md bg-[#5B5FF5]/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <Icon className="w-3.5 h-3.5 text-[#5B5FF5]" />
+              </div>
+              <div>
+                <div className="text-sm font-medium text-[#1A1D2E]">{label}</div>
+                <div className="text-xs text-[#6B7280] mt-0.5">{desc}</div>
+              </div>
             </div>
-            <h3 className="font-semibold text-[#1A1D2E]">회의 종료</h3>
-          </div>
+          ))}
+        </div>
+
+        <div className="flex gap-3">
           <button
             onClick={onClose}
-            className="p-1 hover:bg-gray-100 rounded transition-colors"
+            className="flex-1 px-4 py-2.5 rounded-lg font-medium border border-[#E5E7EB] text-[#6B7280] hover:bg-[#F3F4F6] transition-all text-sm"
           >
-            <X className="w-5 h-5 text-[#6B7280]" />
+            머무르기
+          </button>
+          <button
+            onClick={onConfirm}
+            className="flex-1 px-4 py-2.5 rounded-lg font-medium bg-[#1A1D2E] hover:bg-[#1A1D2E]/90 text-white transition-all text-sm"
+          >
+            회의 종료하기
           </button>
         </div>
-
-        {/* Body */}
-        <div className="p-6">
-          <p className="text-sm font-medium text-[#1A1D2E] mb-1">
-            회의를 종료하고 상세 화면으로 이동할까요?
-          </p>
-          <p className="text-xs text-[#6B7280] mb-5">
-            상세 화면에서 다음 기능을 이용할 수 있어요
-          </p>
-
-          <div className="space-y-2.5 mb-6">
-            {FEATURES.map(({ icon: Icon, label, desc }) => (
-              <div key={label} className="flex items-start gap-3 p-3.5 rounded-lg bg-[#F9FAFB]">
-                <div className="w-7 h-7 rounded-md bg-[#5B5FF5]/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <Icon className="w-3.5 h-3.5 text-[#5B5FF5]" />
-                </div>
-                <div>
-                  <div className="text-sm font-medium text-[#1A1D2E]">{label}</div>
-                  <div className="text-xs text-[#6B7280] mt-0.5">{desc}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="flex gap-3">
-            <button
-              onClick={onClose}
-              className="flex-1 px-4 py-2.5 rounded-lg font-medium border border-[#E5E7EB] text-[#6B7280] hover:bg-[#F3F4F6] transition-all text-sm"
-            >
-              머무르기
-            </button>
-            <button
-              onClick={onConfirm}
-              className="flex-1 px-4 py-2.5 rounded-lg font-medium bg-[#1A1D2E] hover:bg-[#1A1D2E]/90 text-white transition-all text-sm"
-            >
-              회의 종료하기
-            </button>
-          </div>
-        </div>
       </div>
-    </div>
+    </DialogShell>
   );
 }

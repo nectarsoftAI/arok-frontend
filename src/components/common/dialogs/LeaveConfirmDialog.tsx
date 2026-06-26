@@ -1,5 +1,6 @@
-import { LogOut, X } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import type { RecordingState } from '../../../hooks/useMeetingState';
+import { DialogShell } from './DialogShell';
 
 interface LeaveConfirmDialogProps {
   isOpen: boolean;
@@ -26,48 +27,35 @@ export function LeaveConfirmDialog({
   onConfirm,
   onClose,
 }: LeaveConfirmDialogProps) {
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onClose}>
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4" onClick={(e) => e.stopPropagation()}>
-        {/* Header */}
-        <div className="px-6 py-4 border-b border-[#E5E7EB] flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center">
-              <LogOut className="w-4 h-4 text-orange-500" />
-            </div>
-            <h3 className="font-semibold text-[#1A1D2E]">회의에서 나가기</h3>
-          </div>
-          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded transition-colors">
-            <X className="w-5 h-5 text-[#6B7280]" />
+    <DialogShell
+      isOpen={isOpen}
+      onClose={onClose}
+      icon={<LogOut className="w-4 h-4 text-orange-500" />}
+      iconBg="bg-orange-100"
+      title="회의에서 나가기"
+    >
+      <div className="p-6">
+        <p className="text-sm text-[#6B7280] mb-6">
+          {getWarningMessage(recordingState, isProcessing)}
+        </p>
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 px-4 py-2.5 rounded-lg font-medium border border-[#E5E7EB] text-[#6B7280] hover:bg-[#F3F4F6] transition-all"
+          >
+            계속 진행하기
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            className="flex-1 px-4 py-2.5 rounded-lg font-medium bg-red-500 hover:bg-red-600 text-white transition-all"
+          >
+            나가기
           </button>
         </div>
-
-        {/* Content */}
-        <div className="p-6">
-          <p className="text-sm text-[#6B7280] mb-6">
-            {getWarningMessage(recordingState, isProcessing)}
-          </p>
-
-          <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 px-4 py-2.5 rounded-lg font-medium border border-[#E5E7EB] text-[#6B7280] hover:bg-[#F3F4F6] transition-all"
-            >
-              계속 진행하기
-            </button>
-            <button
-              type="button"
-              onClick={onConfirm}
-              className="flex-1 px-4 py-2.5 rounded-lg font-medium bg-red-500 hover:bg-red-600 text-white transition-all"
-            >
-              나가기
-            </button>
-          </div>
-        </div>
       </div>
-    </div>
+    </DialogShell>
   );
 }
