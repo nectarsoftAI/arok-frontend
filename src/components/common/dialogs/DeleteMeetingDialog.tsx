@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { X, Trash2 } from "lucide-react";
-import deleteMinutesIcon from "../assets/icons/delete_minutes_icon.png";
+import deleteMinutesIcon from "../../../assets/icons/delete_minutes_icon.png";
 
 interface DeleteMeetingDialogProps {
   isOpen: boolean;

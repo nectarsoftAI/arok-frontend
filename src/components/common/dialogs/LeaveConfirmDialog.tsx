@@ -1,5 +1,5 @@
 import { LogOut, X } from 'lucide-react';
-import type { RecordingState } from './recording/useMeetingState';
+import type { RecordingState } from '../../../hooks/useMeetingState';
 
 interface LeaveConfirmDialogProps {
   isOpen: boolean;

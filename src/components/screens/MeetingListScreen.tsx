@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Plus } from "lucide-react";
 import { useNavigate } from "react-router";
 import { meetingsApi, type MeetingListItem } from "../../api/meetings";
-import { DeleteMeetingDialog } from "../DeleteMeetingDialog";
+import { DeleteMeetingDialog } from "../common/dialogs/DeleteMeetingDialog";
 import { MeetingCard, MeetingCardSkeleton } from "../meetingList/MeetingCard";
 import { MeetingPagination } from "../meetingList/MeetingPagination";
 import { MeetingListFilters } from "../meetingList/MeetingListFilters";
