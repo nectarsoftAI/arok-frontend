@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useBlocker, useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
-import { MeetingTitleDialog } from '../MeetingTitleDialog';
-import { LeaveConfirmDialog } from '../LeaveConfirmDialog';
-import { MeetingEndDialog } from '../MeetingEndDialog';
-import { useMeetingState } from '../recording/useMeetingState';
+import { MeetingTitleDialog } from '../common/dialogs/MeetingTitleDialog';
+import { LeaveConfirmDialog } from '../common/dialogs/LeaveConfirmDialog';
+import { MeetingEndDialog } from '../common/dialogs/MeetingEndDialog';
+import { useMeetingState } from '../../hooks/useMeetingState';
 import { UploadFlow } from '../recording/UploadFlow';
 import { LiveFlow } from '../recording/LiveFlow';
 import meetingImg1 from '../../assets/images/meeting_scene_1.png';

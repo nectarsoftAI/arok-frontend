@@ -1,5 +1,5 @@
 import { RecordingOrb } from '../RecordingOrb';
-import type { RecordingState } from './useMeetingState';
+import type { RecordingState } from '../../hooks/useMeetingState';
 
 interface LiveControlsProps {
   recordingState: RecordingState;
