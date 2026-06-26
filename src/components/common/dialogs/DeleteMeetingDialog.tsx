@@ -3,6 +3,7 @@ import { Trash2 } from "lucide-react";
 import deleteMinutesIcon from "../../../assets/icons/delete_minutes_icon.png";
 import { DialogShell } from "./DialogShell";
 import { Button } from "../Button";
+import { Input } from "../Input";
 
 interface DeleteMeetingDialogProps {
   isOpen: boolean;
@@ -56,12 +57,12 @@ export function DeleteMeetingDialog({ isOpen, meetingTitle, onConfirm, onClose }
             {meetingTitle}
           </div>
 
-          <input
+          <Input
             type="text"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             placeholder="회의 제목 입력"
-            className="w-full px-4 py-2.5 border border-[#E5E7EB] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-transparent"
+            className="focus:ring-red-400"
             autoFocus
           />
 

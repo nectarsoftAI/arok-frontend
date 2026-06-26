@@ -4,6 +4,7 @@ import recodingLiveImg from "../../../assets/icons/recoding_live_icon.png";
 import audioFileImg from "../../../assets/icons/audio_file_icon.png";
 import { DialogShell } from "./DialogShell";
 import { Button } from "../Button";
+import { Input } from "../Input";
 
 export type MeetingMode = "live" | "upload";
 
@@ -51,12 +52,12 @@ export function MeetingTitleDialog({ isOpen, onConfirm, onClose }: MeetingTitleD
         {step === "title" ? (
           <form onSubmit={handleTitleNext}>
             <label className="block mb-2 text-sm font-medium text-[#1A1D2E]">회의 제목</label>
-            <input
+            <Input
               type="text"
+              variant="filled"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="예: 프로젝트 진행 상황 회의"
-              className="w-full px-4 py-2.5 bg-[#F3F4F6] border border-[#E5E7EB] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#5B5FF5] focus:border-transparent"
               autoFocus
             />
             <p className="mt-2 text-xs text-[#6B7280]">
