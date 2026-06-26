@@ -14,7 +14,7 @@ import meetingImg3 from '../../assets/images/meeting_scene_3.png';
 
 const MEETING_IMAGES = [meetingImg1, meetingImg2, meetingImg3];
 
-export function RecordingScreen() {
+export function NewMeetingScreen() {
   const [imgIndex, setImgIndex] = useState(0);
   const [showEndDialog, setShowEndDialog] = useState(false);
   const navigate = useNavigate();
