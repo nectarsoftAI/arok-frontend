@@ -14,7 +14,7 @@ const sizeClasses: Record<InputSize, string> = {
   md: 'px-4 py-2.5',
 };
 
-interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
+interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'size'> {
   variant?: InputVariant;
   size?: InputSize;
 }
