@@ -1,6 +1,6 @@
 import { useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import type { MeetingMode } from '../MeetingTitleDialog';
+import type { MeetingMode } from '../common/dialogs/MeetingTitleDialog';
 import type { TranscriptSegment } from '../../api/types';
 import type { SegmentMessage } from '../../services/live/types';
 

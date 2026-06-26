@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router";
 import { Download, Loader2 } from "lucide-react";
+import { Button } from "../common/Button";
 import { meetingsApi, type MeetingDetail } from "../../api/meetings";
 import { parseSummaryDto, exportSummaryDocx, type SummaryResponse } from "../../api/summary";
 import type { TranscriptSegment, TranscriptUpdate } from "../../api/types";
@@ -195,12 +196,9 @@ export function MeetingDetailScreen() {
           <p className="text-sm text-[#6B7280] mb-4">
             요청한 회의가 존재하지 않거나 삭제되었습니다.
           </p>
-          <button
-            onClick={() => navigate("/meetings")}
-            className="px-4 py-2 bg-[#5B5FF5] text-white rounded-lg text-sm"
-          >
+          <Button onClick={() => navigate("/meetings")}>
             목록으로 돌아가기
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -235,27 +233,19 @@ export function MeetingDetailScreen() {
             <div className="flex items-center gap-2">
               {isDirty && (
                 <>
-                  <button
-                    onClick={handleCancel}
-                    disabled={isSaving}
-                    className="px-3 py-1.5 text-sm text-[#6B7280] border border-[#E5E7EB] rounded-lg hover:bg-[#F3F4F6] transition-colors"
-                  >
+                  <Button size="sm" variant="secondary" onClick={handleCancel} disabled={isSaving}>
                     취소
-                  </button>
-                  <button
-                    onClick={handleSave}
-                    disabled={isSaving}
-                    className="px-3 py-1.5 text-sm text-white bg-[#5B5FF5] rounded-lg hover:bg-[#5B5FF5]/90 transition-colors flex items-center gap-1.5"
-                  >
+                  </Button>
+                  <Button size="sm" onClick={handleSave} disabled={isSaving} className="flex items-center gap-1.5">
                     {isSaving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                     저장
-                  </button>
+                  </Button>
                 </>
               )}
-              <button className="px-3 py-1.5 text-sm text-[#6B7280] border border-[#E5E7EB] rounded-lg hover:bg-[#F3F4F6] transition-colors flex items-center gap-2">
+              <Button size="sm" variant="secondary" className="flex items-center gap-2">
                 <Download className="w-4 h-4" />
                 대화 내보내기
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -314,7 +304,10 @@ export function MeetingDetailScreen() {
                 ))}
               </div>
             </div>
-            <button
+            <Button
+              size="sm"
+              variant="secondary"
+              disabled={isExporting}
               onClick={async () => {
                 setIsExporting(true);
                 try {
@@ -326,14 +319,11 @@ export function MeetingDetailScreen() {
                   setIsExporting(false);
                 }
               }}
-              disabled={isExporting}
-              className={`px-3 py-1.5 text-sm border border-[#E5E7EB] rounded-lg transition-colors flex items-center gap-2 ${
-                isExporting ? 'text-gray-300 cursor-not-allowed' : 'text-[#6B7280] hover:bg-[#F3F4F6]'
-              }`}
+              className="flex items-center gap-2"
             >
               <Download className="w-4 h-4" />
               {isExporting ? '내보내는 중...' : '요약 내보내기'}
-            </button>
+            </Button>
           </div>
 
           <div className="flex-1 min-h-0 overflow-y-auto p-5 space-y-5">

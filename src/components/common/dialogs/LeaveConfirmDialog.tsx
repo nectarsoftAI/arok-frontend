@@ -1,6 +1,7 @@
 import { LogOut } from 'lucide-react';
 import type { RecordingState } from '../../../hooks/useMeetingState';
 import { DialogShell } from './DialogShell';
+import { Button } from '../Button';
 
 interface LeaveConfirmDialogProps {
   isOpen: boolean;
@@ -40,20 +41,12 @@ export function LeaveConfirmDialog({
           {getWarningMessage(recordingState, isProcessing)}
         </p>
         <div className="flex gap-3">
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex-1 px-4 py-2.5 rounded-lg font-medium border border-[#E5E7EB] text-[#6B7280] hover:bg-[#F3F4F6] transition-all"
-          >
+          <Button type="button" variant="secondary" onClick={onClose} className="flex-1">
             계속 진행하기
-          </button>
-          <button
-            type="button"
-            onClick={onConfirm}
-            className="flex-1 px-4 py-2.5 rounded-lg font-medium bg-red-500 hover:bg-red-600 text-white transition-all"
-          >
+          </Button>
+          <Button type="button" variant="danger" onClick={onConfirm} className="flex-1">
             나가기
-          </button>
+          </Button>
         </div>
       </div>
     </DialogShell>

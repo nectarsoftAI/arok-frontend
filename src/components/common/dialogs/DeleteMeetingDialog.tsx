@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Trash2 } from "lucide-react";
 import deleteMinutesIcon from "../../../assets/icons/delete_minutes_icon.png";
 import { DialogShell } from "./DialogShell";
+import { Button } from "../Button";
 
 interface DeleteMeetingDialogProps {
   isOpen: boolean;
@@ -65,25 +66,12 @@ export function DeleteMeetingDialog({ isOpen, meetingTitle, onConfirm, onClose }
           />
 
           <div className="flex gap-3 mt-6">
-            <button
-              type="button"
-              onClick={handleClose}
-              className="flex-1 px-4 py-2.5 rounded-lg font-medium border border-[#E5E7EB] text-[#6B7280] hover:bg-[#F3F4F6] transition-all"
-            >
+            <Button type="button" variant="secondary" onClick={handleClose} className="flex-1">
               취소
-            </button>
-            <button
-              type="button"
-              onClick={handleConfirm}
-              disabled={!isMatch}
-              className={`flex-1 px-4 py-2.5 rounded-lg font-medium transition-all ${
-                isMatch
-                  ? "bg-red-500 hover:bg-red-600 text-white"
-                  : "bg-gray-200 text-gray-400 cursor-not-allowed"
-              }`}
-            >
+            </Button>
+            <Button type="button" variant="danger" onClick={handleConfirm} disabled={!isMatch} className="flex-1">
               삭제
-            </button>
+            </Button>
           </div>
         </div>
       )}

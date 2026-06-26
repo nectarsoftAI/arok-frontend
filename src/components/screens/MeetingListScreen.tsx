@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Plus } from "lucide-react";
 import { useNavigate } from "react-router";
+import { Button } from "../common/Button";
 import { meetingsApi, type MeetingListItem } from "../../api/meetings";
 import { DeleteMeetingDialog } from "../common/dialogs/DeleteMeetingDialog";
 import { MeetingCard, MeetingCardSkeleton } from "../meetingList/MeetingCard";
@@ -64,13 +65,10 @@ export function MeetingListScreen() {
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
             <h1 className="text-[22px] font-semibold text-[#1A1D2E]">회의록 목록</h1>
-            <button
-              onClick={() => navigate("/", { replace: true })}
-              className="px-4 py-2 bg-[#5B5FF5] hover:bg-[#5B5FF5]/90 text-white rounded-lg font-medium flex items-center gap-2 transition-all shadow-sm hover:shadow"
-            >
+            <Button variant="primary" onClick={() => navigate("/", { replace: true })} className="flex items-center gap-2 shadow-sm hover:shadow">
               <Plus className="w-5 h-5" />
               새로운 회의 시작하기
-            </button>
+            </Button>
           </div>
           <MeetingListFilters />
         </div>

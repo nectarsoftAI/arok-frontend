@@ -1,5 +1,6 @@
 import { LogOut, PenLine, RefreshCw, Download } from 'lucide-react';
 import { DialogShell } from './DialogShell';
+import { Button } from '../Button';
 
 interface MeetingEndDialogProps {
   isOpen: boolean;
@@ -57,18 +58,12 @@ export function MeetingEndDialog({ isOpen, onConfirm, onClose }: MeetingEndDialo
         </div>
 
         <div className="flex gap-3">
-          <button
-            onClick={onClose}
-            className="flex-1 px-4 py-2.5 rounded-lg font-medium border border-[#E5E7EB] text-[#6B7280] hover:bg-[#F3F4F6] transition-all text-sm"
-          >
+          <Button variant="secondary" onClick={onClose} className="flex-1">
             머무르기
-          </button>
-          <button
-            onClick={onConfirm}
-            className="flex-1 px-4 py-2.5 rounded-lg font-medium bg-[#1A1D2E] hover:bg-[#1A1D2E]/90 text-white transition-all text-sm"
-          >
+          </Button>
+          <Button variant="dark" onClick={onConfirm} className="flex-1">
             회의 종료하기
-          </button>
+          </Button>
         </div>
       </div>
     </DialogShell>

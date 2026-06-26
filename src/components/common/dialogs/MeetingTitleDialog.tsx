@@ -3,6 +3,7 @@ import { FileText } from "lucide-react";
 import recodingLiveImg from "../../../assets/icons/recoding_live_icon.png";
 import audioFileImg from "../../../assets/icons/audio_file_icon.png";
 import { DialogShell } from "./DialogShell";
+import { Button } from "../Button";
 
 export type MeetingMode = "live" | "upload";
 
@@ -61,18 +62,10 @@ export function MeetingTitleDialog({ isOpen, onConfirm, onClose }: MeetingTitleD
             <p className="mt-2 text-xs text-[#6B7280]">
               회의 내용을 쉽게 구분할 수 있도록 제목을 입력해주세요.
             </p>
-            <div className="flex gap-3 mt-6">
-              <button
-                type="submit"
-                disabled={!title.trim()}
-                className={`flex-1 px-4 py-2.5 rounded-lg font-medium transition-all ${
-                  title.trim()
-                    ? "bg-[#5B5FF5] hover:bg-[#5B5FF5]/90 text-white"
-                    : "bg-gray-200 text-gray-400 cursor-not-allowed"
-                }`}
-              >
+            <div className="mt-6">
+              <Button type="submit" variant="primary" disabled={!title.trim()} className="w-full">
                 다음
-              </button>
+              </Button>
             </div>
           </form>
         ) : (
@@ -117,25 +110,12 @@ export function MeetingTitleDialog({ isOpen, onConfirm, onClose }: MeetingTitleD
             </div>
 
             <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={() => setStep("title")}
-                className="px-4 py-2.5 rounded-lg font-medium border border-[#E5E7EB] text-[#6B7280] hover:bg-[#F3F4F6] transition-all"
-              >
+              <Button type="button" variant="secondary" onClick={() => setStep("title")}>
                 이전
-              </button>
-              <button
-                type="button"
-                onClick={handleStart}
-                disabled={!mode}
-                className={`flex-1 px-4 py-2.5 rounded-lg font-medium transition-all ${
-                  mode
-                    ? "bg-[#5B5FF5] hover:bg-[#5B5FF5]/90 text-white"
-                    : "bg-gray-200 text-gray-400 cursor-not-allowed"
-                }`}
-              >
+              </Button>
+              <Button type="button" variant="primary" onClick={handleStart} disabled={!mode} className="flex-1">
                 회의 시작하기
-              </button>
+              </Button>
             </div>
           </div>
         )}

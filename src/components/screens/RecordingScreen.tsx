@@ -5,6 +5,7 @@ import { MeetingTitleDialog } from '../common/dialogs/MeetingTitleDialog';
 import { LeaveConfirmDialog } from '../common/dialogs/LeaveConfirmDialog';
 import { MeetingEndDialog } from '../common/dialogs/MeetingEndDialog';
 import { useMeetingState } from '../../hooks/useMeetingState';
+import { Button } from '../common/Button';
 import { UploadFlow } from '../recording/UploadFlow';
 import { LiveFlow } from '../recording/LiveFlow';
 import meetingImg1 from '../../assets/images/meeting_scene_1.png';
@@ -91,12 +92,9 @@ export function RecordingScreen() {
             </div>
             <h2 className="text-2xl font-semibold text-[#1A1D2E] mb-3">새로운 회의를 시작하세요</h2>
             <p className="text-sm text-[#6B7280] mb-8">AI가 자동으로 대화를 분석하고 요약해드립니다</p>
-            <button
-              onClick={() => state.setShowTitleDialog(true)}
-              className="px-8 py-4 bg-gradient-to-br from-[#5B5FF5] to-[#818CF8] hover:from-[#5B5FF5]/90 hover:to-[#818CF8]/90 text-white rounded-xl font-medium text-lg shadow-lg hover:shadow-xl transition-all hover:scale-105"
-            >
+            <Button variant="hero" size="lg" onClick={() => state.setShowTitleDialog(true)}>
               새로운 회의 시작하기
-            </button>
+            </Button>
           </div>
         </div>
       ) : (

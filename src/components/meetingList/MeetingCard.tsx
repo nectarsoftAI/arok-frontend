@@ -1,6 +1,7 @@
 import { Calendar, Clock, X } from "lucide-react";
 import type { MeetingListItem } from "../../api/meetings";
 import { Skeleton } from "../ui/skeleton";
+import { Button } from "../common/Button";
 
 const COLORS = ["#5B5FF5", "#22D3EE", "#818CF8"];
 
@@ -86,12 +87,13 @@ export function MeetingCard({ meeting, onDelete, onOpen }: MeetingCardProps) {
       </div>
 
       {/* Open Button */}
-      <button
+      <Button
+        variant="outline"
         onClick={() => onOpen(meeting.meetingId)}
-        className="w-full py-2 border border-[#E5E7EB] text-[#5B5FF5] text-sm font-medium rounded-lg hover:bg-[#5B5FF5] hover:text-white transition-colors group-hover:bg-[#5B5FF5] group-hover:text-white"
+        className="w-full py-2 border-[#E5E7EB] group-hover:bg-[#5B5FF5] group-hover:text-white"
       >
         열기
-      </button>
+      </Button>
     </div>
   );
 }
