@@ -1,8 +1,9 @@
 import { Calendar, Clock, X } from "lucide-react";
 import type { MeetingListItem } from "../../api/meetings";
-import { Skeleton } from "../ui/skeleton";
-
-const COLORS = ["#5B5FF5", "#22D3EE", "#818CF8"];
+import { Skeleton } from "../common/Skeleton";
+import { Button } from "../common/Button";
+import { SpeakerAvatar, SPEAKER_PALETTE } from "../common/SpeakerAvatar";
+import { Badge } from "../common/Badge";
 
 function formatDate(dateStr: string): string {
   if (!dateStr) return "-";
@@ -38,10 +39,10 @@ export function MeetingCard({ meeting, onDelete, onOpen }: MeetingCardProps) {
       </button>
 
       {/* Date Badge */}
-      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#EEF2FF] text-[#5B5FF5] text-xs font-medium rounded mb-3">
+      <Badge variant="primary" className="inline-flex items-center gap-1.5 px-2.5 py-1 font-medium mb-3">
         <Calendar className="w-3 h-3" />
         {formatDate(meeting.meetingDate)}
-      </div>
+      </Badge>
 
       {/* Title */}
       <h3 className="font-semibold text-[#1A1D2E] mb-3 pr-6">{meeting.title}</h3>
@@ -50,13 +51,13 @@ export function MeetingCard({ meeting, onDelete, onOpen }: MeetingCardProps) {
       <div className="flex items-center gap-2 mb-3">
         <div className="flex -space-x-2">
           {meeting.participants.slice(0, 4).map((p, pIdx) => (
-            <div
+            <SpeakerAvatar
               key={p.speakerLabel}
-              className="w-8 h-8 rounded-full border-2 border-white flex items-center justify-center text-white text-xs font-medium"
-              style={{ backgroundColor: COLORS[pIdx % COLORS.length] }}
-            >
-              {p.speakerDisplay.charAt(0)}
-            </div>
+              letter={p.speakerDisplay.charAt(0)}
+              color={SPEAKER_PALETTE[pIdx % SPEAKER_PALETTE.length]}
+              size="sm"
+              bordered
+            />
           ))}
         </div>
         <span className="text-xs text-[#6B7280]">
@@ -74,24 +75,21 @@ export function MeetingCard({ meeting, onDelete, onOpen }: MeetingCardProps) {
       <div className="flex flex-wrap gap-1.5 mb-4 min-h-[22px]">
         {meeting.keywords.length > 0 ? (
           meeting.keywords.slice(0, 3).map((kw, idx) => (
-            <span key={idx} className="px-2 py-0.5 bg-[#F3F4F6] text-[#6B7280] text-xs rounded">
-              {kw}
-            </span>
+            <Badge key={idx}>{kw}</Badge>
           ))
         ) : (
-          <span className="px-2 py-0.5 bg-[#F3F4F6] text-[#9CA3AF] text-xs rounded">
-            키워드 없음
-          </span>
+          <Badge className="text-[#9CA3AF]">키워드 없음</Badge>
         )}
       </div>
 
       {/* Open Button */}
-      <button
+      <Button
+        variant="outline"
         onClick={() => onOpen(meeting.meetingId)}
-        className="w-full py-2 border border-[#E5E7EB] text-[#5B5FF5] text-sm font-medium rounded-lg hover:bg-[#5B5FF5] hover:text-white transition-colors group-hover:bg-[#5B5FF5] group-hover:text-white"
+        className="w-full py-2 border-[#E5E7EB] group-hover:bg-[#5B5FF5] group-hover:text-white"
       >
         열기
-      </button>
+      </Button>
     </div>
   );
 }

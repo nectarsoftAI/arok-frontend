@@ -1,12 +1,13 @@
 import { useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { CheckCircle2 } from 'lucide-react';
-import type { MeetingStateReturn } from './useMeetingState';
+import { Button } from '../common/Button';
+import type { MeetingStateReturn } from '../../hooks/useMeetingState';
 import { TranscriptSection } from './TranscriptSection';
 import { SummarySection } from './SummarySection';
 import { StepCards } from './StepCards';
 import type { StepDef } from './StepCards';
-import { LoadingAnimation } from './LoadingAnimation';
+import { LoadingAnimation } from '../common/LoadingAnimation';
 
 interface UploadFlowProps {
   state: MeetingStateReturn;
@@ -152,18 +153,12 @@ export function UploadFlow({ state, onComplete }: UploadFlowProps) {
                         </p>
                       </div>
                       <div className="flex gap-3">
-                        <button
-                          onClick={() => state.setUploadedFile(null)}
-                          className="px-4 py-2 text-sm border border-[#E5E7EB] rounded-lg text-[#6B7280] hover:bg-[#F3F4F6] transition-colors"
-                        >
+                        <Button variant="secondary" onClick={() => state.setUploadedFile(null)}>
                           다시 선택
-                        </button>
-                        <button
-                          onClick={state.handleProcessFile}
-                          className="px-5 py-2 text-sm bg-[#5B5FF5] hover:bg-[#5B5FF5]/90 text-white rounded-lg font-medium transition-all"
-                        >
+                        </Button>
+                        <Button variant="primary" onClick={state.handleProcessFile}>
                           파일 분석하기
-                        </button>
+                        </Button>
                       </div>
                     </motion.div>
                   )}

@@ -1,15 +1,14 @@
 import { useState, useEffect } from 'react';
-import type { MeetingMode } from '../MeetingTitleDialog';
-import { transcribeFile } from '../../api/stt';
-import type { TranscriptSegment } from '../../api/types';
-import { parseSummaryDto, type SummaryResponse } from '../../api/summary';
-import { meetingsApi } from '../../api/meetings';
-import { useLiveSTT } from '../../hooks/useLiveSTT';
-import type { SegmentMessage } from '../../services/live/types';
+import type { MeetingMode } from '../components/common/dialogs/MeetingTitleDialog';
+import { transcribeFile } from '../api/stt';
+import type { TranscriptSegment } from '../api/types';
+import { parseSummaryDto, type SummaryResponse } from '../api/summary';
+import { meetingsApi } from '../api/meetings';
+import { useLiveSTT } from './useLiveSTT';
+import type { SegmentMessage } from '../services/live/types';
+import { SPEAKER_PALETTE } from '../components/common/SpeakerAvatar';
 
 export type RecordingState = 'idle' | 'recording' | 'stopping' | 'finished';
-
-const SPEAKER_PALETTE = ['bg-[#5B5FF5]', 'bg-[#22D3EE]', 'bg-[#F59E0B]', 'bg-[#EC4899]'];
 
 export interface MeetingStateReturn {
   meetingTitle: string;
@@ -151,7 +150,6 @@ export function useMeetingState(): MeetingStateReturn {
         await liveStart(meetingTitle);
       } catch {
         setRecordingState('idle'); // 실패 시 롤백
-        // liveError state is set inside useLiveSTT
       }
     } else if (recordingState === 'recording') {
       liveStop(); // {"type":"end"} 전송 — server가 session_ended 보내면 'finished'로 전환
@@ -209,7 +207,6 @@ export function useMeetingState(): MeetingStateReturn {
       setTranscripts(result.transcripts);
       setHasConversation(true);
 
-      // 요약은 GET /api/v1/meetings/{id}로 DB에서 조회 (Java가 Python 요약 완료 후 저장)
       const { data } = await meetingsApi.getById(newMeetingId);
       const parsed = parseSummaryDto(data.summary);
       if (parsed) {

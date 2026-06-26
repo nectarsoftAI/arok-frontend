@@ -1,11 +1,11 @@
 import { motion, AnimatePresence } from 'motion/react';
-import type { MeetingStateReturn } from './useMeetingState';
+import type { MeetingStateReturn } from '../../hooks/useMeetingState';
 import { LiveControls } from './LiveControls';
 import { TranscriptSection } from './TranscriptSection';
 import { SummarySection } from './SummarySection';
 import { StepCards } from './StepCards';
 import type { StepDef } from './StepCards';
-import { LoadingAnimation } from './LoadingAnimation';
+import { LoadingAnimation } from '../common/LoadingAnimation';
 
 interface LiveFlowProps {
   state: MeetingStateReturn;

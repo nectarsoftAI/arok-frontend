@@ -1,17 +1,16 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router";
-import { Download, CheckCircle2, Square, Loader2 } from "lucide-react";
+import { Download, Loader2 } from "lucide-react";
+import { Button } from "../common/Button";
+import { SpeakerAvatar, SPEAKER_PALETTE } from "../common/SpeakerAvatar";
+import { Badge } from "../common/Badge";
+import { ConversationBubble } from "../common/ConversationBubble";
 import { meetingsApi, type MeetingDetail } from "../../api/meetings";
 import { parseSummaryDto, exportSummaryDocx, type SummaryResponse } from "../../api/summary";
 import type { TranscriptSegment, TranscriptUpdate } from "../../api/types";
-import { Skeleton } from "../ui/skeleton";
+import { Skeleton } from "../common/Skeleton";
+import { SummaryDisplay } from "../common/SummaryDisplay";
 
-const SPEAKER_COLORS = [
-  "bg-[#5B5FF5]",
-  "bg-[#22D3EE]",
-  "bg-[#F59E0B]",
-  "bg-[#EC4899]",
-];
 
 function formatSec(sec: number): string {
   const m = Math.floor(sec / 60);
@@ -194,12 +193,9 @@ export function MeetingDetailScreen() {
           <p className="text-sm text-[#6B7280] mb-4">
             요청한 회의가 존재하지 않거나 삭제되었습니다.
           </p>
-          <button
-            onClick={() => navigate("/meetings")}
-            className="px-4 py-2 bg-[#5B5FF5] text-white rounded-lg text-sm"
-          >
+          <Button onClick={() => navigate("/meetings")}>
             목록으로 돌아가기
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -208,7 +204,7 @@ export function MeetingDetailScreen() {
   /* ── 정상 렌더 ───────────────────────────────────────── */
   const uniqueSpeakers = [...new Set(meeting.transcripts.map((t) => t.speakerLabel))];
   const speakerColorMap = Object.fromEntries(
-    uniqueSpeakers.map((lbl, i) => [lbl, SPEAKER_COLORS[i % SPEAKER_COLORS.length]])
+    uniqueSpeakers.map((lbl, i) => [lbl, SPEAKER_PALETTE[i % SPEAKER_PALETTE.length]])
   );
   const speakerLetterMap = Object.fromEntries(
     uniqueSpeakers.map((lbl, i) => [lbl, String.fromCharCode(65 + i)])
@@ -234,27 +230,19 @@ export function MeetingDetailScreen() {
             <div className="flex items-center gap-2">
               {isDirty && (
                 <>
-                  <button
-                    onClick={handleCancel}
-                    disabled={isSaving}
-                    className="px-3 py-1.5 text-sm text-[#6B7280] border border-[#E5E7EB] rounded-lg hover:bg-[#F3F4F6] transition-colors"
-                  >
+                  <Button size="sm" variant="secondary" onClick={handleCancel} disabled={isSaving}>
                     취소
-                  </button>
-                  <button
-                    onClick={handleSave}
-                    disabled={isSaving}
-                    className="px-3 py-1.5 text-sm text-white bg-[#5B5FF5] rounded-lg hover:bg-[#5B5FF5]/90 transition-colors flex items-center gap-1.5"
-                  >
+                  </Button>
+                  <Button size="sm" onClick={handleSave} disabled={isSaving} className="flex items-center gap-1.5">
                     {isSaving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                     저장
-                  </button>
+                  </Button>
                 </>
               )}
-              <button className="px-3 py-1.5 text-sm text-[#6B7280] border border-[#E5E7EB] rounded-lg hover:bg-[#F3F4F6] transition-colors flex items-center gap-2">
+              <Button size="sm" variant="secondary" className="flex items-center gap-2">
                 <Download className="w-4 h-4" />
                 대화 내보내기
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -270,22 +258,18 @@ export function MeetingDetailScreen() {
             ) : (
               editedTranscripts.map((seg, idx) => (
                 <div key={idx} className="flex gap-3">
-                  <div
-                    className={`w-9 h-9 rounded-full flex items-center justify-center text-white font-medium text-sm flex-shrink-0 ${speakerColorMap[seg.speakerLabel]}`}
-                  >
-                    {speakerLetterMap[seg.speakerLabel]}
-                  </div>
+                  <SpeakerAvatar letter={speakerLetterMap[seg.speakerLabel]} color={speakerColorMap[seg.speakerLabel]} />
                   <div className="flex-1">
                     <input
                       value={seg.speakerDisplay}
                       onChange={(e) => handleTranscriptChange(idx, 'speakerDisplay', e.target.value)}
                       className="text-xs text-[#6B7280] mb-1 bg-transparent border-none outline-none w-full hover:bg-[#F3F4F6] focus:bg-[#F3F4F6] rounded px-1 -mx-1 cursor-text"
                     />
-                    <textarea
+                    <ConversationBubble
+                      editable
                       value={seg.content}
                       onChange={(e) => handleTranscriptChange(idx, 'content', e.target.value)}
                       rows={Math.max(1, Math.ceil(seg.content.length / 50))}
-                      className="w-full bg-[#F3F4F6] rounded-xl px-4 py-2.5 text-sm text-[#1A1D2E] resize-none border-2 border-transparent focus:border-[#5B5FF5]/30 outline-none transition-colors"
                     />
                     <div className="text-xs text-[#9CA3AF] mt-1 text-right">
                       {formatSec(seg.startSec)}
@@ -304,16 +288,14 @@ export function MeetingDetailScreen() {
               <h2 className="font-semibold text-[#1A1D2E]">대화 요약</h2>
               <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                 {uniqueSpeakerDisplays.map((display, idx) => (
-                  <span
-                    key={idx}
-                    className="px-2 py-0.5 bg-[#F3F4F6] text-[#6B7280] text-xs rounded"
-                  >
-                    {display}
-                  </span>
+                  <Badge key={idx}>{display}</Badge>
                 ))}
               </div>
             </div>
-            <button
+            <Button
+              size="sm"
+              variant="secondary"
+              disabled={isExporting}
               onClick={async () => {
                 setIsExporting(true);
                 try {
@@ -325,14 +307,11 @@ export function MeetingDetailScreen() {
                   setIsExporting(false);
                 }
               }}
-              disabled={isExporting}
-              className={`px-3 py-1.5 text-sm border border-[#E5E7EB] rounded-lg transition-colors flex items-center gap-2 ${
-                isExporting ? 'text-gray-300 cursor-not-allowed' : 'text-[#6B7280] hover:bg-[#F3F4F6]'
-              }`}
+              className="flex items-center gap-2"
             >
               <Download className="w-4 h-4" />
               {isExporting ? '내보내는 중...' : '요약 내보내기'}
-            </button>
+            </Button>
           </div>
 
           <div className="flex-1 min-h-0 overflow-y-auto p-5 space-y-5">
@@ -341,66 +320,7 @@ export function MeetingDetailScreen() {
                 {summaryError}
               </div>
             ) : summaryData ? (
-              <>
-                <div className="space-y-3">
-                  <h3 className="font-semibold text-[#1A1D2E] text-sm">주요 내용</h3>
-                  <ul className="space-y-2">
-                    {summaryData.summary.map((item, idx) => (
-                      <li key={idx} className="flex gap-2 text-sm text-[#1A1D2E]">
-                        <div className="w-1.5 h-1.5 rounded-full bg-[#5B5FF5] mt-1.5 flex-shrink-0" />
-                        <span>{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div className="space-y-3 pt-5 border-t border-[#E5E7EB]">
-                  <h3 className="font-semibold text-[#1A1D2E] text-sm">결정 사항</h3>
-                  <ul className="space-y-2">
-                    {summaryData.decisions.map((item, idx) => (
-                      <li key={idx} className="flex gap-2 text-sm text-[#1A1D2E]">
-                        <CheckCircle2 className="w-4 h-4 text-[#10B981] flex-shrink-0 mt-0.5" />
-                        <span>{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div className="space-y-3 pt-5 border-t border-[#E5E7EB]">
-                  <h3 className="font-semibold text-[#1A1D2E] text-sm">후속 조치</h3>
-                  <ul className="space-y-3">
-                    {summaryData.action_items.map((item, idx) => (
-                      <li key={idx} className="flex items-start gap-2 text-sm">
-                        <Square className="w-4 h-4 text-[#6B7280] flex-shrink-0 mt-0.5" />
-                        <div className="flex-1">
-                          <div className="text-[#1A1D2E]">{item.task}</div>
-                          <div className="flex gap-2 mt-1">
-                            <span className="px-2 py-0.5 bg-[#EEF2FF] text-[#5B5FF5] text-xs rounded">
-                              {item.assignee}
-                            </span>
-                            <span className="px-2 py-0.5 bg-[#FEF3C7] text-[#92400E] text-xs rounded">
-                              {item.due_date}
-                            </span>
-                          </div>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                {summaryData.keywords.length > 0 && (
-                  <div className="space-y-3 pt-5 border-t border-[#E5E7EB]">
-                    <h3 className="font-semibold text-[#1A1D2E] text-sm">키워드</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {summaryData.keywords.map((kw, idx) => (
-                        <span key={idx} className="px-3 py-1 bg-[#EEF2FF] text-[#5B5FF5] text-xs rounded-md">
-                          {kw}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </>
+              <SummaryDisplay summaryData={summaryData} />
             ) : (
               <div className="h-full flex items-center justify-center text-sm text-[#6B7280]">
                 요약 정보가 없습니다.
