@@ -6,10 +6,9 @@ import { parseSummaryDto, type SummaryResponse } from '../api/summary';
 import { meetingsApi } from '../api/meetings';
 import { useLiveSTT } from './useLiveSTT';
 import type { SegmentMessage } from '../services/live/types';
+import { SPEAKER_PALETTE } from '../components/common/SpeakerAvatar';
 
 export type RecordingState = 'idle' | 'recording' | 'stopping' | 'finished';
-
-const SPEAKER_PALETTE = ['bg-[#5B5FF5]', 'bg-[#22D3EE]', 'bg-[#F59E0B]', 'bg-[#EC4899]'];
 
 export interface MeetingStateReturn {
   meetingTitle: string;

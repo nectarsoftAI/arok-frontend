@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import type { MeetingMode } from '../common/dialogs/MeetingTitleDialog';
 import type { TranscriptSegment } from '../../api/types';
 import type { SegmentMessage } from '../../services/live/types';
+import { SpeakerAvatar } from '../common/SpeakerAvatar';
+import { ConversationBubble } from '../common/ConversationBubble';
 
 interface TranscriptSectionProps {
   meetingMode: MeetingMode;
@@ -48,14 +50,10 @@ export function TranscriptSection({
                 transition={{ duration: 0.3, delay: idx * 0.025 }}
                 className="flex gap-3"
               >
-                <div
-                  className={`w-9 h-9 rounded-full flex items-center justify-center text-white font-medium text-sm flex-shrink-0 ${speakerColorMap[seg.speakerLabel]}`}
-                >
-                  {speakerIndexMap[seg.speakerLabel]}
-                </div>
+                <SpeakerAvatar letter={speakerIndexMap[seg.speakerLabel]} color={speakerColorMap[seg.speakerLabel]} />
                 <div className="flex-1">
                   <div className="text-xs text-[#6B7280] mb-1">{seg.speakerDisplay}</div>
-                  <div className="bg-[#F3F4F6] rounded-xl px-4 py-2.5 text-sm text-[#1A1D2E]">{seg.content}</div>
+                  <ConversationBubble>{seg.content}</ConversationBubble>
                   <div className="text-xs text-[#9CA3AF] mt-1 text-right">{formatSec(seg.startSec)}</div>
                 </div>
               </motion.div>
@@ -68,14 +66,10 @@ export function TranscriptSection({
                 transition={{ duration: 0.3 }}
                 className="flex gap-3"
               >
-                <div
-                  className={`w-9 h-9 rounded-full flex items-center justify-center text-white font-medium text-sm flex-shrink-0 ${liveColorMap[seg.speaker_label]}`}
-                >
-                  {liveIndexMap[seg.speaker_label]}
-                </div>
+                <SpeakerAvatar letter={liveIndexMap[seg.speaker_label]} color={liveColorMap[seg.speaker_label]} />
                 <div className="flex-1">
                   <div className="text-xs text-[#6B7280] mb-1">화자 {liveIndexMap[seg.speaker_label]}</div>
-                  <div className="bg-[#F3F4F6] rounded-xl px-4 py-2.5 text-sm text-[#1A1D2E]">{seg.text}</div>
+                  <ConversationBubble>{seg.text}</ConversationBubble>
                   <div className="text-xs text-[#9CA3AF] mt-1 text-right">{formatSec(seg.start_sec)}</div>
                 </div>
               </motion.div>

@@ -2,18 +2,14 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router";
 import { Download, Loader2 } from "lucide-react";
 import { Button } from "../common/Button";
+import { SpeakerAvatar, SPEAKER_PALETTE } from "../common/SpeakerAvatar";
+import { ConversationBubble } from "../common/ConversationBubble";
 import { meetingsApi, type MeetingDetail } from "../../api/meetings";
 import { parseSummaryDto, exportSummaryDocx, type SummaryResponse } from "../../api/summary";
 import type { TranscriptSegment, TranscriptUpdate } from "../../api/types";
 import { Skeleton } from "../ui/skeleton";
 import { SummaryDisplay } from "../common/SummaryDisplay";
 
-const SPEAKER_COLORS = [
-  "bg-[#5B5FF5]",
-  "bg-[#22D3EE]",
-  "bg-[#F59E0B]",
-  "bg-[#EC4899]",
-];
 
 function formatSec(sec: number): string {
   const m = Math.floor(sec / 60);
@@ -207,7 +203,7 @@ export function MeetingDetailScreen() {
   /* ── 정상 렌더 ───────────────────────────────────────── */
   const uniqueSpeakers = [...new Set(meeting.transcripts.map((t) => t.speakerLabel))];
   const speakerColorMap = Object.fromEntries(
-    uniqueSpeakers.map((lbl, i) => [lbl, SPEAKER_COLORS[i % SPEAKER_COLORS.length]])
+    uniqueSpeakers.map((lbl, i) => [lbl, SPEAKER_PALETTE[i % SPEAKER_PALETTE.length]])
   );
   const speakerLetterMap = Object.fromEntries(
     uniqueSpeakers.map((lbl, i) => [lbl, String.fromCharCode(65 + i)])
@@ -261,22 +257,18 @@ export function MeetingDetailScreen() {
             ) : (
               editedTranscripts.map((seg, idx) => (
                 <div key={idx} className="flex gap-3">
-                  <div
-                    className={`w-9 h-9 rounded-full flex items-center justify-center text-white font-medium text-sm flex-shrink-0 ${speakerColorMap[seg.speakerLabel]}`}
-                  >
-                    {speakerLetterMap[seg.speakerLabel]}
-                  </div>
+                  <SpeakerAvatar letter={speakerLetterMap[seg.speakerLabel]} color={speakerColorMap[seg.speakerLabel]} />
                   <div className="flex-1">
                     <input
                       value={seg.speakerDisplay}
                       onChange={(e) => handleTranscriptChange(idx, 'speakerDisplay', e.target.value)}
                       className="text-xs text-[#6B7280] mb-1 bg-transparent border-none outline-none w-full hover:bg-[#F3F4F6] focus:bg-[#F3F4F6] rounded px-1 -mx-1 cursor-text"
                     />
-                    <textarea
+                    <ConversationBubble
+                      editable
                       value={seg.content}
                       onChange={(e) => handleTranscriptChange(idx, 'content', e.target.value)}
                       rows={Math.max(1, Math.ceil(seg.content.length / 50))}
-                      className="w-full bg-[#F3F4F6] rounded-xl px-4 py-2.5 text-sm text-[#1A1D2E] resize-none border-2 border-transparent focus:border-[#5B5FF5]/30 outline-none transition-colors"
                     />
                     <div className="text-xs text-[#9CA3AF] mt-1 text-right">
                       {formatSec(seg.startSec)}

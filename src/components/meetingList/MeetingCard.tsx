@@ -2,8 +2,7 @@ import { Calendar, Clock, X } from "lucide-react";
 import type { MeetingListItem } from "../../api/meetings";
 import { Skeleton } from "../ui/skeleton";
 import { Button } from "../common/Button";
-
-const COLORS = ["#5B5FF5", "#22D3EE", "#818CF8"];
+import { SpeakerAvatar, SPEAKER_PALETTE } from "../common/SpeakerAvatar";
 
 function formatDate(dateStr: string): string {
   if (!dateStr) return "-";
@@ -51,13 +50,13 @@ export function MeetingCard({ meeting, onDelete, onOpen }: MeetingCardProps) {
       <div className="flex items-center gap-2 mb-3">
         <div className="flex -space-x-2">
           {meeting.participants.slice(0, 4).map((p, pIdx) => (
-            <div
+            <SpeakerAvatar
               key={p.speakerLabel}
-              className="w-8 h-8 rounded-full border-2 border-white flex items-center justify-center text-white text-xs font-medium"
-              style={{ backgroundColor: COLORS[pIdx % COLORS.length] }}
-            >
-              {p.speakerDisplay.charAt(0)}
-            </div>
+              letter={p.speakerDisplay.charAt(0)}
+              color={SPEAKER_PALETTE[pIdx % SPEAKER_PALETTE.length]}
+              size="sm"
+              bordered
+            />
           ))}
         </div>
         <span className="text-xs text-[#6B7280]">
