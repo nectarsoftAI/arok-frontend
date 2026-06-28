@@ -1,6 +1,5 @@
 import { useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { CheckCircle2 } from 'lucide-react';
 import { Button } from '../common/Button';
 import type { MeetingStateReturn } from '../../hooks/useMeetingState';
 import { TranscriptSection } from './TranscriptSection';
@@ -8,6 +7,8 @@ import { SummarySection } from './SummarySection';
 import { StepCards } from './StepCards';
 import type { StepDef } from './StepCards';
 import { LoadingAnimation } from '../common/LoadingAnimation';
+import uploadFileIcon from '../../assets/icons/upload_file_icon.png';
+import uploadCompleteIcon from '../../assets/icons/upload_complete_icon.png';
 
 interface UploadFlowProps {
   state: MeetingStateReturn;
@@ -53,16 +54,27 @@ export function UploadFlow({ state, onComplete }: UploadFlowProps) {
     <div className="flex flex-col flex-1 min-h-0">
       <AnimatePresence mode="wait">
         {!isComplete ? (
-          /* Upload / Processing phase — content centered in available space */
           <motion.div
             key="upload"
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.2 }}
-            className="flex-1 flex flex-col items-center justify-center gap-6"
+            className="flex-1 flex flex-col items-center justify-center gap-6 relative"
           >
+            {/* Subtle breathing radial gradient backdrop */}
+            <div className="absolute inset-0 pointer-events-none overflow-hidden">
+              <motion.div
+                animate={{ scale: [1, 1.1, 1] }}
+                transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[560px] rounded-full"
+                style={{
+                  background:
+                    'radial-gradient(ellipse at center, rgba(91,95,245,0.16) 0%, rgba(139,92,246,0.06) 50%, transparent 75%)',
+                }}
+              />
+            </div>
+
             <AnimatePresence mode="wait">
               {state.isProcessing ? (
-                /* Analyzing — sequential image animation */
                 <motion.div
                   key="analyzing"
                   initial={{ opacity: 0 }}
@@ -75,7 +87,6 @@ export function UploadFlow({ state, onComplete }: UploadFlowProps) {
                   />
                 </motion.div>
               ) : (
-                /* Upload zone */
                 <motion.div
                   key="dropzone"
                   initial={{ opacity: 1 }}
@@ -83,20 +94,20 @@ export function UploadFlow({ state, onComplete }: UploadFlowProps) {
                   transition={{ duration: 0.15 }}
                   className="w-full flex flex-col items-center gap-6"
                 >
-                  <p className="text-base text-[#6B7280] text-center">
-                    오디오 파일을 업로드하면 자동으로 분석해드려요
-                  </p>
+                  <div className="text-center">
+                    <p className="text-lg font-semibold text-[#1A1D2E]">오디오 파일 분석</p>
+                    <p className="text-sm text-[#6B7280] mt-1">파일을 업로드하면 대화 내용과 요약을 자동으로 생성해드려요</p>
+                  </div>
 
                   {!state.uploadedFile ? (
-                    /* Animated dashed border drop zone */
                     <div
                       onDragOver={(e) => { e.preventDefault(); state.setIsDragging(true); }}
                       onDragLeave={() => state.setIsDragging(false)}
                       onDrop={state.handleDrop}
                       onClick={() => fileInputRef.current?.click()}
-                      className="relative w-full max-w-sm cursor-pointer"
+                      className="relative w-full max-w-lg cursor-pointer"
                     >
-                      <div className="flex flex-col items-center gap-4 py-12 px-6">
+                      <div className="flex flex-col items-center gap-6 py-24 px-10">
                         <svg
                           className="absolute inset-0 w-full h-full pointer-events-none"
                           style={{ overflow: 'visible' }}
@@ -108,23 +119,21 @@ export function UploadFlow({ state, onComplete }: UploadFlowProps) {
                             stroke={state.isDragging ? '#5B5FF5' : '#D1D5DB'}
                             strokeWidth="2"
                             strokeDasharray="8 5"
-                            rx="16" ry="16"
+                            rx="20" ry="20"
                             style={{ animation: 'dash-flow 0.8s linear infinite' }}
                           />
                         </svg>
-                        <div
-                          className={`w-14 h-14 rounded-full flex items-center justify-center transition-colors ${
-                            state.isDragging ? 'bg-[#EEF2FF]' : 'bg-[#F3F4F6]'
-                          }`}
-                        >
-                          <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke={state.isDragging ? '#5B5FF5' : '#9CA3AF'}>
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                              d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
-                          </svg>
-                        </div>
-                        <div className="text-center">
-                          <p className="text-sm font-medium text-[#1A1D2E]">오디오 파일 업로드</p>
-                          <p className="text-xs text-[#9CA3AF] mt-0.5">MP3, WAV, M4A, OGG, FLAC 지원</p>
+                        <motion.img
+                          src={uploadFileIcon}
+                          alt="upload"
+                          className="w-40 h-40 object-contain relative z-10"
+                          animate={{ y: [0, -8, 0] }}
+                          transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+                          style={{ filter: state.isDragging ? 'brightness(0.85)' : 'none' }}
+                        />
+                        <div className="text-center relative z-10">
+                          <p className="text-base font-medium text-[#1A1D2E]">오디오 파일 업로드</p>
+                          <p className="text-sm text-[#9CA3AF] mt-1">MP3, WAV, M4A, OGG, FLAC 지원</p>
                         </div>
                       </div>
                       <input
@@ -136,15 +145,30 @@ export function UploadFlow({ state, onComplete }: UploadFlowProps) {
                       />
                     </div>
                   ) : (
-                    /* File selected — check icon + filename + manual trigger button */
                     <motion.div
                       initial={{ scale: 0.85, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
                       transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-                      className="flex flex-col items-center gap-4 py-6"
+                      className="flex flex-col items-center gap-5 py-6"
                     >
-                      <div className="w-16 h-16 rounded-full bg-[#ECFDF5] flex items-center justify-center">
-                        <CheckCircle2 className="w-9 h-9 text-[#10B981]" />
+                      <div className="relative flex items-center justify-center">
+                        {/* Pulsing glow ring */}
+                        <motion.div
+                          className="absolute rounded-full"
+                          style={{
+                            width: '220px',
+                            height: '220px',
+                            background:
+                              'radial-gradient(circle, rgba(16,185,129,0.22) 0%, transparent 70%)',
+                          }}
+                          animate={{ scale: [1, 1.15, 1], opacity: [0.4, 0.7, 0.4] }}
+                          transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
+                        />
+                        <img
+                          src={uploadCompleteIcon}
+                          alt="upload complete"
+                          className="w-44 h-44 object-contain relative z-10"
+                        />
                       </div>
                       <div className="text-center">
                         <p className="text-sm font-medium text-[#1A1D2E]">{state.uploadedFile.name}</p>
@@ -171,7 +195,6 @@ export function UploadFlow({ state, onComplete }: UploadFlowProps) {
             </AnimatePresence>
           </motion.div>
         ) : (
-          /* Step cards — fills remaining height */
           <motion.div
             key="stepcards"
             initial={{ opacity: 0 }}
