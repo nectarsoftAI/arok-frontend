@@ -24,6 +24,17 @@ function formatDuration(seconds: number | null): string {
   return `${m}분`;
 }
 
+function formatMeetingDate(iso: string | null | undefined): string {
+  if (!iso) return "-";
+  return new Date(iso).toLocaleString('ko-KR', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
 export function MeetingDetailScreen() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -216,7 +227,7 @@ export function MeetingDetailScreen() {
       <div className="mb-4 flex-shrink-0">
         <h1 className="text-xl font-semibold text-[#1A1D2E]">{meeting.title}</h1>
         <div className="flex items-center gap-2 mt-1">
-          <span className="text-sm text-[#6B7280]">{meeting.meetingDate}</span>
+          <span className="text-sm text-[#6B7280]">{formatMeetingDate(meeting.meetingDate)}</span>
           <span className="text-sm text-[#9CA3AF]">•</span>
           <span className="text-sm text-[#6B7280]">{formatDuration(meeting.durationSeconds)}</span>
         </div>
