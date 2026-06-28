@@ -13,6 +13,7 @@ export type RecordingState = 'idle' | 'recording' | 'stopping' | 'finished';
 export interface MeetingStateReturn {
   meetingTitle: string;
   meetingMode: MeetingMode;
+  startedAt: Date | null;
   showTitleDialog: boolean;
   setShowTitleDialog: (v: boolean) => void;
   recordingState: RecordingState;
@@ -51,6 +52,7 @@ export interface MeetingStateReturn {
 export function useMeetingState(): MeetingStateReturn {
   const [meetingTitle, setMeetingTitle] = useState('');
   const [meetingMode, setMeetingMode] = useState<MeetingMode>('live');
+  const [startedAt, setStartedAt] = useState<Date | null>(null);
   const [showTitleDialog, setShowTitleDialog] = useState(false);
   const [recordingState, setRecordingState] = useState<RecordingState>('idle');
   const [hasConversation, setHasConversation] = useState(false);
@@ -140,6 +142,7 @@ export function useMeetingState(): MeetingStateReturn {
   const handleTitleConfirm = (title: string, mode: MeetingMode) => {
     setMeetingTitle(title);
     setMeetingMode(mode);
+    setStartedAt(new Date());
     setShowTitleDialog(false);
   };
 
@@ -248,6 +251,7 @@ export function useMeetingState(): MeetingStateReturn {
   return {
     meetingTitle,
     meetingMode,
+    startedAt,
     showTitleDialog,
     setShowTitleDialog,
     recordingState,

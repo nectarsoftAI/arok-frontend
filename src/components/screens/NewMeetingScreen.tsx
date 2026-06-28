@@ -6,6 +6,7 @@ import { LeaveConfirmDialog } from '../common/dialogs/LeaveConfirmDialog';
 import { MeetingEndDialog } from '../common/dialogs/MeetingEndDialog';
 import { useMeetingState } from '../../hooks/useMeetingState';
 import { Button } from '../common/Button';
+import { Badge } from '../common/Badge';
 import { UploadFlow } from '../recording/UploadFlow';
 import { LiveFlow } from '../recording/LiveFlow';
 import meetingImg1 from '../../assets/images/meeting_scene_1.png';
@@ -100,8 +101,18 @@ export function NewMeetingScreen() {
       ) : (
         /* ── 회의 진행 화면 ── */
         <div className="flex flex-col flex-1 min-h-0 px-6 py-6 gap-5">
-          <div className="flex items-center flex-shrink-0">
+          <div className="flex-shrink-0">
             <h1 className="text-2xl font-bold text-[#1A1D2E]">{state.meetingTitle}</h1>
+            <div className="flex items-center gap-2 mt-1.5">
+              {state.startedAt && (
+                <Badge variant="neutral" size="md">
+                  {state.startedAt.toLocaleString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                </Badge>
+              )}
+              <Badge variant="primary" size="md">
+                {state.meetingMode === 'live' ? '실시간 녹음' : '파일 업로드'}
+              </Badge>
+            </div>
           </div>
 
           {state.meetingMode === 'upload' ? (
