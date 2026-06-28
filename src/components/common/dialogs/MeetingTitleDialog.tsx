@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { FileText } from "lucide-react";
-import recodingLiveImg from "../../../assets/icons/recoding_live_icon.png";
-import audioFileImg from "../../../assets/icons/audio_file_icon.png";
+import recodingLiveImg from "../../../assets/icons/recoding_live_icon.webp";
+import audioFileImg from "../../../assets/icons/audio_file_icon.webp";
 import { DialogShell } from "./DialogShell";
 import { Button } from "../Button";
 import { Input } from "../Input";

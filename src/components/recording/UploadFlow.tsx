@@ -7,8 +7,8 @@ import { SummarySection } from './SummarySection';
 import { StepCards } from './StepCards';
 import type { StepDef } from './StepCards';
 import { LoadingAnimation } from '../common/LoadingAnimation';
-import uploadFileIcon from '../../assets/icons/upload_file_icon.png';
-import uploadCompleteIcon from '../../assets/icons/upload_complete_icon.png';
+import uploadFileIcon from '../../assets/icons/upload_file_icon.webp';
+import uploadCompleteIcon from '../../assets/icons/upload_complete_icon.webp';
 
 interface UploadFlowProps {
   state: MeetingStateReturn;

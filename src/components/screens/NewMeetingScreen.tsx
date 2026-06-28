@@ -9,9 +9,9 @@ import { Button } from '../common/Button';
 import { Badge } from '../common/Badge';
 import { UploadFlow } from '../recording/UploadFlow';
 import { LiveFlow } from '../recording/LiveFlow';
-import meetingImg1 from '../../assets/images/meeting_scene_1.png';
-import meetingImg2 from '../../assets/images/meeting_scene_2.png';
-import meetingImg3 from '../../assets/images/meeting_scene_3.png';
+import meetingImg1 from '../../assets/images/meeting_scene_1.webp';
+import meetingImg2 from '../../assets/images/meeting_scene_2.webp';
+import meetingImg3 from '../../assets/images/meeting_scene_3.webp';
 
 const MEETING_IMAGES = [meetingImg1, meetingImg2, meetingImg3];
 

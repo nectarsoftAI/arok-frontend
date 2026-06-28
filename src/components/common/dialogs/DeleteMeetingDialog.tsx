@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Trash2 } from "lucide-react";
-import deleteMinutesIcon from "../../../assets/icons/delete_minutes_icon.png";
+import deleteMinutesIcon from "../../../assets/icons/delete_minutes_icon.webp";
 import { DialogShell } from "./DialogShell";
 import { Button } from "../Button";
 import { Input } from "../Input";

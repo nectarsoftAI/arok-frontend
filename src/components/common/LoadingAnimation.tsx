@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import analyzingAudioIconImg from '../../assets/icons/analyzing_audio_icon.png';
-import analyzingSceneImg from '../../assets/images/analyzing_scene.png';
-import generatingMinutesIconImg from '../../assets/icons/generating_minutes_icon.png';
-import generatingSceneImg from '../../assets/images/generating_scene.png';
+import analyzingAudioIconImg from '../../assets/icons/analyzing_audio_icon.webp';
+import analyzingSceneImg from '../../assets/images/analyzing_scene.webp';
+import generatingMinutesIconImg from '../../assets/icons/generating_minutes_icon.webp';
+import generatingSceneImg from '../../assets/images/generating_scene.webp';
 
 const IMAGES = [
   analyzingAudioIconImg,
