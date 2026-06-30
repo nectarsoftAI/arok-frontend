@@ -77,3 +77,35 @@ export interface ApiError {
   error: string;
   message: string;
 }
+
+export interface SignupRequest {
+  email: string;
+  password: string;
+  display_name?: string;
+}
+
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  user_metadata: {
+    display_name: string;
+    email: string;
+    email_verified: boolean;
+  };
+  created_at: string;
+}
+
+// Supabase 응답을 FastAPI가 패스스루하는 구조
+export interface AuthResponse {
+  access_token: string;
+  token_type: string;
+  expires_in: number;
+  expires_at: number;
+  refresh_token: string;
+  user: AuthUser;
+}
