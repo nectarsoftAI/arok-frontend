@@ -1,7 +1,10 @@
 import { Outlet, Link, useLocation, useParams, useNavigate } from "react-router";
-import { Mic, FileText, BarChart3, Search, Bell, User, ChevronDown, ChevronRight, X } from "lucide-react";
+import { Mic, FileText, BarChart3, Search, Bell, User, ChevronDown, ChevronRight, X, LogOut } from "lucide-react";
 import { meetingsApi } from "../api/meetings";
 import { useState, useEffect } from "react";
+import { useAuthStore } from "../store/authStore";
+import { DialogShell } from "./common/dialogs/DialogShell";
+import { Button } from "./common/Button";
 
 interface OpenedMeeting {
   id: string;
@@ -14,6 +17,19 @@ export function Layout() {
   const navigate = useNavigate();
   const [isMeetingsExpanded, setIsMeetingsExpanded] = useState(true);
   const [openedMeetings, setOpenedMeetings] = useState<OpenedMeeting[]>([]);
+  const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
+
+  const user = useAuthStore((s) => s.user);
+  const logout = useAuthStore((s) => s.logout);
+
+  const displayName = user?.displayName || user?.email || '';
+  const email = user?.email || '';
+
+  const handleLogout = () => {
+    logout();
+    setIsLogoutDialogOpen(false);
+    navigate('/login');
+  };
 
   const currentMeetingId = params.id;
 
@@ -41,6 +57,7 @@ export function Layout() {
   ];
 
   return (
+    <>
     <div className="flex h-screen bg-background">
       {/* ── 사이드바 (데스크톱 전용) ── */}
       <aside className="hidden lg:flex w-60 bg-[#0F1624] flex-col flex-shrink-0">
@@ -136,12 +153,20 @@ export function Layout() {
 
         <div className="p-4 border-t border-white/10">
           <div className="flex items-center gap-3 px-3 py-2">
-            <div className="w-9 h-9 bg-gradient-to-br from-[#5B5FF5] to-[#818CF8] rounded-full flex items-center justify-center">
+            <div className="w-9 h-9 bg-gradient-to-br from-[#5B5FF5] to-[#818CF8] rounded-full flex items-center justify-center flex-shrink-0">
               <User className="w-5 h-5 text-white" />
             </div>
-            <div className="flex-1">
-              <div className="text-white text-sm font-medium">사용자 이름</div>
+            <div className="flex-1 min-w-0">
+              <div className="text-white text-sm font-medium truncate">{displayName}</div>
+              <div className="text-gray-400 text-xs truncate">{email}</div>
             </div>
+            <button
+              onClick={() => setIsLogoutDialogOpen(true)}
+              className="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors flex-shrink-0"
+              title="로그아웃"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
           </div>
         </div>
       </aside>
@@ -178,12 +203,16 @@ export function Layout() {
               <Bell className="w-5 h-5 text-[#6B7280]" />
               <span className="absolute top-1 right-1 w-2 h-2 bg-[#5B5FF5] rounded-full" />
             </button>
-            <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsLogoutDialogOpen(true)}
+              className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+              title="로그아웃"
+            >
               <div className="w-8 h-8 lg:w-9 lg:h-9 bg-gradient-to-br from-[#5B5FF5] to-[#818CF8] rounded-full flex items-center justify-center">
                 <User className="w-4 h-4 lg:w-5 lg:h-5 text-white" />
               </div>
-              <span className="hidden lg:block text-sm font-medium text-[#1A1D2E]">사용자 이름</span>
-            </div>
+              <span className="hidden lg:block text-sm font-medium text-[#1A1D2E]">{displayName}</span>
+            </button>
           </div>
         </header>
 
@@ -212,5 +241,26 @@ export function Layout() {
         </nav>
       </div>
     </div>
+
+    <DialogShell
+      isOpen={isLogoutDialogOpen}
+      onClose={() => setIsLogoutDialogOpen(false)}
+      icon={<LogOut className="w-4 h-4 text-red-500" />}
+      iconBg="bg-red-100"
+      title="로그아웃"
+    >
+      <div className="p-6">
+        <p className="text-sm text-[#6B7280] mb-6">정말 로그아웃 하시겠습니까?</p>
+        <div className="flex gap-3">
+          <Button variant="secondary" onClick={() => setIsLogoutDialogOpen(false)} className="flex-1">
+            취소
+          </Button>
+          <Button variant="danger" onClick={handleLogout} className="flex-1">
+            로그아웃
+          </Button>
+        </div>
+      </div>
+    </DialogShell>
+    </>
   );
 }
