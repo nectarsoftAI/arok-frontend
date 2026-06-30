@@ -1,21 +1,29 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router";
+import { Link, Navigate, useNavigate } from "react-router";
 import { Mic, Eye, EyeOff, AlertCircle } from "lucide-react";
+import { isAxiosError } from "axios";
 import { Button } from "../common/Button";
 import { Input } from "../common/Input";
-
-// TODO: Remove hardcoded credentials when auth API is connected
-const MASTER = { email: "master@arok.ai", password: "arok1234" };
+import { login, extractErrorMessage } from "../../api/auth";
+import { useAuthStore } from "../../store/authStore";
 
 export function LoginScreen() {
   const navigate = useNavigate();
+  const setAuth = useAuthStore((s) => s.setAuth);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const hasHydrated = useAuthStore((s) => s.hasHydrated);
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // hydration 완료 전엔 렌더 보류 (persist 복원 전 /login 으로 튕기는 현상 방지)
+  if (!hasHydrated) return null;
+  if (isAuthenticated) return <Navigate to="/" replace />;
+
+  const handleSubmit = async (e: { preventDefault(): void }) => {
     e.preventDefault();
     setError("");
     if (!email || !password) {
@@ -23,15 +31,18 @@ export function LoginScreen() {
       return;
     }
     setLoading(true);
-    // TODO: Replace with actual login API call (e.g. authApi.login({ email, password }))
-    setTimeout(() => {
+    try {
+      const response = await login(email, password);
+      setAuth(response);
+      navigate("/");
+    } catch (err) {
       setLoading(false);
-      if (email === MASTER.email && password === MASTER.password) {
-        navigate("/");
+      if (isAxiosError(err) && (err.response?.status === 401 || err.response?.status === 400)) {
+        setError("이메일 또는 비밀번호가 일치하지 않습니다.");
       } else {
-        setError("이메일 또는 비밀번호가 올바르지 않습니다.");
+        setError(extractErrorMessage(err));
       }
-    }, 800);
+    }
   };
 
   return (

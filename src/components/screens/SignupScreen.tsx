@@ -1,9 +1,12 @@
 import { useState } from "react";
-import { Link } from "react-router";
+import { Link, Navigate, useNavigate } from "react-router";
 import { Mic, Eye, EyeOff, AlertCircle } from "lucide-react";
+import { isAxiosError } from "axios";
 import { Button } from "../common/Button";
 import { Input } from "../common/Input";
 import { cn } from "../common/utils";
+import { signup, extractFieldErrors, extractErrorMessage } from "../../api/auth";
+import { useAuthStore } from "../../store/authStore";
 
 interface FieldErrors {
   email?: string;
@@ -20,6 +23,11 @@ const FieldError = ({ msg }: { msg?: string }) =>
   ) : null;
 
 export function SignupScreen() {
+  const navigate = useNavigate();
+  const setAuth = useAuthStore((s) => s.setAuth);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const hasHydrated = useAuthStore((s) => s.hasHydrated);
+
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [password, setPassword] = useState("");
@@ -27,7 +35,11 @@ export function SignupScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [errors, setErrors] = useState<FieldErrors>({});
+  const [globalError, setGlobalError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  if (!hasHydrated) return null;
+  if (isAuthenticated) return <Navigate to="/" replace />;
 
   const validate = (): FieldErrors => {
     const e: FieldErrors = {};
@@ -38,14 +50,31 @@ export function SignupScreen() {
     return e;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: { preventDefault(): void }) => {
     e.preventDefault();
+    setGlobalError("");
     const errs = validate();
     setErrors(errs);
     if (Object.keys(errs).length > 0) return;
     setLoading(true);
-    // TODO: Replace with actual signup API call (e.g. authApi.signup({ email, displayName, password }))
-    setTimeout(() => setLoading(false), 1500);
+    try {
+      const response = await signup(email, password, displayName || undefined);
+      setAuth(response);
+      navigate("/");
+    } catch (err) {
+      setLoading(false);
+      if (isAxiosError(err) && err.response?.status === 422) {
+        const fieldErrs = extractFieldErrors(err);
+        setErrors({ email: fieldErrs.email, password: fieldErrs.password });
+        const otherMsg = Object.entries(fieldErrs)
+          .filter(([k]) => k !== "email" && k !== "password")
+          .map(([, v]) => v)
+          .join(" ");
+        if (otherMsg) setGlobalError(otherMsg);
+      } else {
+        setGlobalError(extractErrorMessage(err));
+      }
+    }
   };
 
   const inputCls = (hasErr?: string) =>
@@ -142,6 +171,13 @@ export function SignupScreen() {
                 </div>
                 <FieldError msg={errors.confirm} />
               </div>
+
+              {globalError && (
+                <div className="flex items-center gap-2 px-3.5 py-2.5 bg-red-50 border border-red-100 rounded-xl text-sm text-red-600">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                  {globalError}
+                </div>
+              )}
 
               <Button
                 type="submit"
