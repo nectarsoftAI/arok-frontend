@@ -11,13 +11,13 @@ export function ResetPasswordScreen() {
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: { preventDefault(): void }) => {
     e.preventDefault();
     setError("");
     if (!email) { setError("이메일을 입력해주세요."); return; }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setError("올바른 이메일 형식이 아닙니다."); return; }
     setLoading(true);
-    // TODO: Replace with actual password reset API call (e.g. authApi.resetPassword({ email }))
+    // TODO: 백엔드 확인 필요 — 비밀번호 재설정 엔드포인트가 현재 Swagger에 없음
     setTimeout(() => { setLoading(false); setSent(true); }, 1200);
   };
 
