@@ -1,6 +1,7 @@
 import apiClient from './apiClient';
 import { AxiosError } from 'axios';
 import type { TranscribeResponse, MeetingResult, ApiError } from './types';
+import { useAuthStore } from '../store/authStore';
 
 export type { TranscribeResponse, MeetingResult, ApiError } from './types';
 export type { TranscriptSegment } from './types';
@@ -21,11 +22,17 @@ export async function transcribeFile(file: File, title?: string): Promise<Transc
   form.append('file', file);
   if (title && title.trim()) form.append('title', title.trim());
 
+  const userId = useAuthStore.getState().user?.id;
   try {
     const { data } = await apiClient.post<TranscribeResponse>(
       '/api/v1/stt/transcribe',
       form,
-      { headers: { 'Content-Type': 'multipart/form-data' } },
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          ...(userId && { 'X-User-Id': userId }),
+        },
+      },
     );
     console.log('STT 응답:', data);
     return data;

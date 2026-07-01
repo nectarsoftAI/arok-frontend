@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useBlocker, useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
-import { MeetingTitleDialog } from '../common/dialogs/MeetingTitleDialog';
+import { StartMeetingDialog } from '../common/dialogs/StartMeetingDialog';
 import { LeaveConfirmDialog } from '../common/dialogs/LeaveConfirmDialog';
 import { MeetingEndDialog } from '../common/dialogs/MeetingEndDialog';
 import { useMeetingState } from '../../hooks/useMeetingState';
@@ -42,11 +42,23 @@ export function NewMeetingScreen() {
     if (activeMeetingId) navigate(`/meetings/${activeMeetingId}`);
   };
 
+  const handleEnterRoom = (
+    roomId: string,
+    role: 'host' | 'guest',
+    title: string,
+    link: string,
+  ) => {
+    navigate(`/group-meeting/room/${roomId}`, {
+      state: { role, title, link },
+    });
+  };
+
   return (
     <div className="h-full flex flex-col">
-      <MeetingTitleDialog
+      <StartMeetingDialog
         isOpen={state.showTitleDialog}
-        onConfirm={state.handleTitleConfirm}
+        onStartRecording={state.handleTitleConfirm}
+        onEnterRoom={handleEnterRoom}
         onClose={() => state.setShowTitleDialog(false)}
       />
 

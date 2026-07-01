@@ -1,10 +1,5 @@
-import axios from 'axios';
+import llmClient from './llmClient';
 import type { SummaryDto } from './types';
-
-const summaryClient = axios.create({
-  baseURL: import.meta.env.VITE_API_LLM_URL,
-  headers: { 'Content-Type': 'application/json' },
-});
 
 
 export interface ActionItem {
@@ -37,7 +32,7 @@ export function parseSummaryDto(dto: SummaryDto | null): SummaryResponse | null 
 
 export async function exportSummaryDocx(meetingId: string): Promise<void> {
   console.log('[exportSummaryDocx] 요청 시작 meetingId:', meetingId);
-  const response = await summaryClient.get(`/api/summary/${meetingId}/export`, {
+  const response = await llmClient.get(`/api/summary/${meetingId}/export`, {
     responseType: 'blob',
   });
   console.log('[exportSummaryDocx] 응답 수신 status:', response.status, 'data:', response.data);

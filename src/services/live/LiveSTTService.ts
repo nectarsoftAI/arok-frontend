@@ -1,4 +1,5 @@
 import type { ServerMessage, SegmentMessage, EndMessage } from './types';
+import { useAuthStore } from '../../store/authStore';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL as string;
 const WS_BASE = (import.meta.env.VITE_WS_BASE_URL as string) || API_BASE.replace(/^http/, 'ws');
@@ -27,9 +28,13 @@ export class LiveSTTService {
 
   // 1단계: REST로 세션 생성, 2단계: WS 연결
   async createSessionAndConnect(title: string): Promise<void> {
+    const userId = useAuthStore.getState().user?.id;
     const resp = await fetch(`${API_BASE}/api/v1/live/sessions`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(userId && { 'X-User-Id': userId }),
+      },
       body: JSON.stringify({ title }),
     });
     if (!resp.ok) throw new Error('라이브 세션 생성에 실패했습니다.');
