@@ -6,6 +6,7 @@ interface MeetingEndDialogProps {
   isOpen: boolean;
   onConfirm: () => void;
   onClose: () => void;
+  singleButton?: boolean;
 }
 
 const FEATURES = [
@@ -26,7 +27,7 @@ const FEATURES = [
   },
 ];
 
-export function MeetingEndDialog({ isOpen, onConfirm, onClose }: MeetingEndDialogProps) {
+export function MeetingEndDialog({ isOpen, onConfirm, onClose, singleButton }: MeetingEndDialogProps) {
   return (
     <DialogShell
       isOpen={isOpen}
@@ -58,10 +59,12 @@ export function MeetingEndDialog({ isOpen, onConfirm, onClose }: MeetingEndDialo
         </div>
 
         <div className="flex gap-3">
-          <Button variant="secondary" onClick={onClose} className="flex-1">
-            머무르기
-          </Button>
-          <Button variant="dark" onClick={onConfirm} className="flex-1">
+          {!singleButton && (
+            <Button variant="secondary" onClick={onClose} className="flex-1">
+              머무르기
+            </Button>
+          )}
+          <Button variant="dark" onClick={onConfirm} className={singleButton ? "w-full" : "flex-1"}>
             회의 종료하기
           </Button>
         </div>
