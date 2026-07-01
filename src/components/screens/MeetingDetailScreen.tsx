@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router";
+import { useParams, useNavigate, useLocation } from "react-router";
 import { Download, Loader2 } from "lucide-react";
 import { Button } from "../common/Button";
 import { SpeakerAvatar, SPEAKER_PALETTE } from "../common/SpeakerAvatar";
@@ -38,6 +38,9 @@ function formatMeetingDate(iso: string | null | undefined): string {
 export function MeetingDetailScreen() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const role: "host" | "guest" = (location.state as { role?: "host" | "guest" } | null)?.role ?? "host";
+  const isGuest = role === "guest";
   const [meeting, setMeeting] = useState<MeetingDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
@@ -261,7 +264,7 @@ export function MeetingDetailScreen() {
           <div className="px-5 py-4 border-b border-[#E5E7EB] flex items-center justify-between">
             <h2 className="font-semibold text-[#1A1D2E]">대화 내용</h2>
             <div className="flex items-center gap-2">
-              {isDirty && (
+              {!isGuest && isDirty && (
                 <>
                   <Button size="sm" variant="secondary" onClick={handleCancel} disabled={isSaving}>
                     취소
@@ -293,17 +296,25 @@ export function MeetingDetailScreen() {
                 <div key={idx} className="flex gap-3">
                   <SpeakerAvatar letter={speakerLetterMap[seg.speakerLabel]} color={speakerColorMap[seg.speakerLabel]} />
                   <div className="flex-1">
-                    <input
-                      value={seg.speakerDisplay}
-                      onChange={(e) => handleTranscriptChange(idx, 'speakerDisplay', e.target.value)}
-                      className="text-xs text-[#6B7280] mb-1 bg-transparent border-none outline-none w-full hover:bg-[#F3F4F6] focus:bg-[#F3F4F6] rounded px-1 -mx-1 cursor-text"
-                    />
-                    <ConversationBubble
-                      editable
-                      value={seg.content}
-                      onChange={(e) => handleTranscriptChange(idx, 'content', e.target.value)}
-                      rows={Math.max(1, Math.ceil(seg.content.length / 50))}
-                    />
+                    {isGuest ? (
+                      <div className="text-xs text-[#6B7280] mb-1 px-1">{seg.speakerDisplay}</div>
+                    ) : (
+                      <input
+                        value={seg.speakerDisplay}
+                        onChange={(e) => handleTranscriptChange(idx, 'speakerDisplay', e.target.value)}
+                        className="text-xs text-[#6B7280] mb-1 bg-transparent border-none outline-none w-full hover:bg-[#F3F4F6] focus:bg-[#F3F4F6] rounded px-1 -mx-1 cursor-text"
+                      />
+                    )}
+                    {isGuest ? (
+                      <ConversationBubble>{seg.content}</ConversationBubble>
+                    ) : (
+                      <ConversationBubble
+                        editable
+                        value={seg.content}
+                        onChange={(e) => handleTranscriptChange(idx, 'content', e.target.value)}
+                        rows={Math.max(1, Math.ceil(seg.content.length / 50))}
+                      />
+                    )}
                     <div className="text-xs text-[#9CA3AF] mt-1 text-right">
                       {formatSec(seg.startSec)}
                     </div>
@@ -369,7 +380,7 @@ export function MeetingDetailScreen() {
           <div className="flex-1 flex flex-col min-h-0 bg-white">
             <div className="px-4 py-3 border-b border-[#E5E7EB] flex items-center justify-between">
               <div className="flex items-center gap-2">
-                {isDirty && (
+                {!isGuest && isDirty && (
                   <>
                     <Button size="sm" variant="secondary" onClick={handleCancel} disabled={isSaving}>취소</Button>
                     <Button size="sm" onClick={handleSave} disabled={isSaving} className="flex items-center gap-1.5">
@@ -393,17 +404,25 @@ export function MeetingDetailScreen() {
                   <div key={idx} className="flex gap-3">
                     <SpeakerAvatar letter={speakerLetterMap[seg.speakerLabel]} color={speakerColorMap[seg.speakerLabel]} />
                     <div className="flex-1">
-                      <input
-                        value={seg.speakerDisplay}
-                        onChange={(e) => handleTranscriptChange(idx, 'speakerDisplay', e.target.value)}
-                        className="text-xs text-[#6B7280] mb-1 bg-transparent border-none outline-none w-full hover:bg-[#F3F4F6] focus:bg-[#F3F4F6] rounded px-1 -mx-1 cursor-text"
-                      />
-                      <ConversationBubble
-                        editable
-                        value={seg.content}
-                        onChange={(e) => handleTranscriptChange(idx, 'content', e.target.value)}
-                        rows={Math.max(1, Math.ceil(seg.content.length / 40))}
-                      />
+                      {isGuest ? (
+                        <div className="text-xs text-[#6B7280] mb-1 px-1">{seg.speakerDisplay}</div>
+                      ) : (
+                        <input
+                          value={seg.speakerDisplay}
+                          onChange={(e) => handleTranscriptChange(idx, 'speakerDisplay', e.target.value)}
+                          className="text-xs text-[#6B7280] mb-1 bg-transparent border-none outline-none w-full hover:bg-[#F3F4F6] focus:bg-[#F3F4F6] rounded px-1 -mx-1 cursor-text"
+                        />
+                      )}
+                      {isGuest ? (
+                        <ConversationBubble>{seg.content}</ConversationBubble>
+                      ) : (
+                        <ConversationBubble
+                          editable
+                          value={seg.content}
+                          onChange={(e) => handleTranscriptChange(idx, 'content', e.target.value)}
+                          rows={Math.max(1, Math.ceil(seg.content.length / 40))}
+                        />
+                      )}
                       <div className="text-xs text-[#9CA3AF] mt-1 text-right">{formatSec(seg.startSec)}</div>
                     </div>
                   </div>

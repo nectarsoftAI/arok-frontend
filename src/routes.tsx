@@ -7,6 +7,7 @@ import { InsightsScreen } from "./components/screens/InsightsScreen";
 import { LoginScreen } from "./components/screens/LoginScreen";
 import { SignupScreen } from "./components/screens/SignupScreen";
 import { ResetPasswordScreen } from "./components/screens/ResetPasswordScreen";
+import { GroupMeetingRoomScreen } from "./components/screens/GroupMeetingRoomScreen";
 import { PrivateRoute } from "./routes/PrivateRoute";
 
 export const router = createBrowserRouter([
@@ -27,6 +28,7 @@ export const router = createBrowserRouter([
           { path: "meetings", Component: MeetingListScreen },
           { path: "meetings/:id", Component: MeetingDetailScreen },
           { path: "insights", Component: InsightsScreen },
+          { path: "group-meeting/room/:roomId", Component: GroupMeetingRoomScreen },
         ],
       },
     ],
