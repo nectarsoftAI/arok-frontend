@@ -77,3 +77,18 @@ export interface ApiError {
   error: string;
   message: string;
 }
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  user_metadata: { display_name?: string };
+}
+
+export interface AuthResponse {
+  access_token: string;
+  token_type: string;
+  expires_in: number;
+  expires_at: number;
+  refresh_token: string;
+  user: AuthUser;
+}

@@ -1,5 +1,5 @@
 import axios, { isAxiosError } from 'axios';
-import llmClient from './llmClient';
+import apiClient from './apiClient';
 import type { AuthResponse } from './types';
 
 const SUPABASE_URL  = import.meta.env.VITE_SUPABASE_URL as string;
@@ -10,7 +10,7 @@ export async function signup(
   password: string,
   displayName?: string,
 ): Promise<AuthResponse> {
-  const res = await llmClient.post<AuthResponse>('/api/auth/signup', {
+  const res = await apiClient.post<AuthResponse>('/api/auth/signup', {
     email,
     password,
     display_name: displayName,
