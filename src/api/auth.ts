@@ -1,6 +1,9 @@
-import { isAxiosError } from 'axios';
+import axios, { isAxiosError } from 'axios';
 import llmClient from './llmClient';
 import type { AuthResponse } from './types';
+
+const SUPABASE_URL  = import.meta.env.VITE_SUPABASE_URL as string;
+const SUPABASE_ANON = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
 
 export async function signup(
   email: string,
@@ -16,8 +19,12 @@ export async function signup(
 }
 
 export async function login(email: string, password: string): Promise<AuthResponse> {
-  const res = await llmClient.post<AuthResponse>('/api/auth/login', { email, password });
-  return res.data;
+  const { data } = await axios.post<AuthResponse>(
+    `${SUPABASE_URL}/auth/v1/token?grant_type=password`,
+    { email, password },
+    { headers: { apikey: SUPABASE_ANON, 'Content-Type': 'application/json' } },
+  );
+  return data;
 }
 
 // FastAPI 422 Unprocessable Entity의 detail 배열을 { [field]: message } 로 변환
