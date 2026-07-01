@@ -72,6 +72,46 @@ export interface MeetingResult {
   summary: SummaryDto | null;
 }
 
+export interface SupabaseMeetingRow {
+  meeting_id: string;
+  user_id: string;
+  title: string;
+  meeting_type: string;
+  status: string;
+  duration_seconds: number | null;
+  meeting_date: string;
+  meeting_token: string | null;
+  created_at: string;
+  updated_at: string;
+  transcripts?: Array<{ speaker_label: string; speaker_display: string }>;
+  meeting_summaries?: Array<{ keywords: string | null }>;
+}
+
+export function mapSupabaseRow(row: SupabaseMeetingRow): MeetingListItem {
+  const seen = new Set<string>();
+  const participants: ParticipantDto[] = (row.transcripts ?? [])
+    .filter(t => { if (seen.has(t.speaker_label)) return false; seen.add(t.speaker_label); return true; })
+    .map(t => ({ speakerLabel: t.speaker_label, speakerDisplay: t.speaker_display }));
+
+  let keywords: string[] = [];
+  const kwRaw = row.meeting_summaries?.[0]?.keywords;
+  if (kwRaw) {
+    try { keywords = JSON.parse(kwRaw); } catch { keywords = []; }
+  }
+
+  return {
+    meetingId: row.meeting_id,
+    title: row.title,
+    meetingType: row.meeting_type,
+    status: row.status,
+    durationSeconds: row.duration_seconds,
+    meetingDate: row.meeting_date,
+    createdAt: row.created_at,
+    participants,
+    keywords,
+  };
+}
+
 export interface ApiError {
   status: number;
   error: string;
