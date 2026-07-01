@@ -121,9 +121,7 @@ export function GroupMeetingRoomScreen() {
 
     return () => {
       clearInterval(id);
-      MOCK_SEGMENTS.forEach((_, i) => {
-        // 타이머 정리는 컴포넌트 언마운트 시 처리
-      });
+      // 타이머 정리는 컴포넌트 언마운트 시 처리
     };
   }, [roomStatus]);
 
