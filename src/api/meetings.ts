@@ -23,7 +23,7 @@ export const meetingsApi = {
   getAll: async (page = 0, size = 6): Promise<{ data: MeetingListResponse }> => {
     const res = await supabaseClient.get<SupabaseMeetingRow[]>('/meetings', {
       params: {
-        select: '*',
+        select: '*,transcripts(speaker_label,speaker_display),meeting_summaries(keywords)',
         order: 'created_at.desc',
         limit: size,
         offset: page * size,

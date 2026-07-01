@@ -46,7 +46,7 @@ export interface MeetingListResponse {
   totalPages: number;
 }
 
-// Supabase REST 응답 row (snake_case)
+// Supabase REST 응답 row (joined)
 export interface SupabaseMeetingRow {
   meeting_id: string;
   user_id: string;
@@ -58,9 +58,22 @@ export interface SupabaseMeetingRow {
   meeting_token: string | null;
   created_at: string;
   updated_at: string;
+  transcripts?: Array<{ speaker_label: string; speaker_display: string }>;
+  meeting_summaries?: Array<{ keywords: string | null }>;
 }
 
 export function mapSupabaseRow(row: SupabaseMeetingRow): MeetingListItem {
+  const seen = new Set<string>();
+  const participants: ParticipantDto[] = (row.transcripts ?? [])
+    .filter(t => { if (seen.has(t.speaker_label)) return false; seen.add(t.speaker_label); return true; })
+    .map(t => ({ speakerLabel: t.speaker_label, speakerDisplay: t.speaker_display }));
+
+  let keywords: string[] = [];
+  const kwRaw = row.meeting_summaries?.[0]?.keywords;
+  if (kwRaw) {
+    try { keywords = JSON.parse(kwRaw); } catch { keywords = []; }
+  }
+
   return {
     meetingId: row.meeting_id,
     title: row.title,
@@ -69,8 +82,8 @@ export function mapSupabaseRow(row: SupabaseMeetingRow): MeetingListItem {
     durationSeconds: row.duration_seconds,
     meetingDate: row.meeting_date,
     createdAt: row.created_at,
-    participants: [],
-    keywords: [],
+    participants,
+    keywords,
   };
 }
 
