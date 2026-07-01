@@ -46,7 +46,35 @@ export interface MeetingListResponse {
   totalPages: number;
 }
 
-// GET /api/v1/meetings — 목록 아이템 (participants, keywords 포함)
+// Supabase REST 응답 row (snake_case)
+export interface SupabaseMeetingRow {
+  meeting_id: string;
+  user_id: string;
+  title: string;
+  meeting_type: string;
+  status: string;
+  duration_seconds: number | null;
+  meeting_date: string;
+  meeting_token: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export function mapSupabaseRow(row: SupabaseMeetingRow): MeetingListItem {
+  return {
+    meetingId: row.meeting_id,
+    title: row.title,
+    meetingType: row.meeting_type,
+    status: row.status,
+    durationSeconds: row.duration_seconds,
+    meetingDate: row.meeting_date,
+    createdAt: row.created_at,
+    participants: [],
+    keywords: [],
+  };
+}
+
+// GET /meetings (Supabase REST) — 목록 아이템
 export interface MeetingListItem {
   meetingId: string;
   title: string;
