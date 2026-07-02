@@ -71,6 +71,7 @@ export class OnlineMeetingService {
           this.callbacks.onMeetingStarted();
           break;
         case 'meeting_ended':
+          this.intentionalClose = true; // 서버가 곧 WS를 닫으므로 비정상 종료 경고 방지
           this.callbacks.onMeetingEnded();
           break;
         case 'kicked':
