@@ -11,6 +11,7 @@ import { DialogShell } from "../common/dialogs/DialogShell";
 import { GroupTranscriptSection, type GroupSegment } from "../recording/GroupTranscriptSection";
 import { useOnlineMeeting } from "../../hooks/useOnlineMeeting";
 import { useAuthStore } from "../../store/authStore";
+import { meetingsApi } from "../../api/meetings";
 
 const HOST_END_FEATURES = [
   { icon: Sparkles, label: "AI 자동 요약", desc: "대화 내용이 자동으로 분석되고 요약됩니다" },
@@ -71,11 +72,13 @@ export function GroupMeetingRoomScreen() {
     return () => clearInterval(id);
   }, [roomStatus]);
 
-  // 회의 종료 시 자동 이동
+  // 회의 종료 시 요약 트리거 후 이동
   useEffect(() => {
-    if (roomStatus === "COMPLETED") {
-      navigate(`/meetings/${roomId}`, { state: { role } });
+    if (roomStatus !== "COMPLETED" || !roomId) return;
+    if (role === "host") {
+      meetingsApi.summarize(roomId).catch(() => {});
     }
+    navigate(`/meetings/${roomId}`, { state: { role } });
   }, [roomStatus, roomId, navigate, role]);
 
   // 게스트: 방장 종료 감지 → 다이얼로그 표시

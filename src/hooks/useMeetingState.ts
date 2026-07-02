@@ -223,13 +223,20 @@ export function useMeetingState(): MeetingStateReturn {
       setTranscripts(result.transcripts);
       setHasConversation(true);
 
-      const { data } = await meetingsApi.getById(newMeetingId);
-      const parsed = parseSummaryDto(data.summary);
+      // STT 응답에 summary가 포함돼 있으면 바로 사용, 없으면 DB 재조회
+      const parsed = parseSummaryDto(result.summary);
       if (parsed) {
         setSummaryData(parsed);
         setShowSummary(true);
       } else {
-        setSummaryError('요약 생성에 실패했습니다.');
+        const { data } = await meetingsApi.getById(newMeetingId);
+        const parsedFallback = parseSummaryDto(data.summary);
+        if (parsedFallback) {
+          setSummaryData(parsedFallback);
+          setShowSummary(true);
+        } else {
+          setSummaryError('요약 생성에 실패했습니다.');
+        }
       }
     } catch (err) {
       console.error(err);
