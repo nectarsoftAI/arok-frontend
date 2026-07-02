@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from "react";
-import { useParams, useLocation, useNavigate } from "react-router";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { useParams, useLocation, useNavigate, useBlocker } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
 import { Check, Copy, LogOut, PenLine, Sparkles, Download } from "lucide-react";
 import linkIcon from "../../assets/icons/link_icon.webp";
@@ -8,6 +8,7 @@ import { Button } from "../common/Button";
 import { Badge } from "../common/Badge";
 import { SpeakerAvatar, SPEAKER_PALETTE } from "../common/SpeakerAvatar";
 import { DialogShell } from "../common/dialogs/DialogShell";
+import { MeetingEndDialog } from "../common/dialogs/MeetingEndDialog";
 import { GroupTranscriptSection, type GroupSegment } from "../recording/GroupTranscriptSection";
 import { useOnlineMeeting } from "../../hooks/useOnlineMeeting";
 import { useAuthStore } from "../../store/authStore";
@@ -29,12 +30,6 @@ function formatNow(): string {
   return new Date().toLocaleString("ko-KR", {
     year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit",
   });
-}
-
-// profileId를 짧은 표시 이름으로 변환
-function toDisplayName(profileId: string, myId: string, index: number): string {
-  if (profileId === myId) return "나";
-  return `참여자 ${String.fromCharCode(65 + index)}`; // 참여자 A, B, C...
 }
 
 export function GroupMeetingRoomScreen() {
@@ -63,6 +58,19 @@ export function GroupMeetingRoomScreen() {
   const [showGuestEndedDialog, setShowGuestEndedDialog] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [linkCopied, setLinkCopied] = useState(false);
+
+  // 회의 중 이탈 방지
+  const blocker = useBlocker(roomStatus === "LIVE");
+
+  useEffect(() => {
+    if (roomStatus !== "LIVE") return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [roomStatus]);
 
   // 경과 시간 타이머 — LIVE 상태일 때만 동작
   useEffect(() => {
@@ -104,20 +112,34 @@ export function GroupMeetingRoomScreen() {
     navigate(`/meetings/${roomId}`, { state: { role } });
   };
 
-  // participants → 표시용 이름 매핑 (본인 제외한 순서로 A, B, C)
+  // transcript speakerDisplay로 실제 display_name 수집 (발화 이전엔 알 수 없음)
+  const transcriptDisplayNames = useMemo(() => {
+    const map: Record<string, string> = {};
+    transcripts.forEach((t) => {
+      if (t.profileId !== user?.id && t.speakerDisplay) {
+        map[t.profileId] = t.speakerDisplay;
+      }
+    });
+    return map;
+  }, [transcripts, user?.id]);
+
+  // participants → 표시용 이름 매핑
   const othersInOrder = participants.filter((p) => p.profileId !== user?.id);
   const nameMap = Object.fromEntries(
     participants.map((p) => {
+      if (p.profileId === user?.id) return [p.profileId, user.displayName || "나"];
+      const knownName = transcriptDisplayNames[p.profileId];
+      if (knownName) return [p.profileId, knownName];
       const otherIdx = othersInOrder.findIndex((o) => o.profileId === p.profileId);
-      return [p.profileId, toDisplayName(p.profileId, user?.id ?? "", otherIdx)];
+      return [p.profileId, `참여자 ${String.fromCharCode(65 + otherIdx)}`];
     }),
   );
 
-  // transcripts → GroupSegment 변환
+  // transcripts → GroupSegment 변환 (speakerDisplay 직접 사용, 자신도 실명 표시)
   const segments: GroupSegment[] = transcripts.map((t, i) => ({
     id: String(i),
     speakerLabel: t.profileId,
-    speakerName: nameMap[t.profileId] ?? t.speakerDisplay.substring(0, 8),
+    speakerName: t.speakerDisplay || nameMap[t.profileId] || "참여자",
     text: t.text,
     startSec: t.startSec,
     isMine: t.profileId === user?.id,
@@ -133,6 +155,14 @@ export function GroupMeetingRoomScreen() {
 
   return (
     <>
+      {/* ── 회의 중 이탈 방지 경고 ── */}
+      <MeetingEndDialog
+        isOpen={blocker.state === "blocked"}
+        leaveWarning
+        onConfirm={() => blocker.proceed?.()}
+        onClose={() => blocker.reset?.()}
+      />
+
       {/* ── 방장: 회의 종료 확인 다이얼로그 ── */}
       <DialogShell
         isOpen={showHostEndDialog}

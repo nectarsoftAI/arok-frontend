@@ -71,8 +71,12 @@ export class OnlineMeetingService {
           this.callbacks.onMeetingStarted();
           break;
         case 'meeting_ended':
-          this.intentionalClose = true; // 서버가 곧 WS를 닫으므로 비정상 종료 경고 방지
+          this.intentionalClose = true;
+          this.stopRecording(); // 마이크 트랙 즉시 해제 → Chrome 녹음 표시 제거
           this.callbacks.onMeetingEnded();
+          if (this.ws?.readyState === WebSocket.OPEN) {
+            this.ws.close(); // WS 명시적 종료 (서버 종료 대기 불필요)
+          }
           break;
         case 'kicked':
           this.callbacks.onKicked();

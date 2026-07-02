@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { OnlineMeetingService, type OnlineTranscriptMessage } from '../services/online/OnlineMeetingService';
 import { useAuthStore } from '../store/authStore';
+import { meetingsApi } from '../api/meetings';
 
 export type OnlineRoomStatus = 'PROCESSING' | 'LIVE' | 'COMPLETED';
 
@@ -47,8 +48,12 @@ export function useOnlineMeeting(
         const s = status as OnlineRoomStatus;
         setRoomStatus(s);
         setParticipants(pids.map((pid) => ({ profileId: pid, role: 'GUEST' })));
-        // 이미 진행 중인 회의에 나중에 참여하는 경우 즉시 녹음 시작
         if (s === 'LIVE') tryStartRecording(service);
+
+        // REST API로 실제 role(ADMIN/GUEST) 조회하여 방장 뱃지 반영
+        meetingsApi.getParticipants(meetingId).then(({ data }) => {
+          setParticipants(data.map((p) => ({ profileId: p.profileId, role: p.role })));
+        }).catch(() => {}); // 실패 시 초기값(GUEST) 유지
       },
       onParticipantJoined: (profileId, participantRole) => {
         setParticipants((prev) => {
@@ -64,8 +69,8 @@ export function useOnlineMeeting(
         tryStartRecording(service);
       },
       onMeetingEnded: () => {
+        // stopRecording + WS close는 OnlineMeetingService 내부에서 처리됨
         setRoomStatus('COMPLETED');
-        service.stopRecording();
         setIsRecording(false);
       },
       onKicked: () => {
