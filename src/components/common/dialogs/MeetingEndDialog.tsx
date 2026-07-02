@@ -7,6 +7,7 @@ interface MeetingEndDialogProps {
   onConfirm: () => void;
   onClose: () => void;
   singleButton?: boolean;
+  leaveWarning?: boolean;
 }
 
 const FEATURES = [
@@ -27,7 +28,36 @@ const FEATURES = [
   },
 ];
 
-export function MeetingEndDialog({ isOpen, onConfirm, onClose, singleButton }: MeetingEndDialogProps) {
+export function MeetingEndDialog({ isOpen, onConfirm, onClose, singleButton, leaveWarning }: MeetingEndDialogProps) {
+  if (leaveWarning) {
+    return (
+      <DialogShell
+        isOpen={isOpen}
+        onClose={onClose}
+        icon={<LogOut className="w-4 h-4 text-[#F59E0B]" />}
+        iconBg="bg-[#F59E0B]/10"
+        title="회의가 진행 중입니다"
+      >
+        <div className="p-6">
+          <p className="text-sm font-medium text-[#1A1D2E] mb-1">
+            페이지를 벗어나면 회의 참여가 중단됩니다.
+          </p>
+          <p className="text-xs text-[#6B7280] mb-6">
+            회의 데이터는 방장이 종료할 때까지 저장됩니다. 계속하시겠습니까?
+          </p>
+          <div className="flex gap-3">
+            <Button variant="secondary" onClick={onClose} className="flex-1">
+              머무르기
+            </Button>
+            <Button variant="dark" onClick={onConfirm} className="flex-1">
+              나가기
+            </Button>
+          </div>
+        </div>
+      </DialogShell>
+    );
+  }
+
   return (
     <DialogShell
       isOpen={isOpen}
