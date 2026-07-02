@@ -23,8 +23,8 @@ type Step =
 
 function extractRoomCode(input: string): string {
   const trimmed = input.trim();
-  const match = trimmed.match(/([A-Z0-9]{6,10})$/i);
-  return match ? match[1].toUpperCase() : trimmed.toUpperCase();
+  const match = trimmed.match(/([A-Za-z0-9]{6,10})$/i);
+  return match ? match[1].toLowerCase() : trimmed.toLowerCase();
 }
 
 interface StartMeetingDialogProps {
