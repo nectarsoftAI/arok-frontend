@@ -10,6 +10,17 @@ import {
 export type { MeetingListItem };
 export type MeetingDetail = MeetingResult;
 
+export interface MeetingParticipantInfo {
+  participantId: number;
+  profileId: string;
+  role: 'ADMIN' | 'GUEST';
+  canInvite: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
+  canRunMeeting: boolean;
+  joinedAt: string;
+}
+
 export const meetingsApi = {
   // 회의 목록 — 백엔드 API 조회 (X-User-Id 필터링)
   getAll: async (page = 0, size = 6): Promise<{ data: MeetingListResponse }> => {
@@ -22,6 +33,9 @@ export const meetingsApi = {
   // 회의 상세 — 백엔드 (트랜스크립트 + 요약 조인)
   getById: (meetingId: string) =>
     apiClient.get<MeetingDetail>(`/api/v1/meetings/${meetingId}`),
+
+  getParticipants: (meetingId: string) =>
+    apiClient.get<MeetingParticipantInfo[]>(`/api/v1/meetings/${meetingId}/participants`),
 
   summarize: (meetingId: string, signal?: AbortSignal) =>
     apiClient.post<SummaryDto>(`/api/v1/meetings/${meetingId}/summarize`, null, { signal }),
