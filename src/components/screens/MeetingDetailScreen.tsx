@@ -24,6 +24,12 @@ function formatDuration(seconds: number | null): string {
   return `${m}분`;
 }
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function resolveDisplay(display: string, letter: string): string {
+  return UUID_REGEX.test(display) ? `화자 ${letter}` : display;
+}
+
 function formatMeetingDate(iso: string | null | undefined): string {
   if (!iso) return "-";
   return new Date(iso).toLocaleString('ko-KR', {
@@ -238,7 +244,9 @@ export function MeetingDetailScreen() {
   const speakerLetterMap = Object.fromEntries(
     uniqueSpeakers.map((lbl, i) => [lbl, String.fromCharCode(65 + i)])
   );
-  const uniqueSpeakerDisplays = [...new Set(meeting.transcripts.map((t) => t.speakerDisplay))];
+  const uniqueSpeakerDisplays = [...new Set(meeting.transcripts.map((t) =>
+    resolveDisplay(t.speakerDisplay, speakerLetterMap[t.speakerLabel] ?? 'A')
+  ))];
 
   return (
     <div className="h-full flex flex-col p-6">
@@ -311,10 +319,10 @@ export function MeetingDetailScreen() {
                   <SpeakerAvatar letter={speakerLetterMap[seg.speakerLabel]} color={speakerColorMap[seg.speakerLabel]} />
                   <div className="flex-1">
                     {isGuest ? (
-                      <div className="text-xs text-[#6B7280] mb-1 px-1">{seg.speakerDisplay}</div>
+                      <div className="text-xs text-[#6B7280] mb-1 px-1">{resolveDisplay(seg.speakerDisplay, speakerLetterMap[seg.speakerLabel] ?? 'A')}</div>
                     ) : (
                       <input
-                        value={seg.speakerDisplay}
+                        value={resolveDisplay(seg.speakerDisplay, speakerLetterMap[seg.speakerLabel] ?? 'A')}
                         onChange={(e) => handleTranscriptChange(idx, 'speakerDisplay', e.target.value)}
                         className="text-xs text-[#6B7280] mb-1 bg-transparent border-none outline-none w-full hover:bg-[#F3F4F6] focus:bg-[#F3F4F6] rounded px-1 -mx-1 cursor-text"
                       />
@@ -424,10 +432,10 @@ export function MeetingDetailScreen() {
                     <SpeakerAvatar letter={speakerLetterMap[seg.speakerLabel]} color={speakerColorMap[seg.speakerLabel]} />
                     <div className="flex-1">
                       {isGuest ? (
-                        <div className="text-xs text-[#6B7280] mb-1 px-1">{seg.speakerDisplay}</div>
+                        <div className="text-xs text-[#6B7280] mb-1 px-1">{resolveDisplay(seg.speakerDisplay, speakerLetterMap[seg.speakerLabel] ?? 'A')}</div>
                       ) : (
                         <input
-                          value={seg.speakerDisplay}
+                          value={resolveDisplay(seg.speakerDisplay, speakerLetterMap[seg.speakerLabel] ?? 'A')}
                           onChange={(e) => handleTranscriptChange(idx, 'speakerDisplay', e.target.value)}
                           className="text-xs text-[#6B7280] mb-1 bg-transparent border-none outline-none w-full hover:bg-[#F3F4F6] focus:bg-[#F3F4F6] rounded px-1 -mx-1 cursor-text"
                         />
