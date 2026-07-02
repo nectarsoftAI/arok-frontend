@@ -1,46 +1,22 @@
 import apiClient from './apiClient';
-import supabaseClient from './supabaseClient';
 import {
-  mapSupabaseRow,
   type MeetingListItem,
   type MeetingListResponse,
   type MeetingResult,
   type SummaryDto,
-  type SupabaseMeetingRow,
   type TranscriptUpdate,
 } from './types';
 
 export type { MeetingListItem };
 export type MeetingDetail = MeetingResult;
 
-function parseTotalCount(header: string | undefined): number {
-  if (!header) return 0;
-  return parseInt(header.split('/')[1], 10) || 0;
-}
-
 export const meetingsApi = {
-  // 회의 목록 — Supabase REST 직접 호출 (RLS 자동 필터링)
+  // 회의 목록 — 백엔드 API 조회 (X-User-Id 필터링)
   getAll: async (page = 0, size = 6): Promise<{ data: MeetingListResponse }> => {
-    const res = await supabaseClient.get<SupabaseMeetingRow[]>('/meetings', {
-      params: {
-        select: '*,transcripts(speaker_label,speaker_display),meeting_summaries(keywords)',
-        order: 'created_at.desc',
-        limit: size,
-        offset: page * size,
-      },
-      headers: { Prefer: 'count=exact' },
+    const res = await apiClient.get<MeetingListResponse>('/api/v1/meetings', {
+      params: { page, size },
     });
-    const totalCount = parseTotalCount(res.headers['content-range']);
-    const meetings: MeetingListItem[] = res.data.map(mapSupabaseRow);
-    return {
-      data: {
-        meetings,
-        totalCount,
-        page,
-        size,
-        totalPages: Math.ceil(totalCount / size) || 1,
-      },
-    };
+    return { data: res.data };
   },
 
   // 회의 상세 — 백엔드 (트랜스크립트 + 요약 조인)
