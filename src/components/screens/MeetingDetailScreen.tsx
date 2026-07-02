@@ -30,6 +30,10 @@ function resolveDisplay(display: string, letter: string): string {
   return UUID_REGEX.test(display) ? `화자 ${letter}` : display;
 }
 
+function resolveAvatarLetter(display: string, fallback: string): string {
+  return UUID_REGEX.test(display) ? fallback : (display.charAt(0) || fallback);
+}
+
 function formatMeetingDate(iso: string | null | undefined): string {
   if (!iso) return "-";
   return new Date(iso).toLocaleString('ko-KR', {
@@ -81,7 +85,7 @@ export function MeetingDetailScreen() {
     const parsed = parseSummaryDto(meeting.summary);
     setSummaryData(parsed);
 
-    if (!parsed && meeting.transcripts.length > 0) {
+    if (!parsed && meeting.transcripts.length > 0 && !isGuest) {
       setIsSummarizing(true);
       setSummaryError(null);
       meetingsApi.summarize(id)
@@ -316,7 +320,7 @@ export function MeetingDetailScreen() {
             ) : (
               editedTranscripts.map((seg, idx) => (
                 <div key={idx} className="flex gap-3">
-                  <SpeakerAvatar letter={speakerLetterMap[seg.speakerLabel]} color={speakerColorMap[seg.speakerLabel]} />
+                  <SpeakerAvatar letter={resolveAvatarLetter(seg.speakerDisplay, speakerLetterMap[seg.speakerLabel] ?? 'A')} color={speakerColorMap[seg.speakerLabel]} />
                   <div className="flex-1">
                     {isGuest ? (
                       <div className="text-xs text-[#6B7280] mb-1 px-1">{resolveDisplay(seg.speakerDisplay, speakerLetterMap[seg.speakerLabel] ?? 'A')}</div>
@@ -429,7 +433,7 @@ export function MeetingDetailScreen() {
               ) : (
                 editedTranscripts.map((seg, idx) => (
                   <div key={idx} className="flex gap-3">
-                    <SpeakerAvatar letter={speakerLetterMap[seg.speakerLabel]} color={speakerColorMap[seg.speakerLabel]} />
+                    <SpeakerAvatar letter={resolveAvatarLetter(seg.speakerDisplay, speakerLetterMap[seg.speakerLabel] ?? 'A')} color={speakerColorMap[seg.speakerLabel]} />
                     <div className="flex-1">
                       {isGuest ? (
                         <div className="text-xs text-[#6B7280] mb-1 px-1">{resolveDisplay(seg.speakerDisplay, speakerLetterMap[seg.speakerLabel] ?? 'A')}</div>
