@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { isAxiosError } from 'axios';
 import type { MeetingMode } from '../components/common/dialogs/MeetingTitleDialog';
 import { transcribeFile } from '../api/stt';
 import type { TranscriptSegment } from '../api/types';
@@ -7,6 +8,18 @@ import { meetingsApi } from '../api/meetings';
 import { useLiveSTT } from './useLiveSTT';
 import type { SegmentMessage } from '../services/live/types';
 import { SPEAKER_PALETTE } from '../components/common/SpeakerAvatar';
+
+function getSummarizeErrorMessage(err: unknown): string {
+  if (isAxiosError(err)) {
+    const status = err.response?.status;
+    const serverMessage: string | undefined = err.response?.data?.message;
+    if (status === 422) return serverMessage ?? '음성이 인식되지 않았습니다. 더 길게 말한 뒤 다시 시도해 주세요.';
+    if (status === 404) return '회의를 찾을 수 없습니다.';
+    if (status && status >= 500) return serverMessage ?? '서버 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.';
+    if (!err.response) return '네트워크 오류가 발생했습니다. 연결 상태를 확인해 주세요.';
+  }
+  return '요약 생성에 실패했습니다. 다시 시도해 주세요.';
+}
 
 export type RecordingState = 'idle' | 'recording' | 'stopping' | 'finished';
 
@@ -110,8 +123,8 @@ export function useMeetingState(): MeetingStateReturn {
         }
       })
       .catch((err: unknown) => {
-        const aborted = err instanceof Error && err.name === 'CanceledError';
-        if (!aborted) setSummaryError('요약 생성에 실패했습니다. 다시 시도해 주세요.');
+        const aborted = isAxiosError(err) && err.code === 'ERR_CANCELED';
+        if (!aborted) setSummaryError(getSummarizeErrorMessage(err));
       })
       .finally(() => {
         if (!controller.signal.aborted) setIsLoadingSummary(false);
@@ -177,8 +190,8 @@ export function useMeetingState(): MeetingStateReturn {
         } else {
           setSummaryError('요약 데이터 파싱에 실패했습니다.');
         }
-      } catch {
-        setSummaryError('요약 생성에 실패했습니다. 다시 시도해 주세요.');
+      } catch (err) {
+        setSummaryError(getSummarizeErrorMessage(err));
       } finally {
         setIsLoadingSummary(false);
       }

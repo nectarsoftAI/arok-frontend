@@ -46,7 +46,32 @@ export interface MeetingListResponse {
   totalPages: number;
 }
 
-// Supabase REST 응답 row (joined)
+// GET /api/v1/meetings — 목록 아이템 (participants, keywords 포함)
+export interface MeetingListItem {
+  meetingId: string;
+  title: string;
+  meetingType: string;
+  status: string;
+  durationSeconds: number | null;
+  meetingDate: string;
+  createdAt: string;
+  participants: ParticipantDto[];
+  keywords: string[];
+}
+
+// GET /api/v1/meetings/{id} — 상세 (transcripts, summary 포함)
+export interface MeetingResult {
+  meetingId: string;
+  title: string;
+  meetingType: string;
+  status: string;
+  durationSeconds: number | null;
+  meetingDate: string;
+  createdAt: string;
+  transcripts: TranscriptSegment[];
+  summary: SummaryDto | null;
+}
+
 export interface SupabaseMeetingRow {
   meeting_id: string;
   user_id: string;
@@ -87,61 +112,18 @@ export function mapSupabaseRow(row: SupabaseMeetingRow): MeetingListItem {
   };
 }
 
-// GET /meetings (Supabase REST) — 목록 아이템
-export interface MeetingListItem {
-  meetingId: string;
-  title: string;
-  meetingType: string;
-  status: string;
-  durationSeconds: number | null;
-  meetingDate: string;
-  createdAt: string;
-  participants: ParticipantDto[];
-  keywords: string[];
-}
-
-// GET /api/v1/meetings/{id} — 상세 (transcripts, summary 포함)
-export interface MeetingResult {
-  meetingId: string;
-  title: string;
-  meetingType: string;
-  status: string;
-  durationSeconds: number | null;
-  meetingDate: string;
-  createdAt: string;
-  transcripts: TranscriptSegment[];
-  summary: SummaryDto | null;
-}
-
 export interface ApiError {
   status: number;
   error: string;
   message: string;
 }
 
-export interface SignupRequest {
-  email: string;
-  password: string;
-  display_name?: string;
-}
-
-export interface LoginRequest {
-  email: string;
-  password: string;
-}
-
 export interface AuthUser {
   id: string;
   email: string;
-  user_metadata: {
-    display_name: string;
-    email: string;
-    email_verified: boolean;
-  };
-  created_at: string;
+  user_metadata: { display_name?: string };
 }
 
-// Supabase 응답을 FastAPI가 패스스루하는 구조
 export interface AuthResponse {
   access_token: string;
   token_type: string;
