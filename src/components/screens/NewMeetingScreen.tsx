@@ -47,9 +47,10 @@ export function NewMeetingScreen() {
     role: 'host' | 'guest',
     title: string,
     link: string,
+    token?: string,
   ) => {
     navigate(`/group-meeting/room/${roomId}`, {
-      state: { role, title, link },
+      state: { role, title, link, token },
     });
   };
 

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useLocation, useNavigate } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
-import { Check, Copy, Loader2, LogOut, PenLine, Sparkles, Download } from "lucide-react";
+import { Check, Copy, LogOut, PenLine, Sparkles, Download } from "lucide-react";
 import linkIcon from "../../assets/icons/link_icon.webp";
 import personGroupIcon from "../../assets/icons/person_group_icon.webp";
 import { Button } from "../common/Button";
@@ -9,39 +9,13 @@ import { Badge } from "../common/Badge";
 import { SpeakerAvatar, SPEAKER_PALETTE } from "../common/SpeakerAvatar";
 import { DialogShell } from "../common/dialogs/DialogShell";
 import { GroupTranscriptSection, type GroupSegment } from "../recording/GroupTranscriptSection";
-
-type RoomStatus = "waiting" | "in-progress";
-
-interface Participant {
-  id: string;
-  name: string;
-  isHost: boolean;
-  isCurrentUser: boolean;
-}
-
-const MOCK_HOST: Participant = { id: "1", name: "홍길동", isHost: true, isCurrentUser: false };
-const MOCK_GUESTS: Participant[] = [
-  { id: "2", name: "김철수", isHost: false, isCurrentUser: false },
-  { id: "3", name: "이영희", isHost: false, isCurrentUser: false },
-];
-const MOCK_ME_GUEST: Participant = { id: "4", name: "박지수", isHost: false, isCurrentUser: true };
+import { useOnlineMeeting } from "../../hooks/useOnlineMeeting";
+import { useAuthStore } from "../../store/authStore";
 
 const HOST_END_FEATURES = [
-  {
-    icon: Sparkles,
-    label: "AI 자동 요약",
-    desc: "대화 내용이 자동으로 분석되고 요약됩니다",
-  },
-  {
-    icon: PenLine,
-    label: "대화 수정 및 편집",
-    desc: "상세 화면에서 녹음된 대화를 수정할 수 있습니다",
-  },
-  {
-    icon: Download,
-    label: "요약 내보내기",
-    desc: "회의 요약을 문서 파일로 저장하고 공유할 수 있습니다",
-  },
+  { icon: Sparkles, label: "AI 자동 요약", desc: "대화 내용이 자동으로 분석되고 요약됩니다" },
+  { icon: PenLine, label: "대화 수정 및 편집", desc: "상세 화면에서 녹음된 대화를 수정할 수 있습니다" },
+  { icon: Download, label: "요약 내보내기", desc: "회의 요약을 문서 파일로 저장하고 공유할 수 있습니다" },
 ];
 
 function formatTime(seconds: number): string {
@@ -52,78 +26,64 @@ function formatTime(seconds: number): string {
 
 function formatNow(): string {
   return new Date().toLocaleString("ko-KR", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
+    year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit",
   });
+}
+
+// profileId를 짧은 표시 이름으로 변환
+function toDisplayName(profileId: string, myId: string, index: number): string {
+  if (profileId === myId) return "나";
+  return `참여자 ${String.fromCharCode(65 + index)}`; // 참여자 A, B, C...
 }
 
 export function GroupMeetingRoomScreen() {
   const { roomId } = useParams<{ roomId: string }>();
   const location = useLocation();
   const navigate = useNavigate();
+  const user = useAuthStore((s) => s.user);
 
   const routeState = location.state as {
     role?: "host" | "guest";
     title?: string;
     link?: string;
+    token?: string;
   } | null;
 
   const role: "host" | "guest" = routeState?.role ?? "guest";
   const title = routeState?.title ?? "온라인 회의";
   const meetingLink = routeState?.link ?? (roomId ? `arok.meet/${roomId}` : "");
+  const guestToken = routeState?.token;
   const startedAt = useRef(formatNow()).current;
 
-  const participants: Participant[] =
-    role === "host"
-      ? [{ ...MOCK_HOST, isCurrentUser: true }, ...MOCK_GUESTS]
-      : [MOCK_HOST, ...MOCK_GUESTS, MOCK_ME_GUEST];
+  const { participants, transcripts, roomStatus, error, isRecording, startMeeting, endMeeting } =
+    useOnlineMeeting(roomId, role, guestToken);
 
-  const [roomStatus, setRoomStatus] = useState<RoomStatus>("waiting");
   const [showHostEndDialog, setShowHostEndDialog] = useState(false);
   const [showGuestEndedDialog, setShowGuestEndedDialog] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [linkCopied, setLinkCopied] = useState(false);
-  const [segments, setSegments] = useState<GroupSegment[]>([]);
-  const segmentTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // speakerLabel → color (상대방용)
-  const colorMap: Record<string, string> = {
-    "Speaker_2": SPEAKER_PALETTE[1],
-    "Speaker_3": SPEAKER_PALETTE[2],
-  };
-
-  // Mock 세그먼트: 진행 중 상태가 되면 순차적으로 추가
-  const MOCK_SEGMENTS: GroupSegment[] = [
-    { id: "1", speakerLabel: "Speaker_2", speakerName: "김철수", text: "안녕하세요, 오늘 회의 시작하겠습니다.", startSec: 2, isMine: false },
-    { id: "2", speakerLabel: "Speaker_1", speakerName: "나", text: "네, 잘 부탁드립니다.", startSec: 6, isMine: true },
-    { id: "3", speakerLabel: "Speaker_3", speakerName: "이영희", text: "저도 잘 부탁드립니다. 오늘 안건이 무엇인가요?", startSec: 10, isMine: false },
-    { id: "4", speakerLabel: "Speaker_1", speakerName: "나", text: "이번 주 진행 상황 공유하고, 다음 스프린트 계획을 논의할 예정입니다.", startSec: 15, isMine: true },
-    { id: "5", speakerLabel: "Speaker_2", speakerName: "김철수", text: "좋습니다. 제가 먼저 이번 주 작업 내용을 공유할게요.", startSec: 21, isMine: false },
-  ];
-
+  // 경과 시간 타이머 — LIVE 상태일 때만 동작
   useEffect(() => {
-    if (roomStatus !== "in-progress") return;
+    if (roomStatus !== "LIVE") return;
     setElapsedSeconds(0);
-    setSegments([]);
-
     const id = setInterval(() => setElapsedSeconds((s) => s + 1), 1000);
-
-    // Mock 세그먼트 순차 추가
-    MOCK_SEGMENTS.forEach((seg, i) => {
-      const t = setTimeout(() => {
-        setSegments((prev) => [...prev, seg]);
-      }, (i + 1) * 2500);
-      segmentTimerRef.current = t;
-    });
-
-    return () => {
-      clearInterval(id);
-      // 타이머 정리는 컴포넌트 언마운트 시 처리
-    };
+    return () => clearInterval(id);
   }, [roomStatus]);
+
+  // 회의 종료 시 자동 이동
+  useEffect(() => {
+    if (roomStatus === "COMPLETED") {
+      navigate(`/meetings/${roomId}`, { state: { role } });
+    }
+  }, [roomStatus, roomId, navigate, role]);
+
+  // 게스트: 방장 종료 감지 → 다이얼로그 표시
+  useEffect(() => {
+    if (roomStatus === "COMPLETED" && role === "guest") {
+      setShowGuestEndedDialog(true);
+    }
+  }, [roomStatus, role]);
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(meetingLink).catch(() => {});
@@ -131,12 +91,42 @@ export function GroupMeetingRoomScreen() {
     setTimeout(() => setLinkCopied(false), 2000);
   };
 
+  const handleHostEnd = () => {
+    setShowHostEndDialog(false);
+    endMeeting();
+    // meeting_ended 수신 시 useEffect에서 자동 navigate
+  };
+
   const goToDetail = () => {
     navigate(`/meetings/${roomId}`, { state: { role } });
   };
 
-  const guestCount = participants.filter((p) => !p.isHost).length;
-  const canStart = guestCount > 0;
+  // participants → 표시용 이름 매핑 (본인 제외한 순서로 A, B, C)
+  const othersInOrder = participants.filter((p) => p.profileId !== user?.id);
+  const nameMap = Object.fromEntries(
+    participants.map((p) => {
+      const otherIdx = othersInOrder.findIndex((o) => o.profileId === p.profileId);
+      return [p.profileId, toDisplayName(p.profileId, user?.id ?? "", otherIdx)];
+    }),
+  );
+
+  // transcripts → GroupSegment 변환
+  const segments: GroupSegment[] = transcripts.map((t, i) => ({
+    id: String(i),
+    speakerLabel: t.profileId,
+    speakerName: nameMap[t.profileId] ?? t.speakerDisplay.substring(0, 8),
+    text: t.text,
+    startSec: t.startSec,
+    isMine: t.profileId === user?.id,
+  }));
+
+  // live 화자 색상 맵
+  const uniqueProfiles = [...new Set(transcripts.map((t) => t.profileId))];
+  const colorMap: Record<string, string> = Object.fromEntries(
+    uniqueProfiles.map((pid, i) => [pid, SPEAKER_PALETTE[i % SPEAKER_PALETTE.length]]),
+  );
+
+  const isWaiting = roomStatus === "PROCESSING";
 
   return (
     <>
@@ -149,12 +139,8 @@ export function GroupMeetingRoomScreen() {
         title="회의를 종료하시겠습니까?"
       >
         <div className="p-6">
-          <p className="text-sm text-[#6B7280] mb-1">
-            참여자 모두에게 종료 알림이 전송됩니다.
-          </p>
-          <p className="text-xs text-[#9CA3AF] mb-5">
-            상세 화면에서 다음 기능을 이용할 수 있어요
-          </p>
+          <p className="text-sm text-[#6B7280] mb-1">참여자 모두에게 종료 알림이 전송됩니다.</p>
+          <p className="text-xs text-[#9CA3AF] mb-5">상세 화면에서 다음 기능을 이용할 수 있어요</p>
           <div className="space-y-2.5 mb-6">
             {HOST_END_FEATURES.map(({ icon: Icon, label, desc }) => (
               <div key={label} className="flex items-start gap-3 p-3.5 rounded-lg bg-[#F9FAFB]">
@@ -168,7 +154,7 @@ export function GroupMeetingRoomScreen() {
               </div>
             ))}
           </div>
-          <Button variant="dark" onClick={goToDetail} className="w-full">
+          <Button variant="dark" onClick={handleHostEnd} className="w-full">
             회의 종료하기
           </Button>
         </div>
@@ -183,12 +169,8 @@ export function GroupMeetingRoomScreen() {
         title="회의가 종료되었습니다"
       >
         <div className="p-6">
-          <p className="text-sm text-[#1A1D2E] font-medium mb-1">
-            방장이 회의를 종료했습니다.
-          </p>
-          <p className="text-sm text-[#6B7280] mb-6">
-            상세 화면에서 대화 내용을 확인할 수 있습니다.
-          </p>
+          <p className="text-sm text-[#1A1D2E] font-medium mb-1">방장이 회의를 종료했습니다.</p>
+          <p className="text-sm text-[#6B7280] mb-6">상세 화면에서 대화 내용을 확인할 수 있습니다.</p>
           <Button variant="primary" onClick={goToDetail} className="w-full">
             상세 화면으로 이동
           </Button>
@@ -204,6 +186,14 @@ export function GroupMeetingRoomScreen() {
               <div className="flex items-center gap-2">
                 <Badge variant="neutral" size="md">{startedAt}</Badge>
                 <Badge variant="primary" size="md">온라인 회의</Badge>
+                {isRecording && (
+                  <Badge variant="primary" size="md">
+                    <span className="inline-flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
+                      녹음 중
+                    </span>
+                  </Badge>
+                )}
               </div>
             </div>
             <button
@@ -212,31 +202,29 @@ export function GroupMeetingRoomScreen() {
             >
               <img src={linkIcon} alt="" className="w-5 h-5 object-contain scale-125" />
               <span className="font-mono truncate max-w-[140px]">{meetingLink}</span>
-              {linkCopied
-                ? <Check className="w-3 h-3 text-[#5B5FF5]" />
-                : <Copy className="w-3 h-3" />}
+              {linkCopied ? <Check className="w-3 h-3 text-[#5B5FF5]" /> : <Copy className="w-3 h-3" />}
             </button>
           </div>
 
-          {/* 진행 중: 참여자 아바타 한 줄 */}
-          {roomStatus === "in-progress" && (
+          {/* 진행 중: 참여자 아바타 */}
+          {!isWaiting && participants.length > 0 && (
             <motion.div
               initial={{ opacity: 0, y: -4 }}
               animate={{ opacity: 1, y: 0 }}
               className="mt-3 flex items-center gap-3 overflow-x-auto"
             >
               {participants.map((p, i) => (
-                <div key={p.id} className="flex items-center gap-1.5 flex-shrink-0">
+                <div key={p.profileId} className="flex items-center gap-1.5 flex-shrink-0">
                   <SpeakerAvatar
-                    letter={p.name.charAt(0)}
+                    letter={(nameMap[p.profileId] ?? "?").charAt(0)}
                     color={SPEAKER_PALETTE[i % SPEAKER_PALETTE.length]}
                     size="sm"
                   />
-                  <span className="text-xs text-[#6B7280]">{p.name}</span>
-                  {p.isHost && (
+                  <span className="text-xs text-[#6B7280]">{nameMap[p.profileId] ?? "참여자"}</span>
+                  {p.role === "ADMIN" && (
                     <span className="text-[10px] bg-[#EEF2FF] text-[#5B5FF5] px-1.5 py-0.5 rounded">방장</span>
                   )}
-                  {p.isCurrentUser && (
+                  {p.profileId === user?.id && (
                     <span className="text-[10px] bg-[#F3F4F6] text-[#6B7280] px-1.5 py-0.5 rounded">나</span>
                   )}
                 </div>
@@ -245,10 +233,17 @@ export function GroupMeetingRoomScreen() {
           )}
         </div>
 
+        {/* ── 에러 배너 ── */}
+        {error && (
+          <div className="flex-shrink-0 px-6 py-2 bg-red-50 border-b border-red-100 text-xs text-red-600">
+            {error}
+          </div>
+        )}
+
         {/* ── 메인 영역 ── */}
         <div className="flex-1 flex flex-col p-6 overflow-hidden min-h-0">
           <AnimatePresence mode="wait">
-            {roomStatus === "waiting" ? (
+            {isWaiting ? (
               <motion.div
                 key="waiting"
                 initial={{ opacity: 0 }}
@@ -256,67 +251,61 @@ export function GroupMeetingRoomScreen() {
                 exit={{ opacity: 0 }}
                 className="flex-1 flex flex-col items-center justify-center"
               >
-              <div className="w-full max-w-md flex flex-col items-center gap-6">
-                {/* 참여자 목록 */}
-                <div className="w-full bg-white rounded-xl border border-[#E5E7EB] overflow-hidden">
-                  <div className="px-5 py-3 border-b border-[#E5E7EB] flex items-center gap-2">
-                    <img src={personGroupIcon} alt="" className="w-4 h-4 object-contain" />
-                    <span className="text-sm font-medium text-[#1A1D2E]">
-                      참여자 {participants.length}명 입장
-                    </span>
+                <div className="w-full max-w-md flex flex-col items-center gap-6">
+                  {/* 참여자 목록 */}
+                  <div className="w-full bg-white rounded-xl border border-[#E5E7EB] overflow-hidden">
+                    <div className="px-5 py-3 border-b border-[#E5E7EB] flex items-center gap-2">
+                      <img src={personGroupIcon} alt="" className="w-4 h-4 object-contain" />
+                      <span className="text-sm font-medium text-[#1A1D2E]">
+                        참여자 {participants.length}명 입장
+                      </span>
+                    </div>
+                    <ul className="divide-y divide-[#F3F4F6]">
+                      {participants.length === 0 ? (
+                        <li className="px-5 py-4 text-sm text-[#9CA3AF] text-center">연결 중...</li>
+                      ) : (
+                        participants.map((p, i) => (
+                          <li key={p.profileId} className="flex items-center gap-3 px-5 py-3">
+                            <SpeakerAvatar
+                              letter={(nameMap[p.profileId] ?? "?").charAt(0)}
+                              color={SPEAKER_PALETTE[i % SPEAKER_PALETTE.length]}
+                              size="sm"
+                            />
+                            <span className="text-sm text-[#1A1D2E] flex-1">
+                              {nameMap[p.profileId] ?? "참여자"}
+                            </span>
+                            <div className="flex items-center gap-1.5">
+                              {p.role === "ADMIN" && (
+                                <span className="text-xs bg-[#EEF2FF] text-[#5B5FF5] px-2 py-0.5 rounded-full font-medium">방장</span>
+                              )}
+                              {p.profileId === user?.id && (
+                                <span className="text-xs bg-[#F3F4F6] text-[#6B7280] px-2 py-0.5 rounded-full font-medium">나</span>
+                              )}
+                            </div>
+                          </li>
+                        ))
+                      )}
+                    </ul>
                   </div>
-                  <ul className="divide-y divide-[#F3F4F6]">
-                    {participants.map((p, i) => (
-                      <li key={p.id} className="flex items-center gap-3 px-5 py-3">
-                        <SpeakerAvatar
-                          letter={p.name.charAt(0)}
-                          color={SPEAKER_PALETTE[i % SPEAKER_PALETTE.length]}
-                          size="sm"
-                        />
-                        <span className="text-sm text-[#1A1D2E] flex-1">{p.name}</span>
-                        <div className="flex items-center gap-1.5">
-                          {p.isHost && (
-                            <span className="text-xs bg-[#EEF2FF] text-[#5B5FF5] px-2 py-0.5 rounded-full font-medium">
-                              방장
-                            </span>
-                          )}
-                          {p.isCurrentUser && (
-                            <span className="text-xs bg-[#F3F4F6] text-[#6B7280] px-2 py-0.5 rounded-full font-medium">
-                              나
-                            </span>
-                          )}
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
 
-                {role === "host" ? (
-                  <div className="w-full flex flex-col items-center gap-3">
-                    {!canStart && (
-                      <p className="text-sm text-[#6B7280] text-center">
-                        참여자가 입장하면 회의를 시작할 수 있어요
-                      </p>
-                    )}
+                  {role === "host" ? (
                     <Button
                       variant="primary"
                       size="lg"
-                      disabled={!canStart}
-                      onClick={() => setRoomStatus("in-progress")}
+                      onClick={startMeeting}
                       className="w-full"
                     >
                       회의 시작
                     </Button>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center gap-3">
-                    <Loader2 className="w-6 h-6 text-[#5B5FF5] animate-spin" />
-                    <p className="text-sm text-[#6B7280] text-center">
-                      방장이 회의를 시작하면 자동으로 입장됩니다
-                    </p>
-                  </div>
-                )}
-              </div>
+                  ) : (
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="w-6 h-6 border-2 border-[#5B5FF5] border-t-transparent rounded-full animate-spin" />
+                      <p className="text-sm text-[#6B7280] text-center">
+                        방장이 회의를 시작하면 자동으로 녹음이 시작됩니다
+                      </p>
+                    </div>
+                  )}
+                </div>
               </motion.div>
             ) : (
               /* 진행 중 */
@@ -352,23 +341,11 @@ export function GroupMeetingRoomScreen() {
                   </div>
 
                   {role === "host" ? (
-                    <Button
-                      variant="danger"
-                      size="sm"
-                      onClick={() => setShowHostEndDialog(true)}
-                    >
+                    <Button variant="danger" size="sm" onClick={() => setShowHostEndDialog(true)}>
                       회의 종료
                     </Button>
                   ) : (
-                    <div className="flex flex-col items-end gap-1">
-                      <p className="text-xs text-[#9CA3AF]">방장만 회의를 종료할 수 있어요</p>
-                      <button
-                        onClick={() => setShowGuestEndedDialog(true)}
-                        className="text-[10px] text-[#9CA3AF] underline underline-offset-2 hover:text-[#6B7280]"
-                      >
-                        (방장 종료 시뮬레이션)
-                      </button>
-                    </div>
+                    <p className="text-xs text-[#9CA3AF]">방장만 회의를 종료할 수 있어요</p>
                   )}
                 </div>
 
@@ -376,7 +353,7 @@ export function GroupMeetingRoomScreen() {
                 <div className="flex-1 min-h-0 bg-white rounded-lg border border-[#E5E7EB] shadow-sm overflow-hidden">
                   <GroupTranscriptSection
                     segments={segments}
-                    isActive={segments.length < 5}
+                    isActive={roomStatus === "LIVE"}
                     colorMap={colorMap}
                   />
                 </div>

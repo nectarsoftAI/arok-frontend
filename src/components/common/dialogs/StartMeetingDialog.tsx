@@ -31,7 +31,7 @@ interface StartMeetingDialogProps {
   isOpen: boolean;
   onClose?: () => void;
   onStartRecording: (title: string, mode: MeetingMode) => void;
-  onEnterRoom: (roomId: string, role: "host" | "guest", title: string, link: string) => void;
+  onEnterRoom: (roomId: string, role: "host" | "guest", title: string, link: string, token?: string) => void;
 }
 
 export function StartMeetingDialog({
@@ -118,7 +118,7 @@ export function StartMeetingDialog({
       const res = await apiClient.get<{ meetingId: string; title: string }>(
         `/api/v1/meetings/by-token/${code}`
       );
-      onEnterRoom(res.data.meetingId, "guest", res.data.title || "온라인 회의", linkInput.trim());
+      onEnterRoom(res.data.meetingId, "guest", res.data.title || "온라인 회의", linkInput.trim(), code);
       resetAll();
       onClose?.();
     } catch {
