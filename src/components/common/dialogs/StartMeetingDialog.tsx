@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { FileText, Check, Copy } from "lucide-react";
+import { FileText, Check, Copy, Loader2 } from "lucide-react";
+import apiClient from "../../../api/apiClient";
 import recodingLiveImg from "../../../assets/icons/recoding_live_icon.webp";
 import audioFileImg from "../../../assets/icons/audio_file_icon.webp";
 import personSingleIcon from "../../../assets/icons/person_single_icon.webp";
@@ -19,10 +20,6 @@ type Step =
   | "online-entry"
   | "online-room-title"
   | "online-room-link";
-
-function generateRoomId(): string {
-  return Math.random().toString(36).substring(2, 10).toUpperCase();
-}
 
 function extractRoomCode(input: string): string {
   const trimmed = input.trim();
@@ -47,9 +44,14 @@ export function StartMeetingDialog({
   const [recordingTitle, setRecordingTitle] = useState("");
   const [recordingMode, setRecordingMode] = useState<MeetingMode | null>(null);
   const [roomTitle, setRoomTitle] = useState("");
-  const [roomId, setRoomId] = useState("");
+  const [roomId, setRoomId] = useState("");       // 표시용 토큰 (10자)
+  const [meetingUUID, setMeetingUUID] = useState(""); // 실제 UUID
+  const [isCreating, setIsCreating] = useState(false);
+  const [createError, setCreateError] = useState("");
   const [linkInput, setLinkInput] = useState("");
   const [linkCopied, setLinkCopied] = useState(false);
+  const [isJoining, setIsJoining] = useState(false);
+  const [joinError, setJoinError] = useState("");
 
   const meetingLink = roomId ? `arok.meet/${roomId}` : "";
 
@@ -59,8 +61,13 @@ export function StartMeetingDialog({
     setRecordingMode(null);
     setRoomTitle("");
     setRoomId("");
+    setMeetingUUID("");
+    setIsCreating(false);
+    setCreateError("");
     setLinkInput("");
     setLinkCopied(false);
+    setIsJoining(false);
+    setJoinError("");
   };
 
   const handleClose = () => {
@@ -75,25 +82,50 @@ export function StartMeetingDialog({
     onClose?.();
   };
 
-  const handleCreateRoomTitle = (e: React.FormEvent) => {
+  const handleCreateRoomTitle = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!roomTitle.trim()) return;
-    setRoomId(generateRoomId());
-    setStep("online-room-link");
+    if (!roomTitle.trim() || isCreating) return;
+    setIsCreating(true);
+    setCreateError("");
+    try {
+      const res = await apiClient.post<{ meetingId: string; token: string }>(
+        "/api/v1/meetings/online",
+        { title: roomTitle.trim() }
+      );
+      setMeetingUUID(res.data.meetingId);
+      setRoomId(res.data.token);
+      setStep("online-room-link");
+    } catch {
+      setCreateError("회의 생성에 실패했습니다. 다시 시도해 주세요.");
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   const handleEnterAsHost = () => {
-    onEnterRoom(roomId, "host", roomTitle.trim(), meetingLink);
+    if (!meetingUUID) return;
+    onEnterRoom(meetingUUID, "host", roomTitle.trim(), meetingLink);
     resetAll();
     onClose?.();
   };
 
-  const handleJoinAsGuest = () => {
+  const handleJoinAsGuest = async () => {
     const code = extractRoomCode(linkInput);
-    if (!code) return;
-    onEnterRoom(code, "guest", "온라인 회의", linkInput.trim());
-    resetAll();
-    onClose?.();
+    if (!code || isJoining) return;
+    setIsJoining(true);
+    setJoinError("");
+    try {
+      const res = await apiClient.get<{ meetingId: string; title: string }>(
+        `/api/v1/meetings/by-token/${code}`
+      );
+      onEnterRoom(res.data.meetingId, "guest", res.data.title || "온라인 회의", linkInput.trim());
+      resetAll();
+      onClose?.();
+    } catch {
+      setJoinError("유효하지 않은 코드입니다.");
+    } finally {
+      setIsJoining(false);
+    }
   };
 
   const handleCopyLink = () => {
@@ -284,13 +316,18 @@ export function StartMeetingDialog({
               </div>
               <Button
                 variant="secondary"
-                disabled={!linkInput.trim()}
+                disabled={!linkInput.trim() || isJoining}
                 onClick={handleJoinAsGuest}
-                className="flex-shrink-0"
+                className="flex-shrink-0 flex items-center gap-1.5"
               >
-                참여
+                {isJoining && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                {isJoining ? "..." : "참여"}
               </Button>
             </div>
+
+            {joinError && (
+              <p className="mb-3 text-xs text-red-500">{joinError}</p>
+            )}
 
             <Button
               type="button"
@@ -314,21 +351,26 @@ export function StartMeetingDialog({
               onChange={(e) => setRoomTitle(e.target.value)}
               placeholder="예: 팀 주간 온라인 회의"
               autoFocus
+              disabled={isCreating}
             />
             <p className="mt-2 text-xs text-[#6B7280]">
               참여자들이 확인할 수 있도록 제목을 입력해주세요.
             </p>
+            {createError && (
+              <p className="mt-2 text-xs text-red-500">{createError}</p>
+            )}
             <div className="mt-6 flex gap-3">
-              <Button type="button" variant="secondary" onClick={() => setStep("online-entry")}>
+              <Button type="button" variant="secondary" onClick={() => setStep("online-entry")} disabled={isCreating}>
                 이전
               </Button>
               <Button
                 type="submit"
                 variant="primary"
-                disabled={!roomTitle.trim()}
-                className="flex-1"
+                disabled={!roomTitle.trim() || isCreating}
+                className="flex-1 flex items-center justify-center gap-2"
               >
-                다음
+                {isCreating && <Loader2 className="w-4 h-4 animate-spin" />}
+                {isCreating ? "생성 중..." : "다음"}
               </Button>
             </div>
           </form>
