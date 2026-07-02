@@ -45,7 +45,8 @@ export function MeetingDetailScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [summaryData, setSummaryData] = useState<SummaryResponse | null>(null);
-  const [summaryError] = useState<string | null>(null);
+  const [summaryError, setSummaryError] = useState<string | null>(null);
+  const [isSummarizing, setIsSummarizing] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
   const [editedTranscripts, setEditedTranscripts] = useState<TranscriptSegment[]>([]);
@@ -70,10 +71,23 @@ export function MeetingDetailScreen() {
   }, [id]);
 
   useEffect(() => {
-    if (!meeting) return;
+    if (!meeting || !id) return;
     const parsed = parseSummaryDto(meeting.summary);
     setSummaryData(parsed);
-  }, [meeting]);
+
+    if (!parsed && meeting.transcripts.length > 0) {
+      setIsSummarizing(true);
+      setSummaryError(null);
+      meetingsApi.summarize(id)
+        .then(({ data }) => {
+          const auto = parseSummaryDto(data);
+          if (auto) setSummaryData(auto);
+          else setSummaryError('요약 생성에 실패했습니다.');
+        })
+        .catch(() => setSummaryError('요약 생성에 실패했습니다.'))
+        .finally(() => setIsSummarizing(false));
+    }
+  }, [meeting, id]);
 
   const handleTranscriptChange = (idx: number, field: 'content' | 'speakerDisplay', value: string) => {
     setEditedTranscripts((prev) => {
@@ -359,7 +373,12 @@ export function MeetingDetailScreen() {
           </div>
 
           <div className="flex-1 min-h-0 overflow-y-auto p-5 space-y-5">
-            {summaryError ? (
+            {isSummarizing ? (
+              <div className="h-full flex flex-col items-center justify-center gap-2 text-sm text-[#6B7280]">
+                <Loader2 className="w-5 h-5 animate-spin text-[#5B5FF5]" />
+                AI 요약 생성 중...
+              </div>
+            ) : summaryError ? (
               <div className="h-full flex items-center justify-center text-sm text-red-500 text-center px-4">
                 {summaryError}
               </div>
