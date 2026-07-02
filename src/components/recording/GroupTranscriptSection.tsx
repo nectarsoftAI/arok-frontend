@@ -54,7 +54,7 @@ export function GroupTranscriptSection({ segments, isActive, colorMap }: GroupTr
                 transition={{ duration: 0.25 }}
                 className="flex flex-col items-end gap-1"
               >
-                <span className="text-xs text-[#6B7280] mr-1">나</span>
+                <span className="text-xs text-[#6B7280] mr-1">{seg.speakerName}</span>
                 <div className="max-w-[75%] bg-[#EEF2FF] rounded-xl rounded-tr-sm px-4 py-2.5 text-sm text-[#1A1D2E]">
                   {seg.text}
                 </div>
