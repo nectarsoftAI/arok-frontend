@@ -38,14 +38,21 @@ export class OnlineMeetingService {
     const params = new URLSearchParams({ profileId });
     if (token) params.set('token', token);
 
-    const ws = new WebSocket(`${WS_BASE}/api/v1/online/ws/${meetingId}?${params}`);
-    ws.onopen = () => console.log('[OnlineWS] 연결됨 — meetingId:', meetingId);
+    const url = `${WS_BASE}/api/v1/online/ws/${meetingId}?${params}`;
+    console.log('[OnlineWS] 연결 시도:', url);
+    const ws = new WebSocket(url);
+    ws.onopen = () => console.log('[OnlineWS] ✅ 연결됨 — meetingId:', meetingId, '/ profileId:', profileId);
     ws.onmessage = (e) => this.handleMessage(e);
-    ws.onerror = () => this.callbacks.onError('WebSocket 연결에 실패했습니다.');
+    ws.onerror = (e) => {
+      console.error('[OnlineWS] ❌ 연결 오류:', e);
+      this.callbacks.onError('WebSocket 연결에 실패했습니다.');
+    };
     ws.onclose = (e) => {
       if (!this.intentionalClose) {
         this.callbacks.onError('서버 연결이 끊어졌습니다.');
-        console.warn('[OnlineWS] 비정상 종료:', e.code, e.reason);
+        console.warn('[OnlineWS] ⚠️ 비정상 종료 — code:', e.code, '/ reason:', e.reason);
+      } else {
+        console.log('[OnlineWS] 🔌 정상 종료 — code:', e.code);
       }
     };
     this.ws = ws;
@@ -54,43 +61,54 @@ export class OnlineMeetingService {
   private handleMessage(event: MessageEvent): void {
     try {
       const msg = JSON.parse(event.data as string) as Record<string, unknown>;
+      console.log('[OnlineWS] ▼ 수신:', msg.type, msg);
       switch (msg.type) {
         case 'room_info':
+          console.log('[OnlineWS] room_info — status:', msg.status, '/ participants:', msg.participants);
           this.callbacks.onRoomInfo(
             msg.status as string,
             (msg.participants as string[]) ?? [],
           );
           break;
         case 'participant_joined':
+          console.log('[OnlineWS] participant_joined —', msg.profileId, '/', msg.role);
           this.callbacks.onParticipantJoined(msg.profileId as string, msg.role as string);
           break;
         case 'participant_left':
+          console.log('[OnlineWS] participant_left —', msg.profileId);
           this.callbacks.onParticipantLeft(msg.profileId as string);
           break;
         case 'meeting_started':
+          console.log('[OnlineWS] meeting_started → 녹음 시작');
           this.callbacks.onMeetingStarted();
           break;
         case 'meeting_ended':
+          console.log('[OnlineWS] meeting_ended → 녹음 종료 + WS close');
           this.intentionalClose = true;
-          this.stopRecording(); // 마이크 트랙 즉시 해제 → Chrome 녹음 표시 제거
+          this.stopRecording();
           this.callbacks.onMeetingEnded();
           if (this.ws?.readyState === WebSocket.OPEN) {
-            this.ws.close(); // WS 명시적 종료 (서버 종료 대기 불필요)
+            this.ws.close();
           }
           break;
         case 'kicked':
+          console.warn('[OnlineWS] kicked');
           this.callbacks.onKicked();
           break;
-        case 'transcript':
-          this.callbacks.onTranscript({
+        case 'transcript': {
+          const t = {
             profileId: msg.profileId as string,
             speakerDisplay: msg.speakerDisplay as string,
             text: msg.text as string,
             startSec: msg.startSec as number,
             endSec: msg.endSec as number,
-          });
+          };
+          console.log(`[OnlineWS] transcript ▼ [${t.speakerDisplay}] "${t.text?.substring(0, 40)}" (${t.startSec}s~${t.endSec}s)`);
+          this.callbacks.onTranscript(t);
           break;
+        }
         case 'error':
+          console.error('[OnlineWS] error:', msg.message);
           this.callbacks.onError(msg.message as string);
           break;
       }
@@ -103,11 +121,19 @@ export class OnlineMeetingService {
     this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     const mimeType = MIME_CANDIDATES.find((t) => MediaRecorder.isTypeSupported(t));
     this.mediaRecorder = new MediaRecorder(this.stream, mimeType ? { mimeType } : undefined);
+    let chunkIndex = 0;
     this.mediaRecorder.ondataavailable = (e) => {
       if (e.data.size > 0 && this.ws?.readyState === WebSocket.OPEN) {
+        chunkIndex++;
+        console.log(`[OnlineWS] ▲ 청크 전송 #${chunkIndex} — ${e.data.size} bytes @ ${new Date().toLocaleTimeString('ko-KR')}`);
         this.ws.send(e.data);
+      } else if (e.data.size === 0) {
+        console.log('[OnlineWS] 청크 스킵 — size 0');
+      } else {
+        console.warn('[OnlineWS] WS not OPEN, 청크 드롭 — readyState:', this.ws?.readyState);
       }
     };
+    console.log(`[OnlineWS] 🎙️ 녹음 시작 — mimeType: ${this.mediaRecorder.mimeType}, 청크 주기: ${CHUNK_INTERVAL_MS}ms`);
     this.mediaRecorder.start(CHUNK_INTERVAL_MS);
   }
 

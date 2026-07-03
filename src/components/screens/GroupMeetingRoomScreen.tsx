@@ -80,21 +80,16 @@ export function GroupMeetingRoomScreen() {
     return () => clearInterval(id);
   }, [roomStatus]);
 
-  // 회의 종료 시 요약 트리거 후 이동
+  // 회의 종료 시: 방장은 요약 트리거 후 즉시 이동, 게스트는 다이얼로그 표시
   useEffect(() => {
     if (roomStatus !== "COMPLETED" || !roomId) return;
     if (role === "host") {
       meetingsApi.summarize(roomId).catch(() => {});
-    }
-    navigate(`/meetings/${roomId}`, { state: { role } });
-  }, [roomStatus, roomId, navigate, role]);
-
-  // 게스트: 방장 종료 감지 → 다이얼로그 표시
-  useEffect(() => {
-    if (roomStatus === "COMPLETED" && role === "guest") {
+      navigate(`/meetings/${roomId}`, { state: { role } });
+    } else {
       setShowGuestEndedDialog(true);
     }
-  }, [roomStatus, role]);
+  }, [roomStatus, roomId, navigate, role]);
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(meetingLink).catch(() => {});

@@ -43,17 +43,29 @@ export function useOnlineMeeting(
         .catch(() => setError('마이크 접근 권한이 필요합니다.'));
     };
 
+    const dedup = (list: OnlineParticipant[]): OnlineParticipant[] => {
+      const seen = new Set<string>();
+      return list.filter((p) => {
+        if (seen.has(p.profileId)) return false;
+        seen.add(p.profileId);
+        return true;
+      });
+    };
+
     const service = new OnlineMeetingService({
       onRoomInfo: (status, pids) => {
         const s = status as OnlineRoomStatus;
         setRoomStatus(s);
-        setParticipants(pids.map((pid) => ({ profileId: pid, role: 'GUEST' })));
+        setParticipants(dedup(pids.map((pid) => ({ profileId: pid, role: 'GUEST' }))));
         if (s === 'LIVE') tryStartRecording(service);
 
-        // REST API로 실제 role(ADMIN/GUEST) 조회하여 방장 뱃지 반영
+        // REST API로 role만 업데이트 — 참여자 목록은 WS 기준 유지 (미접속자 추가 방지)
         meetingsApi.getParticipants(meetingId).then(({ data }) => {
-          setParticipants(data.map((p) => ({ profileId: p.profileId, role: p.role })));
-        }).catch(() => {}); // 실패 시 초기값(GUEST) 유지
+          const roleMap = new Map(data.map((p) => [p.profileId, p.role] as const));
+          setParticipants((prev) =>
+            dedup(prev.map((p) => ({ ...p, role: roleMap.get(p.profileId) ?? p.role }))),
+          );
+        }).catch(() => {});
       },
       onParticipantJoined: (profileId, participantRole) => {
         setParticipants((prev) => {
