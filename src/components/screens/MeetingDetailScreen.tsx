@@ -260,6 +260,11 @@ export function MeetingDetailScreen() {
           <span className="text-sm text-[#6B7280]">{formatMeetingDate(meeting.meetingDate)}</span>
           <span className="text-sm text-[#9CA3AF]">•</span>
           <span className="text-sm text-[#6B7280]">{formatDuration(meeting.durationSeconds)}</span>
+          <span className="text-sm text-[#9CA3AF]">•</span>
+          {isGuest
+            ? <Badge variant="neutral" size="sm">읽기 전용</Badge>
+            : <Badge variant="primary" size="sm">편집 가능</Badge>
+          }
         </div>
       </div>
 
