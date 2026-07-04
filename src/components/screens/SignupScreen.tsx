@@ -5,7 +5,7 @@ import { isAxiosError } from "axios";
 import { Button } from "../common/Button";
 import { Input } from "../common/Input";
 import { cn } from "../common/utils";
-import { signup, extractFieldErrors, extractErrorMessage } from "../../api/auth";
+import { signup, extractErrorMessage } from "../../api/auth";
 import { useAuthStore } from "../../store/authStore";
 
 interface FieldErrors {
@@ -63,14 +63,13 @@ export function SignupScreen() {
       navigate("/");
     } catch (err) {
       setLoading(false);
-      if (isAxiosError(err) && err.response?.status === 422) {
-        const fieldErrs = extractFieldErrors(err);
-        setErrors({ email: fieldErrs.email, password: fieldErrs.password });
-        const otherMsg = Object.entries(fieldErrs)
-          .filter(([k]) => k !== "email" && k !== "password")
-          .map(([, v]) => v)
-          .join(" ");
-        if (otherMsg) setGlobalError(otherMsg);
+      if (isAxiosError(err) && err.response?.status === 400) {
+        const errCode = err.response.data?.error;
+        if (errCode === 'user_already_exists') {
+          setErrors((p) => ({ ...p, email: '이미 가입된 이메일입니다.' }));
+        } else {
+          setGlobalError(extractErrorMessage(err));
+        }
       } else {
         setGlobalError(extractErrorMessage(err));
       }
