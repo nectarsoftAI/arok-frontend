@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router";
-import { Mic, Eye, EyeOff, AlertCircle } from "lucide-react";
+import { Eye, EyeOff, AlertCircle } from "lucide-react";
+import logoArok from "../../assets/logo_arok.webp";
 import { isAxiosError } from "axios";
 import { Button } from "../common/Button";
 import { Input } from "../common/Input";
@@ -83,10 +84,8 @@ export function SignupScreen() {
     <div className="min-h-screen bg-[#F8F9FC] flex flex-col">
       <div className="px-8 py-6">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-gradient-to-br from-[#5B5FF5] to-[#818CF8] rounded-lg flex items-center justify-center">
-            <Mic className="w-4 h-4 text-white" />
-          </div>
-          <span className="text-[#1A1D2E] font-semibold text-lg">Arok</span>
+          <img src={logoArok} alt="Arok" className="h-10 w-auto" />
+          <span className="text-[#1A1D2E] font-extrabold text-2xl">Arok</span>
         </div>
       </div>
 
