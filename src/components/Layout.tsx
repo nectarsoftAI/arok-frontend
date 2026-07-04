@@ -1,6 +1,7 @@
 import { Outlet, Link, useLocation, useParams, useNavigate } from "react-router";
 import { Mic, FileText, BarChart3, Search, Bell, User, ChevronDown, ChevronRight, X, LogOut } from "lucide-react";
 import { meetingsApi } from "../api/meetings";
+import { logout as apiLogout } from "../api/auth";
 import { useState, useEffect } from "react";
 import { useAuthStore } from "../store/authStore";
 import { DialogShell } from "./common/dialogs/DialogShell";
@@ -20,12 +21,16 @@ export function Layout() {
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
 
   const user = useAuthStore((s) => s.user);
+  const token = useAuthStore((s) => s.token);
   const logout = useAuthStore((s) => s.logout);
 
   const displayName = user?.displayName || user?.email || '';
   const email = user?.email || '';
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    if (token) {
+      try { await apiLogout(token); } catch { /* 실패해도 로컬 상태 초기화 */ }
+    }
     logout();
     setIsLogoutDialogOpen(false);
     navigate('/login');
