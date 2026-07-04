@@ -1,5 +1,6 @@
 import { Outlet, Link, useLocation, useParams, useNavigate } from "react-router";
 import { Mic, FileText, BarChart3, Search, Bell, User, ChevronDown, ChevronRight, X, LogOut } from "lucide-react";
+import logoArok from "../assets/logo_arok.webp";
 import { meetingsApi } from "../api/meetings";
 import { logout as apiLogout } from "../api/auth";
 import { useState, useEffect } from "react";
@@ -67,12 +68,10 @@ export function Layout() {
       {/* ── 사이드바 (데스크톱 전용) ── */}
       <aside className="hidden lg:flex w-60 bg-[#0F1624] flex-col flex-shrink-0">
         <div className="h-16 flex items-center px-6 border-b border-white/10">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-[#5B5FF5] to-[#818CF8] rounded-lg flex items-center justify-center">
-              <Mic className="w-4 h-4 text-white" />
-            </div>
-            <span className="text-white font-semibold text-lg">Arok</span>
-          </div>
+          <Link to="/" className="flex items-center gap-2">
+            <img src={logoArok} alt="Arok" className="h-12 w-auto" />
+            <span className="text-white font-extrabold text-2xl">Arok</span>
+          </Link>
         </div>
 
         <nav className="flex-1 px-3 py-6 overflow-y-auto">
@@ -181,12 +180,10 @@ export function Layout() {
         {/* 헤더 */}
         <header className="h-14 lg:h-16 bg-white border-b border-[#E5E7EB] flex items-center justify-between px-4 lg:px-6 flex-shrink-0">
           {/* 모바일: 로고 */}
-          <div className="flex items-center gap-2 lg:hidden">
-            <div className="w-7 h-7 bg-gradient-to-br from-[#5B5FF5] to-[#818CF8] rounded-lg flex items-center justify-center">
-              <Mic className="w-3.5 h-3.5 text-white" />
-            </div>
-            <span className="font-semibold text-[#1A1D2E]">Arok</span>
-          </div>
+          <Link to="/" className="flex items-center gap-2 lg:hidden">
+            <img src={logoArok} alt="Arok" className="h-10 w-auto" />
+            <span className="font-extrabold text-xl text-[#1A1D2E]">Arok</span>
+          </Link>
 
           {/* 데스크톱: 검색바 */}
           <div className="hidden lg:flex flex-1 max-w-xl">

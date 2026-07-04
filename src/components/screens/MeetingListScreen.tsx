@@ -46,7 +46,6 @@ export function MeetingListScreen() {
     if (!deleteTarget) return;
     try {
       await meetingsApi.delete(deleteTarget.meetingId);
-      // 현재 페이지 마지막 아이템 삭제 시 이전 페이지로 이동
       if (meetings.length === 1 && currentPage > 1) {
         setCurrentPage((p) => p - 1);
       } else {
@@ -57,8 +56,6 @@ export function MeetingListScreen() {
     }
     setDeleteTarget(null);
   };
-
-  const pagedMeetings = meetings;
 
   return (
     <div className="h-full p-6 pb-12">
@@ -102,7 +99,7 @@ export function MeetingListScreen() {
         ) : (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
-              {pagedMeetings.map((meeting) => (
+              {meetings.map((meeting) => (
                 <MeetingCard
                   key={meeting.meetingId}
                   meeting={meeting}
