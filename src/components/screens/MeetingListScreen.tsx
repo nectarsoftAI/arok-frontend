@@ -15,6 +15,7 @@ export function MeetingListScreen() {
   const [meetings, setMeetings] = useState<MeetingListItem[]>([]);
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
+  const [showSkeleton, setShowSkeleton] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<MeetingListItem | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -22,7 +23,11 @@ export function MeetingListScreen() {
 
   useEffect(() => {
     setIsLoading(true);
+    setShowSkeleton(false);
     setFetchError(null);
+
+    const skeletonTimer = setTimeout(() => setShowSkeleton(true), 200);
+
     meetingsApi
       .getAll(currentPage - 1, PAGE_SIZE)
       .then(({ data }) => {
@@ -30,7 +35,11 @@ export function MeetingListScreen() {
         setTotalPages(data.totalPages);
       })
       .catch(() => setFetchError("회의 목록을 불러오지 못했습니다."))
-      .finally(() => setIsLoading(false));
+      .finally(() => {
+        clearTimeout(skeletonTimer);
+        setIsLoading(false);
+        setShowSkeleton(false);
+      });
   }, [currentPage, refreshKey]);
 
   const handleDeleteConfirm = async () => {
@@ -75,11 +84,13 @@ export function MeetingListScreen() {
 
         {/* States */}
         {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
-            {Array.from({ length: PAGE_SIZE }).map((_, i) => (
-              <MeetingCardSkeleton key={i} />
-            ))}
-          </div>
+          showSkeleton ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
+              {Array.from({ length: PAGE_SIZE }).map((_, i) => (
+                <MeetingCardSkeleton key={i} />
+              ))}
+            </div>
+          ) : null
         ) : fetchError ? (
           <div className="flex items-center justify-center py-20 text-red-500 text-sm">
             {fetchError}
