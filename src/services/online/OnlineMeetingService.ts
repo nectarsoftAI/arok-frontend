@@ -36,6 +36,7 @@ export class OnlineMeetingService {
   private reconnectAttempt = 0;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private meetingStartSent = false;
+  private pendingEndMeeting = false;
 
   constructor(callbacks: Callbacks) {
     this.callbacks = callbacks;
@@ -59,6 +60,11 @@ export class OnlineMeetingService {
     ws.onopen = () => {
       console.log('[OnlineWS] ✅ 연결됨 — meetingId:', meetingId, '/ profileId:', profileId);
       this.reconnectAttempt = 0;
+      if (this.pendingEndMeeting) {
+        console.log('[OnlineWS] 🔁 재연결 완료 — 보류 중이던 end_meeting 재전송');
+        this.pendingEndMeeting = false;
+        this.sendText({ type: 'end_meeting' });
+      }
     };
     ws.onmessage = (e) => this.handleMessage(e);
     ws.onerror = (e) => {
@@ -195,7 +201,12 @@ export class OnlineMeetingService {
   }
 
   endMeeting(): void {
-    this.sendText({ type: 'end_meeting' });
+    // 클릭 시점에 소켓이 재연결 중이라 전송이 실패하면 조용히 사라지지 않도록
+    // 보류시켜뒀다가, 재연결(onopen) 성공하는 즉시 자동으로 다시 전송함
+    if (!this.sendText({ type: 'end_meeting' })) {
+      console.warn('[OnlineWS] end_meeting 전송 실패 — 재연결 시 자동 재전송 예정');
+      this.pendingEndMeeting = true;
+    }
   }
 
   disconnect(): void {

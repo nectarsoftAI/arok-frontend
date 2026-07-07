@@ -60,6 +60,7 @@ export function GroupMeetingRoomScreen() {
     isReconnecting,
     reconnectAttempt,
     maxReconnectAttempts,
+    isNetworkOffline,
     startMeeting,
     endMeeting,
   } = useOnlineMeeting(roomId, role, guestToken);
@@ -276,6 +277,14 @@ export function GroupMeetingRoomScreen() {
             </motion.div>
           )}
         </div>
+
+        {/* ── 네트워크 끊김 배너 — WS onclose보다 먼저 뜨는 즉각 신호 ── */}
+        {isNetworkOffline && !isReconnecting && (
+          <div className="flex-shrink-0 px-6 py-2 bg-amber-50 border-b border-amber-100 text-xs text-amber-700 flex items-center gap-2">
+            <span className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse" />
+            네트워크 연결이 불안정합니다
+          </div>
+        )}
 
         {/* ── 재연결 중 배너 ── */}
         {isReconnecting && (

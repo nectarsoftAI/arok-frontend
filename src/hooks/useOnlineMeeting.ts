@@ -31,6 +31,7 @@ export interface UseOnlineMeetingReturn {
   isReconnecting: boolean;
   reconnectAttempt: number;
   maxReconnectAttempts: number;
+  isNetworkOffline: boolean;
   startMeeting: () => void;
   endMeeting: () => void;
 }
@@ -47,8 +48,22 @@ export function useOnlineMeeting(
   const [isRecording, setIsRecording] = useState(false);
   const [isReconnecting, setIsReconnecting] = useState(false);
   const [reconnectAttempt, setReconnectAttempt] = useState(0);
+  const [isNetworkOffline, setIsNetworkOffline] = useState(!navigator.onLine);
   const serviceRef = useRef<OnlineMeetingService | null>(null);
   const user = useAuthStore((state) => state.user);
+
+  // WS의 onclose는 네트워크가 완전히 끊기면 회선이 복구될 때까지 감지가 안 될 수 있어서,
+  // OS가 즉시 알려주는 온라인/오프라인 상태를 별도로 감지해 더 빠르게 사용자에게 알림
+  useEffect(() => {
+    const handleOffline = () => setIsNetworkOffline(true);
+    const handleOnline = () => setIsNetworkOffline(false);
+    window.addEventListener('offline', handleOffline);
+    window.addEventListener('online', handleOnline);
+    return () => {
+      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('online', handleOnline);
+    };
+  }, []);
 
   useEffect(() => {
     if (!meetingId || !user?.id) return;
@@ -164,6 +179,7 @@ export function useOnlineMeeting(
     isReconnecting,
     reconnectAttempt,
     maxReconnectAttempts: MAX_RECONNECT_ATTEMPTS,
+    isNetworkOffline,
     startMeeting,
     endMeeting,
   };
