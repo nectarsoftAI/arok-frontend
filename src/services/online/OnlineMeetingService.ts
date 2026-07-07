@@ -35,6 +35,7 @@ export class OnlineMeetingService {
   private connectParams: ConnectParams | null = null;
   private reconnectAttempt = 0;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  private meetingStartSent = false;
 
   constructor(callbacks: Callbacks) {
     this.callbacks = callbacks;
@@ -149,6 +150,10 @@ export class OnlineMeetingService {
   }
 
   async startRecording(): Promise<void> {
+    // meeting_started/room_info(LIVE)가 중복 수신되면 이 함수도 중복 호출될 수 있음 —
+    // 기존 recorder를 먼저 정리하지 않으면 이전 스트림이 참조를 잃은 채 계속 돌아
+    // 마이크가 안 꺼지고 청크를 중복 전송하게 됨
+    this.stopRecording();
     this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     const mimeType = MIME_CANDIDATES.find((t) => MediaRecorder.isTypeSupported(t));
     this.mediaRecorder = new MediaRecorder(this.stream, mimeType ? { mimeType } : undefined);
@@ -179,7 +184,14 @@ export class OnlineMeetingService {
   }
 
   startMeeting(): void {
-    this.sendText({ type: 'start_meeting' });
+    // 버튼 연타 등으로 여러 번 호출돼도 start_meeting은 한 번만 전송 —
+    // 서버가 meeting_started를 매번 재브로드캐스트하면 recording이 중복 시작됨.
+    // 단, 소켓이 아직 CONNECTING이라 전송이 실패한 경우엔 플래그를 세우지 않아야
+    // 다음 클릭(재시도)에서 정상적으로 나갈 수 있음
+    if (this.meetingStartSent) return;
+    if (this.sendText({ type: 'start_meeting' })) {
+      this.meetingStartSent = true;
+    }
   }
 
   endMeeting(): void {
@@ -212,9 +224,11 @@ export class OnlineMeetingService {
     }
   }
 
-  private sendText(msg: object): void {
+  private sendText(msg: object): boolean {
     if (this.ws?.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(msg));
+      return true;
     }
+    return false;
   }
 }

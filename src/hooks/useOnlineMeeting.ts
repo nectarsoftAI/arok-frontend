@@ -3,6 +3,17 @@ import { OnlineMeetingService, MAX_RECONNECT_ATTEMPTS } from '../services/online
 import type { OnlineTranscriptMessage } from '../services/online/types';
 import { useAuthStore } from '../store/authStore';
 import { meetingsApi } from '../api/meetings';
+import type { TranscriptSegment } from '../api/types';
+
+function toOnlineTranscript(seg: TranscriptSegment): OnlineTranscriptMessage {
+  return {
+    profileId: seg.speakerLabel,
+    speakerDisplay: seg.speakerDisplay,
+    text: seg.content,
+    startSec: seg.startSec,
+    endSec: seg.endSec,
+  };
+}
 
 export type OnlineRoomStatus = 'PROCESSING' | 'LIVE' | 'COMPLETED';
 
@@ -41,6 +52,9 @@ export function useOnlineMeeting(
 
   useEffect(() => {
     if (!meetingId || !user?.id) return;
+
+    // StrictMode 이중 mount 시 REST 응답이 늦게 도착해 history가 중복 반영되는 것 방지
+    let cancelled = false;
 
     const tryStartRecording = (service: OnlineMeetingService) => {
       service
@@ -110,7 +124,20 @@ export function useOnlineMeeting(
     serviceRef.current = service;
     service.connect(meetingId, user.id, role === 'guest' ? token : undefined);
 
+    // 재입장 시 이전 대화 내용 복원 — WS는 이 연결 이후의 발화만 보내주므로
+    // 지금까지 쌓인 transcript를 REST로 가져와 맨 앞에 이어붙임
+    meetingsApi.getById(meetingId).then(({ data }) => {
+      if (cancelled) return;
+      console.log('[OnlineHistory] GET /meetings/{id} 응답 — status:', data.status, '/ transcripts:', data.transcripts?.length ?? 0, '개');
+      console.log('[OnlineHistory] transcripts 원본:', data.transcripts);
+      const history = (data.transcripts ?? []).map(toOnlineTranscript);
+      if (history.length > 0) {
+        setTranscripts((prev) => [...history, ...prev]);
+      }
+    }).catch(() => {});
+
     return () => {
+      cancelled = true;
       service.disconnect();
       serviceRef.current = null;
     };
