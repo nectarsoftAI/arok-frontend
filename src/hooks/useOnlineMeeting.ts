@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { OnlineMeetingService, type OnlineTranscriptMessage } from '../services/online/OnlineMeetingService';
+import { OnlineMeetingService } from '../services/online/OnlineMeetingService';
+import type { OnlineTranscriptMessage } from '../services/online/types';
 import { useAuthStore } from '../store/authStore';
 import { meetingsApi } from '../api/meetings';
 

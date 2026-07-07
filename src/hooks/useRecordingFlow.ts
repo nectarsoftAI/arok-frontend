@@ -23,7 +23,7 @@ function getSummarizeErrorMessage(err: unknown): string {
 
 export type RecordingState = 'idle' | 'recording' | 'stopping' | 'finished';
 
-export interface MeetingStateReturn {
+export interface UseRecordingFlowReturn {
   meetingTitle: string;
   meetingMode: MeetingMode;
   startedAt: Date | null;
@@ -62,7 +62,7 @@ export interface MeetingStateReturn {
   canSummarize: boolean;
 }
 
-export function useMeetingState(): MeetingStateReturn {
+export function useRecordingFlow(): UseRecordingFlowReturn {
   const [meetingTitle, setMeetingTitle] = useState('');
   const [meetingMode, setMeetingMode] = useState<MeetingMode>('live');
   const [startedAt, setStartedAt] = useState<Date | null>(null);

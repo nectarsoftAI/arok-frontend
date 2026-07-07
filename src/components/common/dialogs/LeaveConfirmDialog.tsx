@@ -1,5 +1,5 @@
 import { LogOut } from 'lucide-react';
-import type { RecordingState } from '../../../hooks/useMeetingState';
+import type { RecordingState } from '../../../hooks/useRecordingFlow';
 import { DialogShell } from './DialogShell';
 import { Button } from '../Button';
 

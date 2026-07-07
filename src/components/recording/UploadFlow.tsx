@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Button } from '../common/Button';
-import type { MeetingStateReturn } from '../../hooks/useMeetingState';
+import type { UseRecordingFlowReturn } from '../../hooks/useRecordingFlow';
 import { TranscriptSection } from './TranscriptSection';
 import { SummarySection } from './SummarySection';
 import { StepCards } from './StepCards';
@@ -11,7 +11,7 @@ import uploadFileIcon from '../../assets/icons/upload_file_icon.webp';
 import uploadCompleteIcon from '../../assets/icons/upload_complete_icon.webp';
 
 interface UploadFlowProps {
-  state: MeetingStateReturn;
+  state: UseRecordingFlowReturn;
   onComplete?: () => void;
 }
 

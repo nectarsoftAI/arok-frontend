@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { StartMeetingDialog } from '../common/dialogs/StartMeetingDialog';
 import { LeaveConfirmDialog } from '../common/dialogs/LeaveConfirmDialog';
 import { MeetingEndDialog } from '../common/dialogs/MeetingEndDialog';
-import { useMeetingState } from '../../hooks/useMeetingState';
+import { useRecordingFlow } from '../../hooks/useRecordingFlow';
 import { Button } from '../common/Button';
 import { Badge } from '../common/Badge';
 import { UploadFlow } from '../recording/UploadFlow';
@@ -19,7 +19,7 @@ export function NewMeetingScreen() {
   const [imgIndex, setImgIndex] = useState(0);
   const [showEndDialog, setShowEndDialog] = useState(false);
   const navigate = useNavigate();
-  const state = useMeetingState();
+  const state = useRecordingFlow();
 
   const blocker = useBlocker(!!state.meetingTitle && !state.showSummary);
 

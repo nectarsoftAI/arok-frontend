@@ -1,16 +1,10 @@
+import type { OnlineTranscriptMessage } from './types';
+
 const API_BASE = import.meta.env.VITE_API_BASE_URL as string;
 const WS_BASE = (import.meta.env.VITE_WS_BASE_URL as string) || API_BASE.replace(/^http/, 'ws');
 
 const CHUNK_INTERVAL_MS = 5000;
 const MIME_CANDIDATES = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg'] as const;
-
-export interface OnlineTranscriptMessage {
-  profileId: string;
-  speakerDisplay: string;
-  text: string;
-  startSec: number;
-  endSec: number;
-}
 
 interface Callbacks {
   onRoomInfo: (status: string, participants: string[]) => void;

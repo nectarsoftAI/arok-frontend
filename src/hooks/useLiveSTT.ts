@@ -2,7 +2,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { LiveSTTService } from '../services/live/LiveSTTService';
 import type { SegmentMessage } from '../services/live/types';
 
-interface UseLiveSTTReturn {
+export interface UseLiveSTTReturn {
   meetingId: string | null;
   segments: SegmentMessage[];
   isConnected: boolean;
