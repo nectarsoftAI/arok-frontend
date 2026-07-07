@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { OnlineMeetingService } from '../services/online/OnlineMeetingService';
+import { OnlineMeetingService, MAX_RECONNECT_ATTEMPTS } from '../services/online/OnlineMeetingService';
 import type { OnlineTranscriptMessage } from '../services/online/types';
 import { useAuthStore } from '../store/authStore';
 import { meetingsApi } from '../api/meetings';
@@ -17,6 +17,9 @@ export interface UseOnlineMeetingReturn {
   roomStatus: OnlineRoomStatus;
   error: string | null;
   isRecording: boolean;
+  isReconnecting: boolean;
+  reconnectAttempt: number;
+  maxReconnectAttempts: number;
   startMeeting: () => void;
   endMeeting: () => void;
 }
@@ -31,6 +34,8 @@ export function useOnlineMeeting(
   const [roomStatus, setRoomStatus] = useState<OnlineRoomStatus>('PROCESSING');
   const [error, setError] = useState<string | null>(null);
   const [isRecording, setIsRecording] = useState(false);
+  const [isReconnecting, setIsReconnecting] = useState(false);
+  const [reconnectAttempt, setReconnectAttempt] = useState(0);
   const serviceRef = useRef<OnlineMeetingService | null>(null);
   const user = useAuthStore((state) => state.user);
 
@@ -56,6 +61,7 @@ export function useOnlineMeeting(
     const service = new OnlineMeetingService({
       onRoomInfo: (status, pids) => {
         const s = status as OnlineRoomStatus;
+        setIsReconnecting(false);
         setRoomStatus(s);
         setParticipants(dedup(pids.map((pid) => ({ profileId: pid, role: 'GUEST' }))));
         if (s === 'LIVE') tryStartRecording(service);
@@ -91,7 +97,14 @@ export function useOnlineMeeting(
         service.disconnect();
       },
       onTranscript: (msg) => setTranscripts((prev) => [...prev, msg]),
-      onError: (msg) => setError(msg),
+      onReconnecting: (attempt) => {
+        setIsReconnecting(true);
+        setReconnectAttempt(attempt);
+      },
+      onError: (msg) => {
+        setIsReconnecting(false);
+        setError(msg);
+      },
     });
 
     serviceRef.current = service;
@@ -115,5 +128,16 @@ export function useOnlineMeeting(
     setIsRecording(false);
   }, []);
 
-  return { participants, transcripts, roomStatus, error, isRecording, startMeeting, endMeeting };
+  return {
+    participants,
+    transcripts,
+    roomStatus,
+    error,
+    isRecording,
+    isReconnecting,
+    reconnectAttempt,
+    maxReconnectAttempts: MAX_RECONNECT_ATTEMPTS,
+    startMeeting,
+    endMeeting,
+  };
 }
