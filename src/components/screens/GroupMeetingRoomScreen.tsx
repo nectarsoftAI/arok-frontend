@@ -51,13 +51,29 @@ export function GroupMeetingRoomScreen() {
   const guestToken = routeState?.token;
   const startedAt = useRef(formatNow()).current;
 
-  const { participants, transcripts, roomStatus, error, isRecording, startMeeting, endMeeting } =
-    useOnlineMeeting(roomId, role, guestToken);
+  const {
+    participants,
+    transcripts,
+    roomStatus,
+    error,
+    isRecording,
+    isReconnecting,
+    reconnectAttempt,
+    maxReconnectAttempts,
+    startMeeting,
+    endMeeting,
+  } = useOnlineMeeting(roomId, role, guestToken);
 
   const [showHostEndDialog, setShowHostEndDialog] = useState(false);
   const [showGuestEndedDialog, setShowGuestEndedDialog] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [linkCopied, setLinkCopied] = useState(false);
+
+  // 초대 링크로 재입장하면 route state의 role이 항상 "guest"로 고정되므로,
+  // 서버가 알려주는 실제 참여자 role(ADMIN)을 우선 신뢰하고
+  // 아직 참여자 목록이 없는 최초 로딩 순간만 route state로 대체함
+  const myServerRole = participants.find((p) => p.profileId === user?.id)?.role;
+  const isHost = myServerRole ? myServerRole === "ADMIN" : role === "host";
 
   // 회의 중 이탈 방지
   const blocker = useBlocker(roomStatus === "LIVE");
@@ -83,13 +99,13 @@ export function GroupMeetingRoomScreen() {
   // 회의 종료 시: 방장은 요약 트리거 후 즉시 이동, 게스트는 다이얼로그 표시
   useEffect(() => {
     if (roomStatus !== "COMPLETED" || !roomId) return;
-    if (role === "host") {
+    if (isHost) {
       meetingsApi.summarize(roomId).catch(() => {});
-      navigate(`/meetings/${roomId}`, { state: { role } });
+      navigate(`/meetings/${roomId}`, { state: { role: "host" } });
     } else {
       setShowGuestEndedDialog(true);
     }
-  }, [roomStatus, roomId, navigate, role]);
+  }, [roomStatus, roomId, navigate, isHost]);
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(meetingLink).catch(() => {});
@@ -104,7 +120,7 @@ export function GroupMeetingRoomScreen() {
   };
 
   const goToDetail = () => {
-    navigate(`/meetings/${roomId}`, { state: { role } });
+    navigate(`/meetings/${roomId}`, { state: { role: isHost ? "host" : "guest" } });
   };
 
   // transcript speakerDisplay로 실제 display_name 수집 (발화 이전엔 알 수 없음)
@@ -261,6 +277,14 @@ export function GroupMeetingRoomScreen() {
           )}
         </div>
 
+        {/* ── 재연결 중 배너 ── */}
+        {isReconnecting && (
+          <div className="flex-shrink-0 px-6 py-2 bg-amber-50 border-b border-amber-100 text-xs text-amber-700 flex items-center gap-2">
+            <span className="w-3 h-3 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+            재연결 중 {reconnectAttempt}/{maxReconnectAttempts}
+          </div>
+        )}
+
         {/* ── 에러 배너 ── */}
         {error && (
           <div className="flex-shrink-0 px-6 py-2 bg-red-50 border-b border-red-100 text-xs text-red-600">
@@ -316,7 +340,7 @@ export function GroupMeetingRoomScreen() {
                     </ul>
                   </div>
 
-                  {role === "host" ? (
+                  {isHost ? (
                     <Button
                       variant="primary"
                       size="lg"
@@ -368,7 +392,7 @@ export function GroupMeetingRoomScreen() {
                     </div>
                   </div>
 
-                  {role === "host" ? (
+                  {isHost ? (
                     <Button variant="danger" size="sm" onClick={() => setShowHostEndDialog(true)}>
                       회의 종료
                     </Button>

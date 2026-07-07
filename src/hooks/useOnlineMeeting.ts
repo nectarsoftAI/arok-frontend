@@ -1,7 +1,19 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { OnlineMeetingService, type OnlineTranscriptMessage } from '../services/online/OnlineMeetingService';
+import { OnlineMeetingService, MAX_RECONNECT_ATTEMPTS } from '../services/online/OnlineMeetingService';
+import type { OnlineTranscriptMessage } from '../services/online/types';
 import { useAuthStore } from '../store/authStore';
 import { meetingsApi } from '../api/meetings';
+import type { TranscriptSegment } from '../api/types';
+
+function toOnlineTranscript(seg: TranscriptSegment): OnlineTranscriptMessage {
+  return {
+    profileId: seg.speakerLabel,
+    speakerDisplay: seg.speakerDisplay,
+    text: seg.content,
+    startSec: seg.startSec,
+    endSec: seg.endSec,
+  };
+}
 
 export type OnlineRoomStatus = 'PROCESSING' | 'LIVE' | 'COMPLETED';
 
@@ -16,6 +28,9 @@ export interface UseOnlineMeetingReturn {
   roomStatus: OnlineRoomStatus;
   error: string | null;
   isRecording: boolean;
+  isReconnecting: boolean;
+  reconnectAttempt: number;
+  maxReconnectAttempts: number;
   startMeeting: () => void;
   endMeeting: () => void;
 }
@@ -30,11 +45,16 @@ export function useOnlineMeeting(
   const [roomStatus, setRoomStatus] = useState<OnlineRoomStatus>('PROCESSING');
   const [error, setError] = useState<string | null>(null);
   const [isRecording, setIsRecording] = useState(false);
+  const [isReconnecting, setIsReconnecting] = useState(false);
+  const [reconnectAttempt, setReconnectAttempt] = useState(0);
   const serviceRef = useRef<OnlineMeetingService | null>(null);
   const user = useAuthStore((state) => state.user);
 
   useEffect(() => {
     if (!meetingId || !user?.id) return;
+
+    // StrictMode 이중 mount 시 REST 응답이 늦게 도착해 history가 중복 반영되는 것 방지
+    let cancelled = false;
 
     const tryStartRecording = (service: OnlineMeetingService) => {
       service
@@ -55,6 +75,7 @@ export function useOnlineMeeting(
     const service = new OnlineMeetingService({
       onRoomInfo: (status, pids) => {
         const s = status as OnlineRoomStatus;
+        setIsReconnecting(false);
         setRoomStatus(s);
         setParticipants(dedup(pids.map((pid) => ({ profileId: pid, role: 'GUEST' }))));
         if (s === 'LIVE') tryStartRecording(service);
@@ -90,13 +111,33 @@ export function useOnlineMeeting(
         service.disconnect();
       },
       onTranscript: (msg) => setTranscripts((prev) => [...prev, msg]),
-      onError: (msg) => setError(msg),
+      onReconnecting: (attempt) => {
+        setIsReconnecting(true);
+        setReconnectAttempt(attempt);
+      },
+      onError: (msg) => {
+        setIsReconnecting(false);
+        setError(msg);
+      },
     });
 
     serviceRef.current = service;
     service.connect(meetingId, user.id, role === 'guest' ? token : undefined);
 
+    // 재입장 시 이전 대화 내용 복원 — WS는 이 연결 이후의 발화만 보내주므로
+    // 지금까지 쌓인 transcript를 REST로 가져와 맨 앞에 이어붙임
+    meetingsApi.getById(meetingId).then(({ data }) => {
+      if (cancelled) return;
+      console.log('[OnlineHistory] GET /meetings/{id} 응답 — status:', data.status, '/ transcripts:', data.transcripts?.length ?? 0, '개');
+      console.log('[OnlineHistory] transcripts 원본:', data.transcripts);
+      const history = (data.transcripts ?? []).map(toOnlineTranscript);
+      if (history.length > 0) {
+        setTranscripts((prev) => [...history, ...prev]);
+      }
+    }).catch(() => {});
+
     return () => {
+      cancelled = true;
       service.disconnect();
       serviceRef.current = null;
     };
@@ -114,5 +155,16 @@ export function useOnlineMeeting(
     setIsRecording(false);
   }, []);
 
-  return { participants, transcripts, roomStatus, error, isRecording, startMeeting, endMeeting };
+  return {
+    participants,
+    transcripts,
+    roomStatus,
+    error,
+    isRecording,
+    isReconnecting,
+    reconnectAttempt,
+    maxReconnectAttempts: MAX_RECONNECT_ATTEMPTS,
+    startMeeting,
+    endMeeting,
+  };
 }

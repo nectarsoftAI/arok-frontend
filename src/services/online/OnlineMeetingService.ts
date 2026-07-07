@@ -1,15 +1,17 @@
+import type { OnlineTranscriptMessage } from './types';
+
 const API_BASE = import.meta.env.VITE_API_BASE_URL as string;
 const WS_BASE = (import.meta.env.VITE_WS_BASE_URL as string) || API_BASE.replace(/^http/, 'ws');
 
 const CHUNK_INTERVAL_MS = 5000;
 const MIME_CANDIDATES = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg'] as const;
+const RECONNECT_DELAY_MS = 1000;
+export const MAX_RECONNECT_ATTEMPTS = 5;
 
-export interface OnlineTranscriptMessage {
+interface ConnectParams {
+  meetingId: string;
   profileId: string;
-  speakerDisplay: string;
-  text: string;
-  startSec: number;
-  endSec: number;
+  token?: string;
 }
 
 interface Callbacks {
@@ -20,6 +22,7 @@ interface Callbacks {
   onMeetingEnded: () => void;
   onKicked: () => void;
   onTranscript: (msg: OnlineTranscriptMessage) => void;
+  onReconnecting: (attempt: number, maxAttempts: number) => void;
   onError: (message: string) => void;
 }
 
@@ -29,33 +32,60 @@ export class OnlineMeetingService {
   private stream: MediaStream | null = null;
   private readonly callbacks: Callbacks;
   private intentionalClose = false;
+  private connectParams: ConnectParams | null = null;
+  private reconnectAttempt = 0;
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  private meetingStartSent = false;
 
   constructor(callbacks: Callbacks) {
     this.callbacks = callbacks;
   }
 
   connect(meetingId: string, profileId: string, token?: string): void {
+    this.connectParams = { meetingId, profileId, token };
+    this.intentionalClose = false;
+    this.reconnectAttempt = 0;
+    this.openWs();
+  }
+
+  private openWs(): void {
+    const { meetingId, profileId, token } = this.connectParams!;
     const params = new URLSearchParams({ profileId });
     if (token) params.set('token', token);
 
     const url = `${WS_BASE}/api/v1/online/ws/${meetingId}?${params}`;
     console.log('[OnlineWS] 연결 시도:', url);
     const ws = new WebSocket(url);
-    ws.onopen = () => console.log('[OnlineWS] ✅ 연결됨 — meetingId:', meetingId, '/ profileId:', profileId);
+    ws.onopen = () => {
+      console.log('[OnlineWS] ✅ 연결됨 — meetingId:', meetingId, '/ profileId:', profileId);
+      this.reconnectAttempt = 0;
+    };
     ws.onmessage = (e) => this.handleMessage(e);
     ws.onerror = (e) => {
+      // 재시도 여부는 onclose에서 일괄 처리 — 여기서 콜백 호출 시 재연결 전에 에러 UI가 먼저 뜸
       console.error('[OnlineWS] ❌ 연결 오류:', e);
-      this.callbacks.onError('WebSocket 연결에 실패했습니다.');
     };
     ws.onclose = (e) => {
-      if (!this.intentionalClose) {
-        this.callbacks.onError('서버 연결이 끊어졌습니다.');
-        console.warn('[OnlineWS] ⚠️ 비정상 종료 — code:', e.code, '/ reason:', e.reason);
-      } else {
+      if (this.intentionalClose) {
         console.log('[OnlineWS] 🔌 정상 종료 — code:', e.code);
+        return;
       }
+      console.warn('[OnlineWS] ⚠️ 비정상 종료 — code:', e.code, '/ reason:', e.reason);
+      this.stopRecording();
+      this.scheduleReconnect();
     };
     this.ws = ws;
+  }
+
+  private scheduleReconnect(): void {
+    if (this.reconnectAttempt >= MAX_RECONNECT_ATTEMPTS) {
+      this.callbacks.onError('서버 연결이 끊어졌습니다.');
+      return;
+    }
+    this.reconnectAttempt++;
+    console.log(`[OnlineWS] 🔁 재연결 시도 ${this.reconnectAttempt}/${MAX_RECONNECT_ATTEMPTS} — ${RECONNECT_DELAY_MS}ms 후`);
+    this.callbacks.onReconnecting(this.reconnectAttempt, MAX_RECONNECT_ATTEMPTS);
+    this.reconnectTimer = setTimeout(() => this.openWs(), RECONNECT_DELAY_MS);
   }
 
   private handleMessage(event: MessageEvent): void {
@@ -85,11 +115,13 @@ export class OnlineMeetingService {
         case 'meeting_ended':
           console.log('[OnlineWS] meeting_ended → 녹음 종료 + WS close');
           this.intentionalClose = true;
+          if (this.reconnectTimer) {
+            clearTimeout(this.reconnectTimer);
+            this.reconnectTimer = null;
+          }
           this.stopRecording();
           this.callbacks.onMeetingEnded();
-          if (this.ws?.readyState === WebSocket.OPEN) {
-            this.ws.close();
-          }
+          this.closeSocket();
           break;
         case 'kicked':
           console.warn('[OnlineWS] kicked');
@@ -118,6 +150,10 @@ export class OnlineMeetingService {
   }
 
   async startRecording(): Promise<void> {
+    // meeting_started/room_info(LIVE)가 중복 수신되면 이 함수도 중복 호출될 수 있음 —
+    // 기존 recorder를 먼저 정리하지 않으면 이전 스트림이 참조를 잃은 채 계속 돌아
+    // 마이크가 안 꺼지고 청크를 중복 전송하게 됨
+    this.stopRecording();
     this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     const mimeType = MIME_CANDIDATES.find((t) => MediaRecorder.isTypeSupported(t));
     this.mediaRecorder = new MediaRecorder(this.stream, mimeType ? { mimeType } : undefined);
@@ -148,7 +184,14 @@ export class OnlineMeetingService {
   }
 
   startMeeting(): void {
-    this.sendText({ type: 'start_meeting' });
+    // 버튼 연타 등으로 여러 번 호출돼도 start_meeting은 한 번만 전송 —
+    // 서버가 meeting_started를 매번 재브로드캐스트하면 recording이 중복 시작됨.
+    // 단, 소켓이 아직 CONNECTING이라 전송이 실패한 경우엔 플래그를 세우지 않아야
+    // 다음 클릭(재시도)에서 정상적으로 나갈 수 있음
+    if (this.meetingStartSent) return;
+    if (this.sendText({ type: 'start_meeting' })) {
+      this.meetingStartSent = true;
+    }
   }
 
   endMeeting(): void {
@@ -157,16 +200,35 @@ export class OnlineMeetingService {
 
   disconnect(): void {
     this.intentionalClose = true;
-    this.stopRecording();
-    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-      this.ws.close();
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
     }
-    this.ws = null;
+    this.stopRecording();
+    this.closeSocket();
   }
 
-  private sendText(msg: object): void {
+  // CONNECTING 상태의 소켓도 핸들러를 먼저 떼고 무조건 닫음 —
+  // StrictMode 이중 mount나 재연결 타이머가 언마운트와 겹칠 때 소켓이
+  // 안 닫힌 채 남아 room_info를 또 받고 녹음을 중복 시작하는 걸 방지
+  private closeSocket(): void {
+    if (!this.ws) return;
+    const ws = this.ws;
+    this.ws = null;
+    ws.onopen = null;
+    ws.onmessage = null;
+    ws.onerror = null;
+    ws.onclose = null;
+    if (ws.readyState !== WebSocket.CLOSED) {
+      ws.close();
+    }
+  }
+
+  private sendText(msg: object): boolean {
     if (this.ws?.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(msg));
+      return true;
     }
+    return false;
   }
 }
