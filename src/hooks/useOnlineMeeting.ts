@@ -38,6 +38,7 @@ export interface UseOnlineMeetingReturn {
   maxReconnectAttempts: number;
   isNetworkOffline: boolean;
   isCongested: boolean;
+  startedAt: string | null;
   startMeeting: () => void;
   endMeeting: () => void;
 }
@@ -45,6 +46,7 @@ export interface UseOnlineMeetingReturn {
 export function useOnlineMeeting(
   meetingId: string | undefined,
   role: 'host' | 'guest',
+  getMicTrack: () => Promise<MediaStreamTrack>,
   token?: string,
 ): UseOnlineMeetingReturn {
   const [participants, setParticipants] = useState<OnlineParticipant[]>([]);
@@ -56,6 +58,7 @@ export function useOnlineMeeting(
   const [reconnectAttempt, setReconnectAttempt] = useState(0);
   const [isNetworkOffline, setIsNetworkOffline] = useState(!navigator.onLine);
   const [isCongested, setIsCongested] = useState(false);
+  const [startedAt, setStartedAt] = useState<string | null>(null);
   const serviceRef = useRef<OnlineMeetingService | null>(null);
   const user = useAuthStore((state) => state.user);
 
@@ -91,8 +94,8 @@ export function useOnlineMeeting(
     const finalizeTimers = finalizeTimersRef.current;
 
     const tryStartRecording = (service: OnlineMeetingService) => {
-      service
-        .startRecording()
+      getMicTrack()
+        .then((track) => service.startRecording(track))
         .then(() => setIsRecording(true))
         .catch((err: unknown) => {
           const unsupported = err instanceof Error && err.message === 'AUDIO_WORKLET_UNSUPPORTED';
@@ -166,11 +169,12 @@ export function useOnlineMeeting(
     };
 
     const service = new OnlineMeetingService({
-      onRoomInfo: (status, pids) => {
+      onRoomInfo: (status, pids, roomStartedAt) => {
         const s = status as OnlineRoomStatus;
         setIsReconnecting(false);
         setRoomStatus(s);
         setParticipants(dedup(pids.map((pid) => ({ profileId: pid, role: 'GUEST' }))));
+        setStartedAt(roomStartedAt);
         if (s === 'LIVE') tryStartRecording(service);
 
         // REST API로 role만 업데이트 — 참여자 목록은 WS 기준 유지 (미접속자 추가 방지)
@@ -190,8 +194,9 @@ export function useOnlineMeeting(
       onParticipantLeft: (profileId) => {
         setParticipants((prev) => prev.filter((p) => p.profileId !== profileId));
       },
-      onMeetingStarted: () => {
+      onMeetingStarted: (meetingStartedAt) => {
         setRoomStatus('LIVE');
+        setStartedAt(meetingStartedAt);
         tryStartRecording(service);
       },
       onMeetingEnded: () => {
@@ -264,6 +269,7 @@ export function useOnlineMeeting(
     maxReconnectAttempts: MAX_RECONNECT_ATTEMPTS,
     isNetworkOffline,
     isCongested,
+    startedAt,
     startMeeting,
     endMeeting,
   };

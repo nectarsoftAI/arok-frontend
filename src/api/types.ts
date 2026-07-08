@@ -132,3 +132,9 @@ export interface AuthResponse {
   refresh_token: string;
   user: AuthUser;
 }
+
+// GET /api/v1/livekit/token
+export interface LiveKitTokenResponse {
+  url: string;
+  token: string;
+}
