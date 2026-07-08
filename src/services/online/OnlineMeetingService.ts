@@ -157,16 +157,18 @@ export class OnlineMeetingService {
     }
   }
 
-  async startRecording(): Promise<void> {
-    // meeting_started/room_info(LIVE)가 중복 수신되면 이 함수도 중복 호출될 수 있음 —
-    // 기존 캡처를 먼저 정리하지 않으면 이전 스트림이 참조를 잃은 채 계속 돌아
-    // 마이크가 안 꺼지고 청크를 중복 전송하게 됨
+  // track은 useMicStream이 소유한 공유 마이크 트랙 — 여기선 PCM 추출(AudioContext/워클릿)만
+  // 시작/중단하고 트랙 자체의 생명주기는 건드리지 않음 (LiveKit 음성통화가 같은 트랙을 계속 씀)
+  async startRecording(track: MediaStreamTrack): Promise<void> {
+    // meeting_started/room_info(LIVE)가 중복 수신되거나 WS 재연결 후 재호출될 수 있음 —
+    // 기존 캡처를 먼저 정리하지 않으면 이전 워클릿이 참조를 잃은 채 계속 돌아
+    // 청크를 중복 전송하게 됨
     this.stopRecording();
     this.pcmCapture = new PcmAudioCaptureService({
       onPcmChunk: (chunk) => this.sendPcmChunk(chunk),
       onError: (message) => this.callbacks.onError(message),
     });
-    await this.pcmCapture.start();
+    await this.pcmCapture.start(track);
     console.log(`[OnlineWS] 🎙️ PCM 녹음 시작 — 16kHz mono Int16, 청크 주기: ${PCM_CHUNK_DURATION_MS}ms`);
   }
 

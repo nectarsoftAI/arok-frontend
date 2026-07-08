@@ -45,6 +45,7 @@ export interface UseOnlineMeetingReturn {
 export function useOnlineMeeting(
   meetingId: string | undefined,
   role: 'host' | 'guest',
+  getMicTrack: () => Promise<MediaStreamTrack>,
   token?: string,
 ): UseOnlineMeetingReturn {
   const [participants, setParticipants] = useState<OnlineParticipant[]>([]);
@@ -91,8 +92,8 @@ export function useOnlineMeeting(
     const finalizeTimers = finalizeTimersRef.current;
 
     const tryStartRecording = (service: OnlineMeetingService) => {
-      service
-        .startRecording()
+      getMicTrack()
+        .then((track) => service.startRecording(track))
         .then(() => setIsRecording(true))
         .catch((err: unknown) => {
           const unsupported = err instanceof Error && err.message === 'AUDIO_WORKLET_UNSUPPORTED';

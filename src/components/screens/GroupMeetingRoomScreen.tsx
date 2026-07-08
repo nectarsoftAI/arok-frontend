@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useParams, useLocation, useNavigate, useBlocker } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
-import { Check, Copy, LogOut, PenLine, Sparkles, Download } from "lucide-react";
+import { Check, Copy, LogOut, PenLine, Sparkles, Download, Mic, MicOff } from "lucide-react";
 import linkIcon from "../../assets/icons/link_icon.webp";
 import personGroupIcon from "../../assets/icons/person_group_icon.webp";
 import { Button } from "../common/Button";
@@ -11,6 +11,8 @@ import { DialogShell } from "../common/dialogs/DialogShell";
 import { MeetingEndDialog } from "../common/dialogs/MeetingEndDialog";
 import { GroupTranscriptSection, type GroupSegment } from "../recording/GroupTranscriptSection";
 import { useOnlineMeeting } from "../../hooks/useOnlineMeeting";
+import { useMicStream } from "../../hooks/useMicStream";
+import { useVoiceCall } from "../../hooks/useVoiceCall";
 import { useAuthStore } from "../../store/authStore";
 import { meetingsApi } from "../../api/meetings";
 
@@ -51,6 +53,8 @@ export function GroupMeetingRoomScreen() {
   const guestToken = routeState?.token;
   const startedAt = useRef(formatNow()).current;
 
+  const micStream = useMicStream();
+
   const {
     participants,
     transcripts,
@@ -64,7 +68,14 @@ export function GroupMeetingRoomScreen() {
     isCongested,
     startMeeting,
     endMeeting,
-  } = useOnlineMeeting(roomId, role, guestToken);
+  } = useOnlineMeeting(roomId, role, micStream.ensureTrack, guestToken);
+
+  const {
+    isMuted,
+    activeSpeakerIds,
+    error: voiceCallError,
+    toggleMute,
+  } = useVoiceCall(roomId, role, user?.id, roomStatus, micStream.ensureTrack, guestToken);
 
   const [showHostEndDialog, setShowHostEndDialog] = useState(false);
   const [showGuestEndedDialog, setShowGuestEndedDialog] = useState(false);
@@ -265,6 +276,7 @@ export function GroupMeetingRoomScreen() {
                     letter={(nameMap[p.profileId] ?? "?").charAt(0)}
                     color={SPEAKER_PALETTE[i % SPEAKER_PALETTE.length]}
                     size="sm"
+                    speaking={activeSpeakerIds.includes(p.profileId)}
                   />
                   <span className="text-xs text-[#6B7280]">{nameMap[p.profileId] ?? "참여자"}</span>
                   {p.role === "ADMIN" && (
@@ -303,10 +315,10 @@ export function GroupMeetingRoomScreen() {
           </div>
         )}
 
-        {/* ── 에러 배너 ── */}
-        {error && (
+        {/* ── 에러 배너 — STT/음성통화 공용 ── */}
+        {(error || voiceCallError) && (
           <div className="flex-shrink-0 px-6 py-2 bg-red-50 border-b border-red-100 text-xs text-red-600">
-            {error}
+            {error || voiceCallError}
           </div>
         )}
 
@@ -410,13 +422,25 @@ export function GroupMeetingRoomScreen() {
                     </div>
                   </div>
 
-                  {isHost ? (
-                    <Button variant="danger" size="sm" onClick={() => setShowHostEndDialog(true)}>
-                      회의 종료
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant={isMuted ? "danger" : "secondary"}
+                      size="sm"
+                      onClick={toggleMute}
+                      className="flex items-center gap-1.5"
+                    >
+                      {isMuted ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
+                      {isMuted ? "음소거됨" : "음소거"}
                     </Button>
-                  ) : (
-                    <p className="text-xs text-[#9CA3AF]">방장만 회의를 종료할 수 있어요</p>
-                  )}
+
+                    {isHost ? (
+                      <Button variant="danger" size="sm" onClick={() => setShowHostEndDialog(true)}>
+                        회의 종료
+                      </Button>
+                    ) : (
+                      <p className="text-xs text-[#9CA3AF]">방장만 회의를 종료할 수 있어요</p>
+                    )}
+                  </div>
                 </div>
 
                 {/* 대화 내용 */}
