@@ -1,12 +1,12 @@
 import type { OnlineTranscriptMessage } from './types';
+import { PcmAudioCaptureService, PCM_CHUNK_DURATION_MS } from '../audio/PcmAudioCaptureService';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL as string;
 const WS_BASE = (import.meta.env.VITE_WS_BASE_URL as string) || API_BASE.replace(/^http/, 'ws');
 
-const CHUNK_INTERVAL_MS = 5000;
-const MIME_CANDIDATES = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg'] as const;
 const RECONNECT_DELAY_MS = 1000;
 export const MAX_RECONNECT_ATTEMPTS = 5;
+const WS_BUFFERED_AMOUNT_THRESHOLD_BYTES = 1_000_000; // 이 이상 쌓이면 전송 지연으로 간주 (버리지는 않음 — 회의록 손실 방지)
 
 interface ConnectParams {
   meetingId: string;
@@ -23,13 +23,13 @@ interface Callbacks {
   onKicked: () => void;
   onTranscript: (msg: OnlineTranscriptMessage) => void;
   onReconnecting: (attempt: number, maxAttempts: number) => void;
+  onNetworkCongestion: (congested: boolean) => void;
   onError: (message: string) => void;
 }
 
 export class OnlineMeetingService {
   private ws: WebSocket | null = null;
-  private mediaRecorder: MediaRecorder | null = null;
-  private stream: MediaStream | null = null;
+  private pcmCapture: PcmAudioCaptureService | null = null;
   private readonly callbacks: Callbacks;
   private intentionalClose = false;
   private connectParams: ConnectParams | null = null;
@@ -37,6 +37,7 @@ export class OnlineMeetingService {
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private meetingStartSent = false;
   private pendingEndMeeting = false;
+  private isCongested = false;
 
   constructor(callbacks: Callbacks) {
     this.callbacks = callbacks;
@@ -134,14 +135,15 @@ export class OnlineMeetingService {
           this.callbacks.onKicked();
           break;
         case 'transcript': {
-          const t = {
+          const t: OnlineTranscriptMessage = {
             profileId: msg.profileId as string,
             speakerDisplay: msg.speakerDisplay as string,
             text: msg.text as string,
-            startSec: msg.startSec as number,
-            endSec: msg.endSec as number,
+            startSec: msg.startSec as number | undefined,
+            endSec: msg.endSec as number | undefined,
+            isFinal: Boolean(msg.isFinal),
           };
-          console.log(`[OnlineWS] transcript ▼ [${t.speakerDisplay}] "${t.text?.substring(0, 40)}" (${t.startSec}s~${t.endSec}s)`);
+          console.log(`[OnlineWS] transcript ▼ [${t.speakerDisplay}] isFinal=${t.isFinal} "${t.text?.substring(0, 40)}"`);
           this.callbacks.onTranscript(t);
           break;
         }
@@ -157,36 +159,44 @@ export class OnlineMeetingService {
 
   async startRecording(): Promise<void> {
     // meeting_started/room_info(LIVE)가 중복 수신되면 이 함수도 중복 호출될 수 있음 —
-    // 기존 recorder를 먼저 정리하지 않으면 이전 스트림이 참조를 잃은 채 계속 돌아
+    // 기존 캡처를 먼저 정리하지 않으면 이전 스트림이 참조를 잃은 채 계속 돌아
     // 마이크가 안 꺼지고 청크를 중복 전송하게 됨
     this.stopRecording();
-    this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const mimeType = MIME_CANDIDATES.find((t) => MediaRecorder.isTypeSupported(t));
-    this.mediaRecorder = new MediaRecorder(this.stream, mimeType ? { mimeType } : undefined);
-    let chunkIndex = 0;
-    this.mediaRecorder.ondataavailable = (e) => {
-      if (e.data.size > 0 && this.ws?.readyState === WebSocket.OPEN) {
-        chunkIndex++;
-        console.log(`[OnlineWS] ▲ 청크 전송 #${chunkIndex} — ${e.data.size} bytes @ ${new Date().toLocaleTimeString('ko-KR')}`);
-        this.ws.send(e.data);
-      } else if (e.data.size === 0) {
-        console.log('[OnlineWS] 청크 스킵 — size 0');
-      } else {
-        console.warn('[OnlineWS] WS not OPEN, 청크 드롭 — readyState:', this.ws?.readyState);
-      }
-    };
-    console.log(`[OnlineWS] 🎙️ 녹음 시작 — mimeType: ${this.mediaRecorder.mimeType}, 청크 주기: ${CHUNK_INTERVAL_MS}ms`);
-    this.mediaRecorder.start(CHUNK_INTERVAL_MS);
+    this.pcmCapture = new PcmAudioCaptureService({
+      onPcmChunk: (chunk) => this.sendPcmChunk(chunk),
+      onError: (message) => this.callbacks.onError(message),
+    });
+    await this.pcmCapture.start();
+    console.log(`[OnlineWS] 🎙️ PCM 녹음 시작 — 16kHz mono Int16, 청크 주기: ${PCM_CHUNK_DURATION_MS}ms`);
+  }
+
+  private sendPcmChunk(chunk: ArrayBuffer): void {
+    if (this.ws?.readyState !== WebSocket.OPEN) {
+      console.warn('[OnlineWS] WS not OPEN, PCM 청크 드롭 — readyState:', this.ws?.readyState);
+      return;
+    }
+    this.ws.send(chunk);
+
+    // 오디오는 회의록 원본이라 밀린다고 버리지 않음 — 지연 상태만 감지해서 UI에 알림
+    const congested = this.ws.bufferedAmount > WS_BUFFERED_AMOUNT_THRESHOLD_BYTES;
+    if (congested !== this.isCongested) {
+      this.isCongested = congested;
+      console.warn(
+        congested
+          ? `[OnlineWS] ⚠️ 전송 지연 감지 — bufferedAmount: ${this.ws.bufferedAmount}`
+          : '[OnlineWS] ✅ 전송 지연 해소',
+      );
+      this.callbacks.onNetworkCongestion(congested);
+    }
   }
 
   stopRecording(): void {
-    if (this.mediaRecorder) {
-      this.mediaRecorder.ondataavailable = null;
-      this.mediaRecorder.stop();
-      this.mediaRecorder = null;
+    this.pcmCapture?.stop();
+    this.pcmCapture = null;
+    if (this.isCongested) {
+      this.isCongested = false;
+      this.callbacks.onNetworkCongestion(false);
     }
-    this.stream?.getTracks().forEach((t) => t.stop());
-    this.stream = null;
   }
 
   startMeeting(): void {
