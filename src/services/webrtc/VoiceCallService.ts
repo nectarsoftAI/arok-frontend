@@ -1,10 +1,6 @@
 import { Room, RoomEvent, Track, type RemoteTrack, type RemoteParticipant, type Participant } from 'livekit-client';
-import apiClient from '../../api/apiClient';
-
-interface LiveKitTokenResponse {
-  url: string;
-  token: string;
-}
+import { livekitApi } from '../../api/livekit';
+import type { LiveKitTokenResponse } from '../../api/types';
 
 interface VoiceCallCallbacks {
   onConnected: () => void;
@@ -28,12 +24,9 @@ export class VoiceCallService {
   // micTrack은 useMicStream이 소유한 공유 트랙을 그대로 publish — 음소거 시
   // STT PCM 캡처도 같이 무음 처리되는 게 의도된 동작 (회의록 완전성 우선)
   async connect(meetingId: string, profileId: string, micTrack: MediaStreamTrack, token?: string): Promise<void> {
-    const params = new URLSearchParams({ meetingId, profileId });
-    if (token) params.set('token', token);
-
     let data: LiveKitTokenResponse;
     try {
-      const res = await apiClient.get<LiveKitTokenResponse>(`/api/v1/livekit/token?${params}`);
+      const res = await livekitApi.getToken(meetingId, profileId, token);
       data = res.data;
     } catch {
       this.callbacks.onError('음성 통화 연결에 실패했습니다.');
