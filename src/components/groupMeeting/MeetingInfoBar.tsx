@@ -4,7 +4,7 @@ import { Badge } from "../common/Badge";
 
 interface MeetingInfoBarProps {
   title: string;
-  startedAt: string;
+  startedAt: string | null;
   meetingLink: string;
   linkCopied: boolean;
   onCopyLink: () => void;
@@ -17,7 +17,7 @@ export function MeetingInfoBar({ title, startedAt, meetingLink, linkCopied, onCo
         <div className="flex items-center gap-3 flex-wrap">
           <h1 className="text-lg font-bold text-[#1A1D2E]">{title}</h1>
           <div className="flex items-center gap-2">
-            <Badge variant="neutral" size="md">{startedAt}</Badge>
+            {startedAt && <Badge variant="neutral" size="md">{startedAt}</Badge>}
             <Badge variant="primary" size="md">온라인 회의</Badge>
           </div>
         </div>

@@ -18,8 +18,8 @@ import { useVoiceCall } from "../../hooks/useVoiceCall";
 import { useAuthStore } from "../../store/authStore";
 import { meetingsApi } from "../../api/meetings";
 
-function formatNow(): string {
-  return new Date().toLocaleString("ko-KR", {
+function formatDateTime(date: Date): string {
+  return date.toLocaleString("ko-KR", {
     year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit",
   });
 }
@@ -41,7 +41,6 @@ export function GroupMeetingRoomScreen() {
   const title = routeState?.title ?? "온라인 회의";
   const meetingLink = routeState?.link ?? (roomId ? `arok.meet/${roomId}` : "");
   const guestToken = routeState?.token;
-  const startedAt = useRef(formatNow()).current;
 
   const micStream = useMicStream();
 
@@ -55,9 +54,12 @@ export function GroupMeetingRoomScreen() {
     maxReconnectAttempts,
     isNetworkOffline,
     isCongested,
+    startedAt,
     startMeeting,
     endMeeting,
   } = useOnlineMeeting(roomId, role, micStream.ensureTrack, guestToken);
+
+  const startedAtDisplay = startedAt ? formatDateTime(new Date(startedAt)) : null;
 
   const {
     isMuted,
@@ -96,13 +98,20 @@ export function GroupMeetingRoomScreen() {
     return () => window.removeEventListener("beforeunload", handler);
   }, [roomStatus]);
 
-  // 경과 시간 타이머 — LIVE 상태일 때만 동작
+  // 경과 시간 타이머 — LIVE 상태이고 startedAt(실제 시작 시각)이 확정된 뒤에만 동작.
+  // setElapsedSeconds(s => s + 1) 대신 매 tick마다 "현재시각 - startedAt"을 다시 계산해서
+  // 재입장/재연결 시에도 원래 시작 시각 기준으로 정확히 이어지도록 함 (드리프트 방지)
   useEffect(() => {
-    if (roomStatus !== "LIVE") return;
-    setElapsedSeconds(0);
-    const id = setInterval(() => setElapsedSeconds((s) => s + 1), 1000);
+    if (roomStatus !== "LIVE" || !startedAt) {
+      setElapsedSeconds(0);
+      return;
+    }
+    const startMs = new Date(startedAt).getTime();
+    const tick = () => setElapsedSeconds(Math.max(0, Math.floor((Date.now() - startMs) / 1000)));
+    tick();
+    const id = setInterval(tick, 1000);
     return () => clearInterval(id);
-  }, [roomStatus]);
+  }, [roomStatus, startedAt]);
 
   // 회의 종료 시: 방장은 요약 트리거 후 즉시 이동, 게스트는 다이얼로그 표시
   useEffect(() => {
@@ -230,7 +239,7 @@ export function GroupMeetingRoomScreen() {
       <div className="h-full flex flex-col relative">
         <MeetingInfoBar
           title={title}
-          startedAt={startedAt}
+          startedAt={startedAtDisplay}
           meetingLink={meetingLink}
           linkCopied={linkCopied}
           onCopyLink={handleCopyLink}

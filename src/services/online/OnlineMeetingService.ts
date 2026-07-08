@@ -15,10 +15,10 @@ interface ConnectParams {
 }
 
 interface Callbacks {
-  onRoomInfo: (status: string, participants: string[]) => void;
+  onRoomInfo: (status: string, participants: string[], startedAt: string | null) => void;
   onParticipantJoined: (profileId: string, role: string) => void;
   onParticipantLeft: (profileId: string) => void;
-  onMeetingStarted: () => void;
+  onMeetingStarted: (startedAt: string | null) => void;
   onMeetingEnded: () => void;
   onKicked: () => void;
   onTranscript: (msg: OnlineTranscriptMessage) => void;
@@ -101,10 +101,11 @@ export class OnlineMeetingService {
       console.log('[OnlineWS] ▼ 수신:', msg.type, msg);
       switch (msg.type) {
         case 'room_info':
-          console.log('[OnlineWS] room_info — status:', msg.status, '/ participants:', msg.participants);
+          console.log('[OnlineWS] room_info — status:', msg.status, '/ participants:', msg.participants, '/ startedAt:', msg.startedAt);
           this.callbacks.onRoomInfo(
             msg.status as string,
             (msg.participants as string[]) ?? [],
+            (msg.startedAt as string | undefined) ?? null,
           );
           break;
         case 'participant_joined':
@@ -116,8 +117,8 @@ export class OnlineMeetingService {
           this.callbacks.onParticipantLeft(msg.profileId as string);
           break;
         case 'meeting_started':
-          console.log('[OnlineWS] meeting_started → 녹음 시작');
-          this.callbacks.onMeetingStarted();
+          console.log('[OnlineWS] meeting_started → 녹음 시작 / startedAt:', msg.startedAt);
+          this.callbacks.onMeetingStarted((msg.startedAt as string | undefined) ?? null);
           break;
         case 'meeting_ended':
           console.log('[OnlineWS] meeting_ended → 녹음 종료 + WS close');
