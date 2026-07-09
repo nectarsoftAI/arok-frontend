@@ -8,6 +8,8 @@ import { LoginScreen } from "./components/screens/LoginScreen";
 import { SignupScreen } from "./components/screens/SignupScreen";
 import { ResetPasswordScreen } from "./components/screens/ResetPasswordScreen";
 import { GroupMeetingRoomScreen } from "./components/screens/GroupMeetingRoomScreen";
+import { LiveMeetingScreen } from "./components/screens/LiveMeetingScreen";
+import { UploadMeetingScreen } from "./components/screens/UploadMeetingScreen";
 import { PrivateRoute } from "./routes/PrivateRoute";
 
 export const router = createBrowserRouter([
@@ -28,6 +30,8 @@ export const router = createBrowserRouter([
           { path: "meetings", Component: MeetingListScreen },
           { path: "meetings/:id", Component: MeetingDetailScreen },
           { path: "insights", Component: InsightsScreen },
+          { path: "recording/live", Component: LiveMeetingScreen },
+          { path: "recording/upload", Component: UploadMeetingScreen },
           { path: "group-meeting/room/:roomId", Component: GroupMeetingRoomScreen },
         ],
       },
