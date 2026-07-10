@@ -15,6 +15,9 @@ interface VoiceCallCallbacks {
 
 export class VoiceCallService {
   private room: Room | null = null;
+  // connect()가 끝나기 전에 setMuted가 호출되면 그 시점엔 publish된 track이 없어
+  // 적용할 대상이 없다 — 원하는 음소거 상태를 기억해뒀다가 publish 직후 다시 적용한다.
+  private desiredMuted = false;
   private readonly callbacks: VoiceCallCallbacks;
 
   constructor(callbacks: VoiceCallCallbacks) {
@@ -56,13 +59,19 @@ export class VoiceCallService {
     }
 
     this.room = room;
+    this.applyDesiredMuteState();
     this.callbacks.onConnected();
   }
 
   setMuted(muted: boolean): void {
+    this.desiredMuted = muted;
+    this.applyDesiredMuteState();
+  }
+
+  private applyDesiredMuteState(): void {
     const track = this.room?.localParticipant.getTrackPublication(Track.Source.Microphone)?.track;
     if (!track) return;
-    if (muted) track.mute();
+    if (this.desiredMuted) track.mute();
     else track.unmute();
   }
 
