@@ -1,11 +1,9 @@
 import type { ServerMessage, SegmentMessage, EndMessage } from './types';
 import { useAuthStore } from '../../store/authStore';
+import { PcmAudioCaptureService } from '../audio/PcmAudioCaptureService';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL as string;
 const WS_BASE = (import.meta.env.VITE_WS_BASE_URL as string) || API_BASE.replace(/^http/, 'ws');
-
-const CHUNK_INTERVAL_MS = 5000;
-const MIME_CANDIDATES = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg'] as const;
 
 interface Callbacks {
   onSessionCreated: (meetingId: string) => void;
@@ -16,7 +14,7 @@ interface Callbacks {
 
 export class LiveSTTService {
   private ws: WebSocket | null = null;
-  private mediaRecorder: MediaRecorder | null = null;
+  private pcmCapture: PcmAudioCaptureService | null = null;
   private stream: MediaStream | null = null;
   private meetingId: string | null = null;
   private readonly callbacks: Callbacks;
@@ -101,22 +99,18 @@ export class LiveSTTService {
   }
 
   async startRecording(): Promise<void> {
-    this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    this.stream = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1 } });
+    const track = this.stream.getAudioTracks()[0];
 
-    const mimeType = MIME_CANDIDATES.find((t) => MediaRecorder.isTypeSupported(t));
-    this.mediaRecorder = new MediaRecorder(
-      this.stream,
-      mimeType ? { mimeType } : undefined,
-    );
-
-    this.mediaRecorder.ondataavailable = (event) => {
-      console.log('[녹음] 청크:', event.data.size, 'bytes');
-      if (event.data.size > 0 && this.ws?.readyState === WebSocket.OPEN) {
-        this.ws.send(event.data);
-      }
-    };
-
-    this.mediaRecorder.start(CHUNK_INTERVAL_MS);
+    this.pcmCapture = new PcmAudioCaptureService({
+      onPcmChunk: (chunk) => {
+        if (this.ws?.readyState === WebSocket.OPEN) {
+          this.ws.send(chunk);
+        }
+      },
+      onError: (message) => this.callbacks.onError(message),
+    });
+    await this.pcmCapture.start(track);
   }
 
   stop(): void {
@@ -148,11 +142,8 @@ export class LiveSTTService {
   }
 
   private stopMedia(): void {
-    if (this.mediaRecorder) {
-      this.mediaRecorder.ondataavailable = null; // 큐에 남은 이벤트 차단
-      this.mediaRecorder.stop();
-      this.mediaRecorder = null;
-    }
+    this.pcmCapture?.stop();
+    this.pcmCapture = null;
     this.stream?.getTracks().forEach((t) => t.stop());
     this.stream = null;
   }
