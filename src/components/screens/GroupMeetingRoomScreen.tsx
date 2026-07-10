@@ -12,7 +12,7 @@ import { ParticipantPanel } from "../groupMeeting/ParticipantPanel";
 import { TranscriptPanel } from "../groupMeeting/TranscriptPanel";
 import { MeetingControlBar } from "../groupMeeting/MeetingControlBar";
 import { type GroupSegment } from "../recording/GroupTranscriptSection";
-import { useOnlineMeeting } from "../../hooks/useOnlineMeeting";
+import { useOnlineMeeting, isMeetingOver } from "../../hooks/useOnlineMeeting";
 import { useMicStream } from "../../hooks/useMicStream";
 import { useVoiceCall } from "../../hooks/useVoiceCall";
 import { useAuthStore } from "../../store/authStore";
@@ -51,12 +51,13 @@ export function GroupMeetingRoomScreen() {
     error,
     isReconnecting,
     reconnectAttempt,
-    maxReconnectAttempts,
+    isReconnectStalled,
     isNetworkOffline,
     isCongested,
     startedAt,
     startMeeting,
     endMeeting,
+    reconnectNow,
   } = useOnlineMeeting(roomId, role, micStream.ensureTrack, guestToken);
 
   const startedAtDisplay = startedAt ? formatDateTime(new Date(startedAt)) : null;
@@ -113,9 +114,12 @@ export function GroupMeetingRoomScreen() {
     return () => clearInterval(id);
   }, [roomStatus, startedAt]);
 
-  // 회의 종료 시: 방장은 요약 트리거 후 즉시 이동, 게스트는 다이얼로그 표시
+  // 회의 종료 시: 방장은 요약 트리거 후 즉시 이동, 게스트는 다이얼로그 표시.
+  // COMPLETED(정상 종료)뿐 아니라 FAILED(장시간 연결 두절로 서버가 자체 종료)도 "끝난 회의"로
+  // 취급해야 함 — 이걸 안 하면 화면이 실시간 회의 상태로 영원히 멈춰있게 됨(대화록/참여자는
+  // 그 시점 값으로 고정된 채 아무 반응도 없음)
   useEffect(() => {
-    if (roomStatus !== "COMPLETED" || !roomId) return;
+    if (!isMeetingOver(roomStatus) || !roomId) return;
     if (isHost) {
       meetingsApi.summarize(roomId).catch(() => {});
       navigate(`/meetings/${roomId}`, { state: { role: "host" } });
@@ -232,7 +236,11 @@ export function GroupMeetingRoomScreen() {
         onConfirm={handleHostEnd}
       />
 
-      <GuestEndedDialog isOpen={showGuestEndedDialog} onGoToDetail={goToDetail} />
+      <GuestEndedDialog
+        isOpen={showGuestEndedDialog}
+        onGoToDetail={goToDetail}
+        reason={roomStatus === "FAILED" ? "failed" : "ended"}
+      />
 
       <LeaveDialog isOpen={isLeaveDialogOpen} onCancel={handleLeaveCancel} onConfirm={handleLeaveConfirm} />
 
@@ -249,9 +257,10 @@ export function GroupMeetingRoomScreen() {
           isNetworkOffline={isNetworkOffline}
           isReconnecting={isReconnecting}
           reconnectAttempt={reconnectAttempt}
-          maxReconnectAttempts={maxReconnectAttempts}
+          isReconnectStalled={isReconnectStalled}
           isCongested={isCongested}
           errorMessage={error || voiceCallError}
+          onReconnectNow={reconnectNow}
         />
 
         {/* ── 메인 영역 ── */}

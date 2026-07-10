@@ -4,8 +4,13 @@ import { PcmAudioCaptureService, PCM_CHUNK_DURATION_MS } from '../audio/PcmAudio
 const API_BASE = import.meta.env.VITE_API_BASE_URL as string;
 const WS_BASE = (import.meta.env.VITE_WS_BASE_URL as string) || API_BASE.replace(/^http/, 'ws');
 
-const RECONNECT_DELAY_MS = 1000;
-export const MAX_RECONNECT_ATTEMPTS = 5;
+// 고정 간격으로 몇 번만 재시도하고 포기하면, 재시도 창(예: 예전엔 5초)보다 네트워크 복구가
+// 늦게 일어나는 순간 그 탭은 새로고침 전까지 영구히 죽는다 — 지수 백오프로 무제한 재시도하고,
+// 대신 일정 횟수를 넘기면 onReconnecting의 stalled 플래그로 UI에서만 상태를 구분한다.
+const RECONNECT_BASE_DELAY_MS = 1000;
+const RECONNECT_MAX_DELAY_MS = 15000;
+// UI에 "n/5"로 보여주는 표시용 상한일 뿐, 5번을 넘겨도 재시도 자체는 멈추지 않는다
+export const RECONNECT_STALLED_THRESHOLD = 5;
 const WS_BUFFERED_AMOUNT_THRESHOLD_BYTES = 1_000_000; // 이 이상 쌓이면 전송 지연으로 간주 (버리지는 않음 — 회의록 손실 방지)
 
 interface ConnectParams {
@@ -22,7 +27,7 @@ interface Callbacks {
   onMeetingEnded: () => void;
   onKicked: () => void;
   onTranscript: (msg: OnlineTranscriptMessage) => void;
-  onReconnecting: (attempt: number, maxAttempts: number) => void;
+  onReconnecting: (attempt: number, stalled: boolean) => void;
   onNetworkCongestion: (congested: boolean) => void;
   onError: (message: string) => void;
 }
@@ -51,6 +56,13 @@ export class OnlineMeetingService {
   }
 
   private openWs(): void {
+    // 방어적 가드 — 어떤 경로로든 openWs()가 겹쳐 호출되면 같은 profileId로 소켓이 2개
+    // 동시에 열려 서버 쪽 참여자 상태가 꼬인다(회의 시작 시간 정지, 참여자 목록 불일치 등).
+    // 정상 흐름에서는 도달하지 않아야 하는 경로지만 안전망으로 남겨둠.
+    if (this.ws && (this.ws.readyState === WebSocket.CONNECTING || this.ws.readyState === WebSocket.OPEN)) {
+      console.warn('[OnlineWS] openWs() 중복 호출 무시 — 이미 연결/연결시도 중');
+      return;
+    }
     const { meetingId, profileId, token } = this.connectParams!;
     const params = new URLSearchParams({ profileId });
     if (token) params.set('token', token);
@@ -84,15 +96,39 @@ export class OnlineMeetingService {
     this.ws = ws;
   }
 
+  // 회의가 실제로 끝났다는 걸 서버가 알려주기 전까진(meeting_ended/kicked → intentionalClose)
+  // 절대 포기하지 않고 백오프를 걸며 계속 재시도한다. 딱 N번만 시도하고 멈추면, 그 예산보다
+  // 네트워크 복구가 늦게 일어나는 탭만 영구히 죽어버리는 문제(양쪽 클라이언트가 같은 네트워크
+  // 단절을 겪고도 한쪽만 복구되는 현상)가 생김.
   private scheduleReconnect(): void {
-    if (this.reconnectAttempt >= MAX_RECONNECT_ATTEMPTS) {
-      this.callbacks.onError('서버 연결이 끊어졌습니다.');
-      return;
-    }
     this.reconnectAttempt++;
-    console.log(`[OnlineWS] 🔁 재연결 시도 ${this.reconnectAttempt}/${MAX_RECONNECT_ATTEMPTS} — ${RECONNECT_DELAY_MS}ms 후`);
-    this.callbacks.onReconnecting(this.reconnectAttempt, MAX_RECONNECT_ATTEMPTS);
-    this.reconnectTimer = setTimeout(() => this.openWs(), RECONNECT_DELAY_MS);
+    const delay = Math.min(
+      RECONNECT_BASE_DELAY_MS * 2 ** (this.reconnectAttempt - 1),
+      RECONNECT_MAX_DELAY_MS,
+    );
+    const stalled = this.reconnectAttempt > RECONNECT_STALLED_THRESHOLD;
+    console.log(`[OnlineWS] 🔁 재연결 시도 ${this.reconnectAttempt} — ${delay}ms 후${stalled ? ' (장기 단절)' : ''}`);
+    this.callbacks.onReconnecting(this.reconnectAttempt, stalled);
+    // 타이머가 실제로 발동하는 순간 reconnectTimer를 먼저 비워야 한다 — 안 그러면 타이머 콜백이
+    // 이미 실행돼 openWs()가 진행 중인데도 this.reconnectTimer는 여전히 "만료된" 타이머 id를
+    // 들고 있는 상태가 되고, 그 틈에 notifyNetworkOnline()이 호출되면 "아직 대기 중"으로
+    // 오판해 openWs()를 한 번 더 실행 — 같은 profileId로 소켓이 2개 동시에 열려 서버 쪽
+    // 참여자 상태가 꼬이는 원인이 됨(회의 시작 시간 정지, 참여자 목록 불일치 등)
+    this.reconnectTimer = setTimeout(() => {
+      this.reconnectTimer = null;
+      this.openWs();
+    }, delay);
+  }
+
+  // 브라우저의 online 이벤트는 WS의 onclose보다 훨씬 빨리 올 수 있음 — 마침 백오프 대기 중이면
+  // 그 대기를 건너뛰고 바로 재시도한다. 이미 연결돼 있거나(this.ws OPEN) 소켓 시도가 진행 중이면
+  // (reconnectTimer가 비어있음) 아무것도 하지 않아 중복 연결을 막는다.
+  notifyNetworkOnline(): void {
+    if (this.intentionalClose || !this.reconnectTimer) return;
+    clearTimeout(this.reconnectTimer);
+    this.reconnectTimer = null;
+    console.log('[OnlineWS] 🌐 네트워크 복귀 감지 — 대기 없이 즉시 재연결 시도');
+    this.openWs();
   }
 
   private handleMessage(event: MessageEvent): void {

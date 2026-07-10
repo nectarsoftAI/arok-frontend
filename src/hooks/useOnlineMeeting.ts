@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { OnlineMeetingService, MAX_RECONNECT_ATTEMPTS } from '../services/online/OnlineMeetingService';
+import { OnlineMeetingService } from '../services/online/OnlineMeetingService';
 import type { OnlineTranscriptMessage } from '../services/online/types';
 import { useAuthStore } from '../store/authStore';
 import { meetingsApi } from '../api/meetings';
@@ -20,7 +20,13 @@ function toOnlineTranscript(seg: TranscriptSegment): OnlineTranscriptMessage {
 // 없으면 프론트에서 자체적으로 확정 처리 (서버가 정상적으로 isFinal:true를 보내면 발동 안 함)
 const PARTIAL_FINALIZE_TIMEOUT_MS = 4000;
 
-export type OnlineRoomStatus = 'PROCESSING' | 'LIVE' | 'COMPLETED';
+// 서버는 정상 종료(COMPLETED) 외에 실패 종료(FAILED, 예: 장시간 연결 두절로 서버가 자체 종료)도
+// 보낼 수 있음 — 둘 다 "회의가 끝났다"는 뜻이므로 isMeetingOver()로 함께 취급해야 함
+export type OnlineRoomStatus = 'PROCESSING' | 'LIVE' | 'COMPLETED' | 'FAILED';
+
+export function isMeetingOver(status: OnlineRoomStatus): boolean {
+  return status === 'COMPLETED' || status === 'FAILED';
+}
 
 export interface OnlineParticipant {
   profileId: string;
@@ -35,12 +41,13 @@ export interface UseOnlineMeetingReturn {
   isRecording: boolean;
   isReconnecting: boolean;
   reconnectAttempt: number;
-  maxReconnectAttempts: number;
+  isReconnectStalled: boolean;
   isNetworkOffline: boolean;
   isCongested: boolean;
   startedAt: string | null;
   startMeeting: () => void;
   endMeeting: () => void;
+  reconnectNow: () => void;
 }
 
 export function useOnlineMeeting(
@@ -56,6 +63,7 @@ export function useOnlineMeeting(
   const [isRecording, setIsRecording] = useState(false);
   const [isReconnecting, setIsReconnecting] = useState(false);
   const [reconnectAttempt, setReconnectAttempt] = useState(0);
+  const [isReconnectStalled, setIsReconnectStalled] = useState(false);
   const [isNetworkOffline, setIsNetworkOffline] = useState(!navigator.onLine);
   const [isCongested, setIsCongested] = useState(false);
   const [startedAt, setStartedAt] = useState<string | null>(null);
@@ -73,7 +81,12 @@ export function useOnlineMeeting(
   // OS가 즉시 알려주는 온라인/오프라인 상태를 별도로 감지해 더 빠르게 사용자에게 알림
   useEffect(() => {
     const handleOffline = () => setIsNetworkOffline(true);
-    const handleOnline = () => setIsNetworkOffline(false);
+    // WS 백오프가 다음 시도까지 몇 초~십수 초 대기하는 중일 수 있음 — OS가 네트워크 복귀를
+    // 알려주면 그 대기를 건너뛰고 바로 재연결을 시도해 복구를 앞당김
+    const handleOnline = () => {
+      setIsNetworkOffline(false);
+      serviceRef.current?.notifyNetworkOnline();
+    };
     window.addEventListener('offline', handleOffline);
     window.addEventListener('online', handleOnline);
     return () => {
@@ -172,6 +185,7 @@ export function useOnlineMeeting(
       onRoomInfo: (status, pids, roomStartedAt) => {
         const s = status as OnlineRoomStatus;
         setIsReconnecting(false);
+        setIsReconnectStalled(false);
         setRoomStatus(s);
         setParticipants(dedup(pids.map((pid) => ({ profileId: pid, role: 'GUEST' }))));
         setStartedAt(roomStartedAt);
@@ -209,9 +223,10 @@ export function useOnlineMeeting(
         service.disconnect();
       },
       onTranscript: (msg) => applyTranscript(msg),
-      onReconnecting: (attempt) => {
+      onReconnecting: (attempt, stalled) => {
         setIsReconnecting(true);
         setReconnectAttempt(attempt);
+        setIsReconnectStalled(stalled);
       },
       onNetworkCongestion: (congested) => setIsCongested(congested),
       onError: (msg) => {
@@ -258,6 +273,12 @@ export function useOnlineMeeting(
     setIsRecording(false);
   }, []);
 
+  // 장기 단절 배너의 수동 "지금 재연결" 버튼 — 이미 소켓이 열려 있거나 재시도가 진행 중이면
+  // (백오프 대기 중이 아니면) 서비스 내부에서 안전하게 무시됨
+  const reconnectNow = useCallback(() => {
+    serviceRef.current?.notifyNetworkOnline();
+  }, []);
+
   return {
     participants,
     transcripts,
@@ -266,11 +287,12 @@ export function useOnlineMeeting(
     isRecording,
     isReconnecting,
     reconnectAttempt,
-    maxReconnectAttempts: MAX_RECONNECT_ATTEMPTS,
+    isReconnectStalled,
     isNetworkOffline,
     isCongested,
     startedAt,
     startMeeting,
     endMeeting,
+    reconnectNow,
   };
 }
