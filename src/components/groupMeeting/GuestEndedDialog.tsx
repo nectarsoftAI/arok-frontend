@@ -5,14 +5,16 @@ import { DialogShell } from "../common/dialogs/DialogShell";
 interface GuestEndedDialogProps {
   isOpen: boolean;
   onGoToDetail: () => void;
-  // 방장이 직접 종료한 게 아니라(reason: "failed") 장시간 연결 두절로 서버가 자체 종료한
-  // 경우엔 "방장이 회의를 종료했습니다"라고 안내하면 사실과 다르므로 문구를 구분함
+  // 방장이 직접 종료한 게 아니라(reason: "failed") 서버가 비정상 종료로 처리한 경우엔
+  // "방장이 회의를 종료했습니다"라고 안내하면 사실과 다르므로 문구를 구분함.
+  // FAILED는 네트워크 단절뿐 아니라 다양한 원인으로 발생할 수 있어(백엔드 확인) 원인을
+  // 특정하지 않고 "비정상 종료"로만 안내함
   reason?: "ended" | "failed";
 }
 
 export function GuestEndedDialog({ isOpen, onGoToDetail, reason = "ended" }: GuestEndedDialogProps) {
   const description = reason === "failed"
-    ? "네트워크 연결이 오래 끊겨 회의가 종료되었습니다."
+    ? "회의가 비정상적으로 종료되었습니다."
     : "방장이 회의를 종료했습니다.";
 
   return (
