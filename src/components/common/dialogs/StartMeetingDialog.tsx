@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { FileText, Check, Copy, Loader2 } from "lucide-react";
 import apiClient from "../../../api/apiClient";
+import { meetingsApi } from "../../../api/meetings";
 import recodingLiveImg from "../../../assets/icons/recoding_live_icon.webp";
 import audioFileImg from "../../../assets/icons/audio_file_icon.webp";
 import personSingleIcon from "../../../assets/icons/person_single_icon.webp";
@@ -19,7 +20,8 @@ type Step =
   | "recording-mode"
   | "online-entry"
   | "online-room-title"
-  | "online-room-link";
+  | "online-room-link"
+  | "online-already-started";
 
 function extractRoomCode(input: string): string {
   const trimmed = input.trim();
@@ -52,6 +54,8 @@ export function StartMeetingDialog({
   const [linkCopied, setLinkCopied] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
   const [joinError, setJoinError] = useState("");
+  const [pendingJoin, setPendingJoin] = useState<{ meetingId: string; title: string; link: string; code: string } | null>(null);
+  const [pendingParticipantCount, setPendingParticipantCount] = useState<number | null>(null);
 
   const meetingLink = roomId ? `arok.meet/${roomId}` : "";
 
@@ -68,6 +72,8 @@ export function StartMeetingDialog({
     setLinkCopied(false);
     setIsJoining(false);
     setJoinError("");
+    setPendingJoin(null);
+    setPendingParticipantCount(null);
   };
 
   const handleClose = () => {
@@ -118,7 +124,26 @@ export function StartMeetingDialog({
       const res = await apiClient.get<{ meetingId: string; title: string }>(
         `/api/v1/meetings/by-token/${code}`
       );
-      onEnterRoom(res.data.meetingId, "guest", res.data.title || "온라인 회의", linkInput.trim(), code);
+      const meetingId = res.data.meetingId;
+      const title = res.data.title || "온라인 회의";
+      const link = linkInput.trim();
+
+      // 이미 시작된(LIVE) 회의면 곧바로 입장시키지 않고 한 번 더 확인받음
+      // (상태 조회 실패 시엔 확인 없이 기존처럼 바로 입장 — 이 체크 때문에 참여 자체가 막히면 안 됨)
+      try {
+        const detail = await meetingsApi.getById(meetingId);
+        if (detail.data.status === "LIVE") {
+          const participants = await meetingsApi.getParticipants(meetingId).catch(() => null);
+          setPendingParticipantCount(participants?.data.length ?? null);
+          setPendingJoin({ meetingId, title, link, code });
+          setStep("online-already-started");
+          return;
+        }
+      } catch {
+        /* 상태 확인 실패 — 확인 없이 진행 */
+      }
+
+      onEnterRoom(meetingId, "guest", title, link, code);
       resetAll();
       onClose?.();
     } catch {
@@ -126,6 +151,19 @@ export function StartMeetingDialog({
     } finally {
       setIsJoining(false);
     }
+  };
+
+  const handleConfirmJoinAnyway = () => {
+    if (!pendingJoin) return;
+    onEnterRoom(pendingJoin.meetingId, "guest", pendingJoin.title, pendingJoin.link, pendingJoin.code);
+    resetAll();
+    onClose?.();
+  };
+
+  const handleCancelJoin = () => {
+    setPendingJoin(null);
+    setPendingParticipantCount(null);
+    setStep("online-entry");
   };
 
   const handleCopyLink = () => {
@@ -337,6 +375,29 @@ export function StartMeetingDialog({
             >
               이전
             </Button>
+          </div>
+        )}
+
+        {/* ── 3b: 이미 시작된 회의 참여 확인 ── */}
+        {step === "online-already-started" && pendingJoin && (
+          <div>
+            <p className="text-sm font-medium text-[#1A1D2E] mb-2">
+              "{pendingJoin.title}" 회의가 이미 진행 중입니다
+            </p>
+            <p className="text-xs text-[#6B7280] mb-6">
+              {pendingParticipantCount !== null
+                ? `현재 ${pendingParticipantCount}명이 참여 중이에요. `
+                : ""}
+              지금 참여하시겠어요?
+            </p>
+            <div className="flex gap-3">
+              <Button type="button" variant="secondary" onClick={handleCancelJoin} className="flex-1">
+                취소
+              </Button>
+              <Button type="button" variant="primary" onClick={handleConfirmJoinAnyway} className="flex-1">
+                참여하기
+              </Button>
+            </div>
           </div>
         )}
 
