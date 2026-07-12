@@ -222,35 +222,26 @@ export function useRecordingFlow(): UseRecordingFlowReturn {
       setMeetingId(newMeetingId);
       setTranscripts(result.transcripts);
       setHasConversation(true);
-      setIsProcessing(false); // STT 완료 → 트랜스크립트 즉시 표시
 
-      // 요약은 별도 로딩 (LLM 백그라운드 처리 대기)
-      setIsLoadingSummary(true);
-      setSummaryError(null);
-      try {
-        const parsed = parseSummaryDto(result.summary);
-        if (parsed) {
-          setSummaryData(parsed);
+      // STT 응답에 summary가 포함돼 있으면 바로 사용, 없으면 DB 재조회
+      const parsed = parseSummaryDto(result.summary);
+      if (parsed) {
+        setSummaryData(parsed);
+        setShowSummary(true);
+      } else {
+        const { data } = await meetingsApi.getById(newMeetingId);
+        const parsedFallback = parseSummaryDto(data.summary);
+        if (parsedFallback) {
+          setSummaryData(parsedFallback);
           setShowSummary(true);
         } else {
-          // 백그라운드 LLM 완료 대기 — summarize 엔드포인트가 DB 캐시 or 신규 LLM 호출 처리
-          const { data } = await meetingsApi.summarize(newMeetingId);
-          const parsedFallback = parseSummaryDto(data);
-          if (parsedFallback) {
-            setSummaryData(parsedFallback);
-            setShowSummary(true);
-          } else {
-            setSummaryError('요약 생성에 실패했습니다.');
-          }
+          setSummaryError('요약 생성에 실패했습니다.');
         }
-      } catch (err) {
-        setSummaryError(getSummarizeErrorMessage(err));
-      } finally {
-        setIsLoadingSummary(false);
       }
     } catch (err) {
       console.error(err);
       setError('파일 분석 중 오류가 발생했습니다.');
+    } finally {
       setIsProcessing(false);
     }
   };
