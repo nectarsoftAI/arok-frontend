@@ -1,5 +1,5 @@
 import { Outlet, useLocation, useParams, useNavigate } from "react-router";
-import { useState, useEffect } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { meetingsApi } from "../api/meetings";
 import { logout as apiLogout } from "../api/auth";
 import { useAuthStore } from "../store/authStore";
@@ -8,6 +8,7 @@ import { Sidebar } from "./layout/Sidebar";
 import { Header } from "./layout/Header";
 import { MobileTabBar } from "./layout/MobileTabBar";
 import { LogoutConfirmDialog } from "./common/dialogs/LogoutConfirmDialog";
+import { RouteFallback } from "./common/RouteFallback";
 import type { OpenedMeeting } from "./layout/types";
 
 export function Layout() {
@@ -86,7 +87,9 @@ export function Layout() {
 
         {/* 페이지 컨텐츠 */}
         <main className="flex-1 overflow-auto pb-16 lg:pb-0">
-          <Outlet />
+          <Suspense fallback={<RouteFallback />}>
+            <Outlet />
+          </Suspense>
         </main>
 
         <MobileTabBar currentPath={location.pathname} />

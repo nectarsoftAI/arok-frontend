@@ -1,16 +1,18 @@
 import { createBrowserRouter } from "react-router";
 import { Layout } from "./components/Layout";
-import { NewMeetingScreen } from "./components/screens/NewMeetingScreen";
-import { MeetingListScreen } from "./components/screens/MeetingListScreen";
-import { MeetingDetailScreen } from "./components/screens/MeetingDetailScreen";
-import { InsightsScreen } from "./components/screens/InsightsScreen";
-import { LoginScreen } from "./components/screens/LoginScreen";
-import { SignupScreen } from "./components/screens/SignupScreen";
-import { ResetPasswordScreen } from "./components/screens/ResetPasswordScreen";
-import { GroupMeetingRoomScreen } from "./components/screens/GroupMeetingRoomScreen";
-import { LiveMeetingScreen } from "./components/screens/LiveMeetingScreen";
-import { UploadMeetingScreen } from "./components/screens/UploadMeetingScreen";
 import { PrivateRoute } from "./routes/PrivateRoute";
+import {
+  NewMeetingScreen,
+  MeetingListScreen,
+  MeetingDetailScreen,
+  InsightsScreen,
+  LoginScreen,
+  SignupScreen,
+  ResetPasswordScreen,
+  GroupMeetingRoomScreen,
+  LiveMeetingScreen,
+  UploadMeetingScreen,
+} from "./routes/lazyScreens";
 
 export const router = createBrowserRouter([
   // 인증 불필요 — 독립 화면 (Layout 바깥)
