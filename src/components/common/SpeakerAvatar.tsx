@@ -1,6 +1,9 @@
 import { cn } from './utils';
 
-export const SPEAKER_PALETTE = ['#5B5FF5', '#22D3EE', '#F59E0B', '#EC4899'];
+export const SPEAKER_PALETTE = [
+  '#5B5FF5', '#22D3EE', '#F59E0B', '#EC4899', '#10B981',
+  '#EF4444', '#9b9b9b', '#A855F7', '#84CC16', '#b86314',
+];
 
 interface SpeakerAvatarProps {
   letter: string;
