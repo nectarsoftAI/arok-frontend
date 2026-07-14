@@ -68,7 +68,7 @@ export function TranscriptSection({
               >
                 <SpeakerAvatar letter={liveIndexMap[seg.speaker_label]} color={liveColorMap[seg.speaker_label]} />
                 <div className="flex-1">
-                  <div className="text-xs text-[#6B7280] mb-1">화자 {liveIndexMap[seg.speaker_label]}</div>
+                  <div className="text-xs text-[#6B7280] mb-1">{seg.speaker_label}</div>
                   <ConversationBubble>{seg.text}</ConversationBubble>
                   <div className="text-xs text-[#9CA3AF] mt-1 text-right">{formatSec(seg.start_sec)}</div>
                 </div>
