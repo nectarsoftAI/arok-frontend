@@ -13,6 +13,7 @@ export interface SegmentMessage {
   end_sec: number;
   text: string;
   confidence: number;
+  is_final: boolean;
 }
 
 export interface SessionEndedMessage {

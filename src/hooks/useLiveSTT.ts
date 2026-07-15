@@ -22,6 +22,10 @@ export function useLiveSTT(): UseLiveSTTReturn {
   const [error, setError] = useState<string | null>(null);
 
   const serviceRef = useRef<LiveSTTService | null>(null);
+  // segments state와 별개로 유지하는 소스 오브 트루스 — WS 메시지가 React 렌더 사이클과
+  // 무관하게 연달아 들어와도 "지금 열려있는 partial 세그먼트가 몇 번째 원소인지"를 정확히 추적하기 위함.
+  const segmentsRef = useRef<SegmentMessage[]>([]);
+  const openPartialRef = useRef<Map<string, SegmentMessage>>(new Map()); // speaker_label -> 아직 안 끝난 세그먼트
 
   useEffect(() => {
     return () => {
@@ -35,6 +39,8 @@ export function useLiveSTT(): UseLiveSTTReturn {
 
     setError(null);
     setSegments([]);
+    segmentsRef.current = [];
+    openPartialRef.current.clear();
     setMeetingId(null);
     setIsEnded(false);
 
@@ -44,7 +50,23 @@ export function useLiveSTT(): UseLiveSTTReturn {
         setIsConnected(true);
       },
       onSegment: (msg) => {
-        setSegments((prev) => [...prev, msg]);
+        // is_final:false인 동안엔 같은 화자의 미리보기 세그먼트를 새로 추가하지 않고 갱신만 함
+        // (final이 오면 그 자리를 확정 텍스트로 교체하고 열린 상태에서 제외)
+        const openPartials = openPartialRef.current;
+        const openMsg = openPartials.get(msg.speaker_label);
+        const idx = openMsg ? segmentsRef.current.indexOf(openMsg) : -1;
+        if (idx !== -1) {
+          segmentsRef.current[idx] = msg;
+        } else {
+          segmentsRef.current.push(msg);
+        }
+        setSegments([...segmentsRef.current]);
+
+        if (msg.is_final) {
+          openPartials.delete(msg.speaker_label);
+        } else {
+          openPartials.set(msg.speaker_label, msg);
+        }
       },
       onEnded: (id) => {
         setMeetingId(id);
