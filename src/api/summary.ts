@@ -30,6 +30,11 @@ export function parseSummaryDto(dto: SummaryDto | null): SummaryResponse | null 
   }
 }
 
+export async function resummarize(meetingId: string): Promise<SummaryResponse> {
+  const response = await llmClient.post<SummaryResponse>(`/api/summary/${meetingId}/resummarize`);
+  return response.data;
+}
+
 export async function exportSummaryDocx(meetingId: string): Promise<void> {
   console.log('[exportSummaryDocx] 요청 시작 meetingId:', meetingId);
   const response = await llmClient.get(`/api/summary/${meetingId}/export`, {

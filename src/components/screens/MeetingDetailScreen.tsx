@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router";
-import { Download, Loader2 } from "lucide-react";
+import { Download, Loader2, RefreshCw } from "lucide-react";
 import { Button } from "../common/Button";
 import { SpeakerAvatar, SPEAKER_PALETTE } from "../common/SpeakerAvatar";
 import { Badge } from "../common/Badge";
 import { ConversationBubble } from "../common/ConversationBubble";
 import { meetingsApi, type MeetingDetail } from "../../api/meetings";
-import { parseSummaryDto, exportSummaryDocx, type SummaryResponse } from "../../api/summary";
+import { parseSummaryDto, exportSummaryDocx, resummarize, type SummaryResponse } from "../../api/summary";
 import type { TranscriptSegment, TranscriptUpdate } from "../../api/types";
 import { Skeleton } from "../common/Skeleton";
 import { SummaryDisplay } from "../common/SummaryDisplay";
@@ -54,6 +54,7 @@ export function MeetingDetailScreen() {
   const [summaryData, setSummaryData] = useState<SummaryResponse | null>(null);
   const [summaryError, setSummaryError] = useState<string | null>(null);
   const [isSummarizing, setIsSummarizing] = useState(false);
+  const [isResummarizing, setIsResummarizing] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
   const [editedTranscripts, setEditedTranscripts] = useState<TranscriptSegment[]>([]);
@@ -67,6 +68,9 @@ export function MeetingDetailScreen() {
     meetingsApi
       .getById(id)
       .then(({ data }) => {
+        console.log('[MeetingDetail] getById 응답 meetingId:', id, data);
+        console.log('[MeetingDetail] summary(DTO):', data.summary);
+        console.log('[MeetingDetail] transcripts:', data.transcripts);
         setMeeting(data);
         setEditedTranscripts(data.transcripts);
       })
@@ -138,6 +142,23 @@ export function MeetingDetailScreen() {
     setEditedTranscripts(meeting.transcripts);
     setIsDirty(false);
     setSaveError(null);
+  };
+
+  const handleResummarize = async () => {
+    if (!id) return;
+    setIsResummarizing(true);
+    setSummaryError(null);
+    console.log('[MeetingDetail] 재요약 요청 meetingId:', id);
+    try {
+      const data = await resummarize(id);
+      console.log('[MeetingDetail] 재요약 응답:', data);
+      setSummaryData(data);
+    } catch (err) {
+      console.error('재요약 실패', err);
+      setSummaryError('재요약에 실패했습니다. 다시 시도해 주세요.');
+    } finally {
+      setIsResummarizing(false);
+    }
   };
 
   /* ── Loading ─────────────────────────────────────────── */
@@ -353,26 +374,38 @@ export function MeetingDetailScreen() {
                 ))}
               </div>
             </div>
-            <Button
-              size="sm"
-              variant="secondary"
-              disabled={isExporting}
-              onClick={async () => {
-                setIsExporting(true);
-                try {
-                  await exportSummaryDocx(meeting.meetingId);
-                } catch (err) {
-                  console.error('요약 내보내기 실패', err);
-                  alert('요약 내보내기에 실패했습니다. 다시 시도해주세요.');
-                } finally {
-                  setIsExporting(false);
-                }
-              }}
-              className="flex items-center gap-2"
-            >
-              <Download className="w-4 h-4" />
-              {isExporting ? '내보내는 중...' : '요약 내보내기'}
-            </Button>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <Button
+                size="sm"
+                variant="secondary"
+                disabled={isResummarizing || isSummarizing}
+                onClick={handleResummarize}
+                className="flex items-center gap-2"
+              >
+                <RefreshCw className={`w-4 h-4 ${isResummarizing ? 'animate-spin' : ''}`} />
+                {isResummarizing ? '재요약 중...' : '재요약'}
+              </Button>
+              <Button
+                size="sm"
+                variant="secondary"
+                disabled={isExporting}
+                onClick={async () => {
+                  setIsExporting(true);
+                  try {
+                    await exportSummaryDocx(meeting.meetingId);
+                  } catch (err) {
+                    console.error('요약 내보내기 실패', err);
+                    alert('요약 내보내기에 실패했습니다. 다시 시도해주세요.');
+                  } finally {
+                    setIsExporting(false);
+                  }
+                }}
+                className="flex items-center gap-2"
+              >
+                <Download className="w-4 h-4" />
+                {isExporting ? '내보내는 중...' : '요약 내보내기'}
+              </Button>
+            </div>
           </div>
 
           <div className="flex-1 min-h-0 overflow-y-auto p-5 space-y-5">
@@ -452,21 +485,33 @@ export function MeetingDetailScreen() {
                   <Badge key={idx}>{display}</Badge>
                 ))}
               </div>
-              <Button
-                size="sm"
-                variant="secondary"
-                disabled={isExporting}
-                onClick={async () => {
-                  setIsExporting(true);
-                  try { await exportSummaryDocx(meeting.meetingId); }
-                  catch { alert('요약 내보내기에 실패했습니다.'); }
-                  finally { setIsExporting(false); }
-                }}
-                className="flex items-center gap-1.5 flex-shrink-0"
-              >
-                <Download className="w-4 h-4" />
-                {isExporting ? '...' : '내보내기'}
-              </Button>
+              <div className="flex items-center gap-1.5 flex-shrink-0">
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  disabled={isResummarizing || isSummarizing}
+                  onClick={handleResummarize}
+                  className="flex items-center gap-1.5"
+                >
+                  <RefreshCw className={`w-4 h-4 ${isResummarizing ? 'animate-spin' : ''}`} />
+                  {isResummarizing ? '...' : '재요약'}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  disabled={isExporting}
+                  onClick={async () => {
+                    setIsExporting(true);
+                    try { await exportSummaryDocx(meeting.meetingId); }
+                    catch { alert('요약 내보내기에 실패했습니다.'); }
+                    finally { setIsExporting(false); }
+                  }}
+                  className="flex items-center gap-1.5"
+                >
+                  <Download className="w-4 h-4" />
+                  {isExporting ? '...' : '내보내기'}
+                </Button>
+              </div>
             </div>
             <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-5">
               {summaryError ? (
