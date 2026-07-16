@@ -8,7 +8,7 @@ import { MeetingCard, MeetingCardSkeleton } from "../meetingList/MeetingCard";
 import { MeetingPagination } from "../meetingList/MeetingPagination";
 import { MeetingListFilters } from "../meetingList/MeetingListFilters";
 
-const PAGE_SIZE = 6;
+const PAGE_SIZE = 9;
 
 export function MeetingListScreen() {
   const navigate = useNavigate();
@@ -31,10 +31,17 @@ export function MeetingListScreen() {
     meetingsApi
       .getAll(currentPage - 1, PAGE_SIZE)
       .then(({ data }) => {
+        console.log(
+          `[MeetingList] getAll 응답 — page: ${currentPage}/${data.totalPages} / size: ${PAGE_SIZE} / totalCount: ${data.totalCount} / 수신: ${data.meetings.length}건`
+        );
+        console.log('[MeetingList] meetings:', data.meetings);
         setMeetings(data.meetings);
         setTotalPages(data.totalPages);
       })
-      .catch(() => setFetchError("회의 목록을 불러오지 못했습니다."))
+      .catch((err) => {
+        console.error('[MeetingList] getAll 실패 — page:', currentPage, err);
+        setFetchError("회의 목록을 불러오지 못했습니다.");
+      })
       .finally(() => {
         clearTimeout(skeletonTimer);
         setIsLoading(false);

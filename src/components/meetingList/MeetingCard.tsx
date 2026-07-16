@@ -1,7 +1,6 @@
 import { Calendar, Clock, X } from "lucide-react";
 import type { MeetingListItem } from "../../api/meetings";
 import { Skeleton } from "../common/Skeleton";
-import { Button } from "../common/Button";
 import { SpeakerAvatar, SPEAKER_PALETTE } from "../common/SpeakerAvatar";
 import { Badge } from "../common/Badge";
 
@@ -25,7 +24,18 @@ interface MeetingCardProps {
 
 export function MeetingCard({ meeting, onDelete, onOpen }: MeetingCardProps) {
   return (
-    <div className="bg-white rounded-lg border border-[#E5E7EB] shadow-sm p-5 transition-all hover:shadow-md hover:border-[#5B5FF5] hover:scale-[1.01] cursor-pointer group relative">
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={() => onOpen(meeting.meetingId)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onOpen(meeting.meetingId);
+        }
+      }}
+      className="bg-white rounded-lg border border-[#E5E7EB] shadow-sm p-6 transition-all hover:shadow-md hover:border-[#5B5FF5] hover:scale-[1.01] cursor-pointer relative text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#5B5FF5] focus-visible:ring-offset-2"
+    >
       {/* Delete button */}
       <button
         onClick={(e) => {
@@ -39,16 +49,16 @@ export function MeetingCard({ meeting, onDelete, onOpen }: MeetingCardProps) {
       </button>
 
       {/* Date Badge */}
-      <Badge variant="primary" className="inline-flex items-center gap-1.5 px-2.5 py-1 font-medium mb-3">
+      <Badge variant="primary" className="inline-flex items-center gap-1.5 px-2.5 py-1 font-medium mb-4">
         <Calendar className="w-3 h-3" />
         {formatDate(meeting.meetingDate)}
       </Badge>
 
       {/* Title */}
-      <h3 className="font-semibold text-[#1A1D2E] mb-3 pr-6">{meeting.title}</h3>
+      <h3 className="font-semibold text-[#1A1D2E] mb-4 pr-6">{meeting.title}</h3>
 
       {/* Participants */}
-      <div className="flex items-center gap-2 mb-3">
+      <div className="flex items-center gap-2 mb-7">
         <div className="flex -space-x-2">
           {meeting.participants.slice(0, 4).map((p, pIdx) => (
             <SpeakerAvatar
@@ -66,13 +76,13 @@ export function MeetingCard({ meeting, onDelete, onOpen }: MeetingCardProps) {
       </div>
 
       {/* Duration */}
-      <div className="flex items-center gap-1.5 text-xs text-[#6B7280] mb-3">
+      <div className="flex items-center gap-1.5 text-xs text-[#6B7280] mb-4">
         <Clock className="w-3.5 h-3.5" />
         {formatDuration(meeting.durationSeconds)}
       </div>
 
       {/* Keywords */}
-      <div className="flex flex-wrap gap-1.5 mb-4 min-h-[22px]">
+      <div className="flex flex-wrap gap-1.5 min-h-[22px]">
         {meeting.keywords.length > 0 ? (
           meeting.keywords.slice(0, 3).map((kw, idx) => (
             <Badge key={idx}>{kw}</Badge>
@@ -81,37 +91,27 @@ export function MeetingCard({ meeting, onDelete, onOpen }: MeetingCardProps) {
           <Badge className="text-[#9CA3AF]">키워드 없음</Badge>
         )}
       </div>
-
-      {/* Open Button */}
-      <Button
-        variant="outline"
-        onClick={() => onOpen(meeting.meetingId)}
-        className="w-full py-2 border-[#E5E7EB] group-hover:bg-[#5B5FF5] group-hover:text-white"
-      >
-        열기
-      </Button>
     </div>
   );
 }
 
 export function MeetingCardSkeleton() {
   return (
-    <div className="bg-white rounded-lg border border-[#E5E7EB] shadow-sm p-5 relative">
-      <Skeleton className="h-6 w-28 bg-gray-200 mb-3" />
-      <Skeleton className="h-5 w-4/5 bg-gray-200 mb-3" />
-      <div className="flex items-center gap-2 mb-3">
+    <div className="bg-white rounded-lg border border-[#E5E7EB] shadow-sm p-6 relative">
+      <Skeleton className="h-6 w-28 bg-gray-200 mb-4" />
+      <Skeleton className="h-5 w-4/5 bg-gray-200 mb-4" />
+      <div className="flex items-center gap-2 mb-4">
         <div className="flex -space-x-2">
           <Skeleton className="w-8 h-8 rounded-full bg-gray-200" />
           <Skeleton className="w-8 h-8 rounded-full bg-gray-200" />
         </div>
         <Skeleton className="h-3 w-14 bg-gray-200" />
       </div>
-      <Skeleton className="h-3 w-20 bg-gray-200 mb-3" />
-      <div className="flex gap-1.5 mb-4">
+      <Skeleton className="h-3 w-20 bg-gray-200 mb-4" />
+      <div className="flex gap-1.5">
         <Skeleton className="h-5 w-16 bg-gray-200" />
         <Skeleton className="h-5 w-14 bg-gray-200" />
       </div>
-      <Skeleton className="h-9 w-full bg-gray-200" />
     </div>
   );
 }
