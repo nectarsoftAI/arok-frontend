@@ -4,6 +4,8 @@ import { Download, Loader2, RefreshCw } from "lucide-react";
 import { Button } from "../common/Button";
 import { SpeakerAvatar, SPEAKER_PALETTE } from "../common/SpeakerAvatar";
 import { Badge } from "../common/Badge";
+import { MeetingTypeBadge } from "../common/MeetingTypeBadge";
+import { formatDuration } from "../common/utils";
 import { ConversationBubble } from "../common/ConversationBubble";
 import { meetingsApi, type MeetingDetail } from "../../api/meetings";
 import { parseSummaryDto, exportSummaryDocx, resummarize, type SummaryResponse } from "../../api/summary";
@@ -16,12 +18,6 @@ function formatSec(sec: number): string {
   const m = Math.floor(sec / 60);
   const s = Math.floor(sec) % 60;
   return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
-}
-
-function formatDuration(seconds: number | null): string {
-  if (!seconds) return "-";
-  const m = Math.floor(seconds / 60);
-  return `${m}분`;
 }
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -179,8 +175,10 @@ export function MeetingDetailScreen() {
           {/* 왼쪽: 대화 내용 */}
           <div className="bg-white rounded-lg shadow-sm flex flex-col border-2 border-[#E5E7EB]">
             <div className="px-5 py-4 border-b border-[#E5E7EB] flex items-center justify-between">
-              <Skeleton className="h-5 w-20 bg-gray-200" />
-              <Skeleton className="h-8 w-28 bg-gray-200" />
+              <div className="flex items-center gap-2">
+                <Skeleton className="h-5 w-20 bg-gray-200" />
+                <Skeleton className="h-5 w-16 bg-gray-200" />
+              </div>
             </div>
             <div className="flex-1 overflow-auto p-5 space-y-5">
               {Array.from({ length: 5 }).map((_, i) => (
@@ -279,7 +277,7 @@ export function MeetingDetailScreen() {
           <span className="text-sm text-[#9CA3AF]">•</span>
           <span className="text-sm text-[#6B7280]">{formatDuration(meeting.durationSeconds)}</span>
           <span className="text-sm text-[#9CA3AF]">•</span>
-          <Badge variant="primary" size="sm">편집 가능</Badge>
+          <MeetingTypeBadge type={meeting.meetingType} />
         </div>
       </div>
 
@@ -308,7 +306,10 @@ export function MeetingDetailScreen() {
         {/* 왼쪽: 대화 내용 */}
         <div className="bg-white rounded-lg shadow-sm flex flex-col min-h-0 border-2 border-[#5B5FF5]/20 bg-[#5B5FF5]/[0.02]">
           <div className="px-5 py-4 border-b border-[#E5E7EB] flex items-center justify-between">
-            <h2 className="font-semibold text-[#1A1D2E]">대화 내용</h2>
+            <div className="flex items-center gap-2">
+              <h2 className="font-semibold text-[#1A1D2E]">대화 내용</h2>
+              <Badge variant="primary" size="sm">편집 가능</Badge>
+            </div>
             <div className="flex items-center gap-2">
               {isDirty && (
                 <>
@@ -321,10 +322,6 @@ export function MeetingDetailScreen() {
                   </Button>
                 </>
               )}
-              <Button size="sm" variant="secondary" className="flex items-center gap-2">
-                <Download className="w-4 h-4" />
-                대화 내보내기
-              </Button>
             </div>
           </div>
 
@@ -435,6 +432,7 @@ export function MeetingDetailScreen() {
           <div className="flex-1 flex flex-col min-h-0 bg-white">
             <div className="px-4 py-3 border-b border-[#E5E7EB] flex items-center justify-between">
               <div className="flex items-center gap-2">
+                <Badge variant="primary" size="sm">편집 가능</Badge>
                 {isDirty && (
                   <>
                     <Button size="sm" variant="secondary" onClick={handleCancel} disabled={isSaving}>취소</Button>
@@ -445,10 +443,6 @@ export function MeetingDetailScreen() {
                   </>
                 )}
               </div>
-              <Button size="sm" variant="secondary" className="flex items-center gap-1.5">
-                <Download className="w-4 h-4" />
-                내보내기
-              </Button>
             </div>
             {saveError && <div className="px-4 pt-2 text-xs text-red-500">{saveError}</div>}
             <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">

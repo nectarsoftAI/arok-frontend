@@ -3,17 +3,12 @@ import type { MeetingListItem } from "../../api/meetings";
 import { Skeleton } from "../common/Skeleton";
 import { SpeakerAvatar, SPEAKER_PALETTE } from "../common/SpeakerAvatar";
 import { Badge } from "../common/Badge";
+import { MeetingTypeBadge } from "../common/MeetingTypeBadge";
+import { formatDuration } from "../common/utils";
 
 function formatDate(dateStr: string): string {
   if (!dateStr) return "-";
   return dateStr.slice(0, 10);
-}
-
-function formatDuration(seconds: number | null): string {
-  if (!seconds) return "-";
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return s > 0 ? `${m}분 ${s}초` : `${m}분`;
 }
 
 interface MeetingCardProps {
@@ -48,11 +43,14 @@ export function MeetingCard({ meeting, onDelete, onOpen }: MeetingCardProps) {
         <X className="w-4 h-4" />
       </button>
 
-      {/* Date Badge */}
-      <Badge variant="primary" className="inline-flex items-center gap-1.5 px-2.5 py-1 font-medium mb-4">
-        <Calendar className="w-3 h-3" />
-        {formatDate(meeting.meetingDate)}
-      </Badge>
+      {/* Date + Type — 날짜는 좌측, 유형은 우측 (pr-6으로 삭제 버튼 회피) */}
+      <div className="flex items-center justify-between gap-2 mb-4 pr-6">
+        <Badge variant="primary" className="inline-flex items-center gap-1.5 px-2.5 py-1 font-medium">
+          <Calendar className="w-3 h-3" />
+          {formatDate(meeting.meetingDate)}
+        </Badge>
+        <MeetingTypeBadge type={meeting.meetingType} />
+      </div>
 
       {/* Title */}
       <h3 className="font-semibold text-[#1A1D2E] mb-4 pr-6">{meeting.title}</h3>
@@ -98,7 +96,10 @@ export function MeetingCard({ meeting, onDelete, onOpen }: MeetingCardProps) {
 export function MeetingCardSkeleton() {
   return (
     <div className="bg-white rounded-lg border border-[#E5E7EB] shadow-sm p-6 relative">
-      <Skeleton className="h-6 w-28 bg-gray-200 mb-4" />
+      <div className="flex items-center justify-between gap-2 mb-4 pr-6">
+        <Skeleton className="h-6 w-28 bg-gray-200" />
+        <Skeleton className="h-6 w-24 bg-gray-200" />
+      </div>
       <Skeleton className="h-5 w-4/5 bg-gray-200 mb-4" />
       <div className="flex items-center gap-2 mb-4">
         <div className="flex -space-x-2">
