@@ -13,6 +13,7 @@ import { parseSummaryDto, exportSummaryDocx, resummarize, type SummaryResponse }
 import type { TranscriptSegment, TranscriptUpdate } from "../../api/types";
 import { Skeleton } from "../common/Skeleton";
 import { SummaryDisplay } from "../common/SummaryDisplay";
+import { SpeakerRenameDropdown, type SpeakerRenameItem } from "../common/SpeakerRenameDropdown";
 
 
 function formatSec(sec: number): string {
@@ -104,6 +105,20 @@ export function MeetingDetailScreen() {
       next[idx] = { ...next[idx], [field]: value };
       return next;
     });
+    setIsDirty(true);
+    setSaveError(null);
+  };
+
+  /**
+   * 화자 단위 일괄 변경 — 같은 speakerLabel 발언 전체의 speakerDisplay를 교체한다.
+   * TODO: 백엔드 `PUT /api/v1/meetings/{meetingId}/speakers` 머지 후,
+   *       로컬 반영 대신 해당 API를 1회 호출하도록 교체 (현재는 기존 저장 플로우에 위임).
+   */
+  const handleSpeakerRename = (renames: Record<string, string>) => {
+    if (Object.keys(renames).length === 0) return;
+    setEditedTranscripts((prev) =>
+      prev.map((t) => (renames[t.speakerLabel] ? { ...t, speakerDisplay: renames[t.speakerLabel] } : t))
+    );
     setIsDirty(true);
     setSaveError(null);
   };
@@ -281,6 +296,16 @@ export function MeetingDetailScreen() {
   const speakerLetterMap = Object.fromEntries(
     uniqueSpeakers.map((lbl, i) => [lbl, String.fromCharCode(65 + i)])
   );
+  const speakerRenameItems: SpeakerRenameItem[] = uniqueSpeakers.map((lbl) => {
+    const letter = speakerLetterMap[lbl] ?? 'A';
+    const first = editedTranscripts.find((t) => t.speakerLabel === lbl);
+    return {
+      label: lbl,
+      letter,
+      color: speakerColorMap[lbl],
+      display: resolveDisplay(first?.speakerDisplay ?? '', letter),
+    };
+  });
   const uniqueSpeakerDisplays = [...new Set(meeting.transcripts.map((t) =>
     resolveDisplay(t.speakerDisplay, speakerLetterMap[t.speakerLabel] ?? 'A')
   ))];
@@ -357,6 +382,7 @@ export function MeetingDetailScreen() {
                   </Button>
                 </>
               )}
+              <SpeakerRenameDropdown speakers={speakerRenameItems} onApply={handleSpeakerRename} />
             </div>
           </div>
 
@@ -478,6 +504,7 @@ export function MeetingDetailScreen() {
                   </>
                 )}
               </div>
+              <SpeakerRenameDropdown speakers={speakerRenameItems} onApply={handleSpeakerRename} />
             </div>
             {saveError && <div className="px-4 pt-2 text-xs text-red-500">{saveError}</div>}
             <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
