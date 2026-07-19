@@ -1,5 +1,8 @@
 import { lazy } from "react";
 
+export const LandingScreen = lazy(() =>
+  import("../components/screens/LandingScreen").then((m) => ({ default: m.LandingScreen }))
+);
 export const NewMeetingScreen = lazy(() =>
   import("../components/screens/NewMeetingScreen").then((m) => ({ default: m.NewMeetingScreen }))
 );
