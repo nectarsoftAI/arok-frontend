@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router";
 import { Download, Loader2, RefreshCw } from "lucide-react";
 import { Button } from "../common/Button";
+import { DeleteMeetingDialog } from "../common/dialogs/DeleteMeetingDialog";
 import { SpeakerAvatar, SPEAKER_PALETTE } from "../common/SpeakerAvatar";
 import { Badge } from "../common/Badge";
 import { MeetingTypeBadge } from "../common/MeetingTypeBadge";
@@ -58,6 +59,7 @@ export function MeetingDetailScreen() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'transcript' | 'summary'>('transcript');
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -140,6 +142,18 @@ export function MeetingDetailScreen() {
     setSaveError(null);
   };
 
+  const handleDeleteConfirm = async () => {
+    if (!meeting) return;
+    try {
+      await meetingsApi.delete(meeting.meetingId);
+      navigate("/meetings", { replace: true });
+    } catch (err) {
+      console.error('회의록 삭제 실패', err);
+      setIsDeleteOpen(false);
+      alert('회의록 삭제에 실패했습니다. 다시 시도해 주세요.');
+    }
+  };
+
   const handleResummarize = async () => {
     if (!id) return;
     setIsResummarizing(true);
@@ -162,13 +176,16 @@ export function MeetingDetailScreen() {
     return (
       <div className="h-full p-6">
         {/* 제목 영역 */}
-        <div className="mb-4">
-          <Skeleton className="h-7 w-72 bg-gray-200 mb-2" />
-          <div className="flex items-center gap-2">
-            <Skeleton className="h-4 w-24 bg-gray-200" />
-            <Skeleton className="h-4 w-1 bg-gray-200" />
-            <Skeleton className="h-4 w-12 bg-gray-200" />
+        <div className="mb-4 flex items-start justify-between gap-4">
+          <div>
+            <Skeleton className="h-7 w-72 bg-gray-200 mb-2" />
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-4 w-24 bg-gray-200" />
+              <Skeleton className="h-4 w-1 bg-gray-200" />
+              <Skeleton className="h-4 w-12 bg-gray-200" />
+            </div>
           </div>
+          <Skeleton className="h-8 w-28 bg-gray-200 flex-shrink-0" />
         </div>
 
         <div className="hidden lg:grid grid-cols-[1fr_0.67fr] gap-6" style={{ height: "calc(100% - 3rem)" }}>
@@ -270,15 +287,33 @@ export function MeetingDetailScreen() {
 
   return (
     <div className="h-full flex flex-col p-6">
-      <div className="mb-4 flex-shrink-0">
-        <h1 className="text-xl font-semibold text-[#1A1D2E]">{meeting.title}</h1>
-        <div className="flex items-center gap-2 mt-1">
-          <span className="text-sm text-[#6B7280]">{formatMeetingDate(meeting.meetingDate)}</span>
-          <span className="text-sm text-[#9CA3AF]">•</span>
-          <span className="text-sm text-[#6B7280]">{formatDuration(meeting.durationSeconds)}</span>
-          <span className="text-sm text-[#9CA3AF]">•</span>
-          <MeetingTypeBadge type={meeting.meetingType} />
+      <DeleteMeetingDialog
+        isOpen={isDeleteOpen}
+        meetingTitle={meeting.title}
+        onConfirm={handleDeleteConfirm}
+        onClose={() => setIsDeleteOpen(false)}
+      />
+
+      <div className="mb-4 flex-shrink-0 flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <h1 className="text-xl font-semibold text-[#1A1D2E]">{meeting.title}</h1>
+          <div className="flex items-center gap-2 mt-1 flex-wrap">
+            <span className="text-sm text-[#6B7280]">{formatMeetingDate(meeting.meetingDate)}</span>
+            <span className="text-sm text-[#9CA3AF]">•</span>
+            <span className="text-sm text-[#6B7280]">{formatDuration(meeting.durationSeconds)}</span>
+            <span className="text-sm text-[#9CA3AF]">•</span>
+            <MeetingTypeBadge type={meeting.meetingType} />
+          </div>
         </div>
+
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={() => setIsDeleteOpen(true)}
+          className="flex-shrink-0 hover:text-red-600 hover:bg-red-50 hover:border-red-200"
+        >
+          삭제하기
+        </Button>
       </div>
 
       {/* 모바일 탭 */}
