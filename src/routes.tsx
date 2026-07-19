@@ -1,6 +1,6 @@
 import { createBrowserRouter } from "react-router";
 import { Layout } from "./components/Layout";
-import { PrivateRoute } from "./routes/PrivateRoute";
+import { RootRoute } from "./routes/RootRoute";
 import {
   NewMeetingScreen,
   MeetingListScreen,
@@ -20,9 +20,10 @@ export const router = createBrowserRouter([
   { path: "/signup", Component: SignupScreen },
   { path: "/reset-password", Component: ResetPasswordScreen },
 
-  // 인증 필요 — PrivateRoute → Layout → 각 화면
+  // "/" 는 미로그인 시 랜딩(공개), 로그인 시 Layout → 각 화면
+  // 그 외 경로는 인증 필요 — RootRoute → Layout → 각 화면
   {
-    element: <PrivateRoute />,
+    element: <RootRoute />,
     children: [
       {
         path: "/",
