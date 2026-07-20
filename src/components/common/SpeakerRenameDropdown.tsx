@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { X, Check, Users } from 'lucide-react';
+import { X, Check, Users, Loader2 } from 'lucide-react';
 import { SpeakerAvatar } from './SpeakerAvatar';
 import { Button } from './Button';
 import { cn } from './utils';
@@ -7,7 +7,7 @@ import { cn } from './utils';
 export interface SpeakerRenameItem {
   /** 화자 고유 키 (예: SPEAKER_A) — 일괄 변경의 기준 */
   label: string;
-  /** 아바타에 표시할 글자 */
+  /** 아바타 기본 글자 — 보통 표시 이름의 첫 글자 */
   letter: string;
   /** 아바타 배경 HEX */
   color: string;
@@ -17,8 +17,8 @@ export interface SpeakerRenameItem {
 
 interface SpeakerRenameDropdownProps {
   speakers: SpeakerRenameItem[];
-  /** 변경된 화자만 { speakerLabel: 새 이름 } 형태로 전달 */
-  onApply: (renames: Record<string, string>) => void;
+  /** 변경된 화자만 { speakerLabel: 새 이름 } 형태로 전달. reject 시 패널이 열린 채 에러를 표시한다. */
+  onApply: (renames: Record<string, string>) => Promise<void>;
   className?: string;
 }
 
@@ -70,7 +70,7 @@ export function SpeakerRenameDropdown({ speakers, onApply, className }: SpeakerR
 
 interface SpeakerRenamePanelProps {
   speakers: SpeakerRenameItem[];
-  onApply: (renames: Record<string, string>) => void;
+  onApply: (renames: Record<string, string>) => Promise<void>;
   onClose: () => void;
 }
 
@@ -78,12 +78,23 @@ function SpeakerRenamePanel({ speakers, onApply, onClose }: SpeakerRenamePanelPr
   const [names, setNames] = useState<Record<string, string>>(() =>
     Object.fromEntries(speakers.map((s) => [s.label, s.display]))
   );
+  const [isApplying, setIsApplying] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const changed = speakers.filter((s) => names[s.label].trim() && names[s.label] !== s.display);
 
-  const handleApply = () => {
-    onApply(Object.fromEntries(changed.map((s) => [s.label, names[s.label].trim()])));
-    onClose();
+  const handleApply = async () => {
+    if (changed.length === 0 || isApplying) return;
+    setIsApplying(true);
+    setError(null);
+    try {
+      await onApply(Object.fromEntries(changed.map((s) => [s.label, names[s.label].trim()])));
+      onClose();
+    } catch (err) {
+      console.error('화자 이름 일괄 변경 실패', err);
+      setError('변경에 실패했습니다. 다시 시도해 주세요.');
+      setIsApplying(false);
+    }
   };
 
   return (
@@ -110,7 +121,8 @@ function SpeakerRenamePanel({ speakers, onApply, onClose }: SpeakerRenamePanelPr
         ) : (
           speakers.map((s) => (
             <div key={s.label} className="flex items-center gap-2">
-              <SpeakerAvatar letter={s.letter} color={s.color} size="sm" />
+              {/* 입력 중인 이름의 첫 글자를 즉시 반영 (비면 현재 이름 기준 글자) */}
+              <SpeakerAvatar letter={names[s.label].trim().charAt(0) || s.letter} color={s.color} size="sm" />
               <span className="text-xs text-[#9CA3AF] truncate max-w-[4.5rem]" title={s.display}>
                 {s.display}
               </span>
@@ -118,26 +130,29 @@ function SpeakerRenamePanel({ speakers, onApply, onClose }: SpeakerRenamePanelPr
               <input
                 value={names[s.label]}
                 onChange={(e) => setNames((prev) => ({ ...prev, [s.label]: e.target.value }))}
-                onKeyDown={(e) => e.key === 'Enter' && handleApply()}
+                onKeyDown={(e) => { if (e.key === 'Enter') void handleApply(); }}
                 placeholder={s.display}
-                className="flex-1 min-w-0 text-xs text-[#1A1D2E] bg-[#F9FAFB] border border-[#E5E7EB] rounded px-2 py-1.5 outline-none focus:border-[#5B5FF5] focus:bg-white transition-colors"
+                disabled={isApplying}
+                className="flex-1 min-w-0 text-xs text-[#1A1D2E] bg-[#F9FAFB] border border-[#E5E7EB] rounded px-2 py-1.5 outline-none focus:border-[#5B5FF5] focus:bg-white transition-colors disabled:opacity-60"
               />
             </div>
           ))
         )}
       </div>
 
+      {error && <p className="px-4 pb-1 text-xs text-red-500">{error}</p>}
+
       <div className="px-4 py-3 flex items-center gap-2 border-t border-[#F3F4F6]">
-        <Button size="sm" variant="secondary" onClick={onClose} className="flex-1">
+        <Button size="sm" variant="secondary" onClick={onClose} disabled={isApplying} className="flex-1">
           취소
         </Button>
         <Button
           size="sm"
           onClick={handleApply}
-          disabled={changed.length === 0}
+          disabled={changed.length === 0 || isApplying}
           className="flex-1 flex items-center justify-center gap-1.5"
         >
-          <Check className="w-3.5 h-3.5" />
+          {isApplying ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
           적용
         </Button>
       </div>

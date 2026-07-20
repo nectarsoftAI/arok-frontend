@@ -10,7 +10,7 @@ import { formatDuration } from "../common/utils";
 import { ConversationBubble } from "../common/ConversationBubble";
 import { meetingsApi, type MeetingDetail } from "../../api/meetings";
 import { parseSummaryDto, exportSummaryDocx, resummarize, type SummaryResponse } from "../../api/summary";
-import type { TranscriptSegment, TranscriptUpdate } from "../../api/types";
+import type { TranscriptSegment, TranscriptUpdate, SpeakerRename } from "../../api/types";
 import { Skeleton } from "../common/Skeleton";
 import { SummaryDisplay } from "../common/SummaryDisplay";
 import { SpeakerRenameDropdown, type SpeakerRenameItem } from "../common/SpeakerRenameDropdown";
@@ -99,10 +99,10 @@ export function MeetingDetailScreen() {
     }
   }, [meeting, id]);
 
-  const handleTranscriptChange = (idx: number, field: 'content' | 'speakerDisplay', value: string) => {
+  const handleContentChange = (idx: number, value: string) => {
     setEditedTranscripts((prev) => {
       const next = [...prev];
-      next[idx] = { ...next[idx], [field]: value };
+      next[idx] = { ...next[idx], content: value };
       return next;
     });
     setIsDirty(true);
@@ -110,16 +110,23 @@ export function MeetingDetailScreen() {
   };
 
   /**
-   * 화자 단위 일괄 변경 — 같은 speakerLabel 발언 전체의 speakerDisplay를 교체한다.
-   * TODO: 백엔드 `PUT /api/v1/meetings/{meetingId}/speakers` 머지 후,
-   *       로컬 반영 대신 해당 API를 1회 호출하도록 교체 (현재는 기존 저장 플로우에 위임).
+   * 화자 단위 일괄 변경 — PUT /speakers 1회로 같은 speakerLabel 발언 전체를 변경한다.
+   * 저장 버튼과 무관하게 즉시 반영되므로, 성공 후 편집본과 원본 양쪽을 함께 갱신한다.
+   * (원본을 함께 갱신해야 handleSave 의 diff 가 화자 행을 중복 전송하지 않는다.)
    */
-  const handleSpeakerRename = (renames: Record<string, string>) => {
-    if (Object.keys(renames).length === 0) return;
-    setEditedTranscripts((prev) =>
-      prev.map((t) => (renames[t.speakerLabel] ? { ...t, speakerDisplay: renames[t.speakerLabel] } : t))
-    );
-    setIsDirty(true);
+  const handleSpeakerRename = async (renames: Record<string, string>) => {
+    if (!meeting || Object.keys(renames).length === 0) return;
+    const payload: SpeakerRename[] = Object.entries(renames).map(([speakerLabel, speakerDisplay]) => ({
+      speakerLabel,
+      speakerDisplay,
+    }));
+
+    await meetingsApi.renameSpeakers(meeting.meetingId, payload);
+
+    const apply = (list: TranscriptSegment[]) =>
+      list.map((t) => (renames[t.speakerLabel] ? { ...t, speakerDisplay: renames[t.speakerLabel] } : t));
+    setEditedTranscripts(apply);
+    setMeeting((prev) => (prev ? { ...prev, transcripts: apply(prev.transcripts) } : null));
     setSaveError(null);
   };
 
@@ -128,16 +135,13 @@ export function MeetingDetailScreen() {
     setIsSaving(true);
     setSaveError(null);
     try {
+      // 화자 이름은 PUT /speakers 로 분리됐으므로 여기서는 발언 내용만 보낸다.
       const updates: TranscriptUpdate[] = editedTranscripts
-        .filter((t, i) => {
-          const orig = meeting.transcripts[i];
-          return t.content !== orig.content || t.speakerDisplay !== orig.speakerDisplay;
-        })
+        .filter((t, i) => t.content !== meeting.transcripts[i].content)
         .filter((t) => t.transcriptId != null)
         .map((t) => ({
           transcriptId: t.transcriptId!,
           content: t.content,
-          speakerDisplay: t.speakerDisplay,
         }));
 
       await meetingsApi.updateTranscripts(meeting.meetingId, updates);
@@ -299,11 +303,12 @@ export function MeetingDetailScreen() {
   const speakerRenameItems: SpeakerRenameItem[] = uniqueSpeakers.map((lbl) => {
     const letter = speakerLetterMap[lbl] ?? 'A';
     const first = editedTranscripts.find((t) => t.speakerLabel === lbl);
+    const display = first?.speakerDisplay ?? '';
     return {
       label: lbl,
-      letter,
+      letter: resolveAvatarLetter(display, letter),
       color: speakerColorMap[lbl],
-      display: resolveDisplay(first?.speakerDisplay ?? '', letter),
+      display: resolveDisplay(display, letter),
     };
   });
   const uniqueSpeakerDisplays = [...new Set(meeting.transcripts.map((t) =>
@@ -400,15 +405,14 @@ export function MeetingDetailScreen() {
                 <div key={idx} className="flex gap-3">
                   <SpeakerAvatar letter={resolveAvatarLetter(seg.speakerDisplay, speakerLetterMap[seg.speakerLabel] ?? 'A')} color={speakerColorMap[seg.speakerLabel]} />
                   <div className="flex-1">
-                    <input
-                      value={resolveDisplay(seg.speakerDisplay, speakerLetterMap[seg.speakerLabel] ?? 'A')}
-                      onChange={(e) => handleTranscriptChange(idx, 'speakerDisplay', e.target.value)}
-                      className="text-xs text-[#6B7280] mb-1 bg-transparent border-none outline-none w-full hover:bg-[#F3F4F6] focus:bg-[#F3F4F6] rounded px-1 -mx-1 cursor-text"
-                    />
+                    {/* 화자 이름은 여기서 직접 수정하지 않는다 — 헤더의 "화자 편집"에서 일괄 변경 */}
+                    <div className="text-xs text-[#6B7280] mb-1">
+                      {resolveDisplay(seg.speakerDisplay, speakerLetterMap[seg.speakerLabel] ?? 'A')}
+                    </div>
                     <ConversationBubble
                       editable
                       value={seg.content}
-                      onChange={(e) => handleTranscriptChange(idx, 'content', e.target.value)}
+                      onChange={(e) => handleContentChange(idx, e.target.value)}
                       rows={Math.max(1, Math.ceil(seg.content.length / 50))}
                     />
                     <div className="text-xs text-[#9CA3AF] mt-1 text-right">
@@ -515,15 +519,13 @@ export function MeetingDetailScreen() {
                   <div key={idx} className="flex gap-3">
                     <SpeakerAvatar letter={resolveAvatarLetter(seg.speakerDisplay, speakerLetterMap[seg.speakerLabel] ?? 'A')} color={speakerColorMap[seg.speakerLabel]} />
                     <div className="flex-1">
-                      <input
-                        value={resolveDisplay(seg.speakerDisplay, speakerLetterMap[seg.speakerLabel] ?? 'A')}
-                        onChange={(e) => handleTranscriptChange(idx, 'speakerDisplay', e.target.value)}
-                        className="text-xs text-[#6B7280] mb-1 bg-transparent border-none outline-none w-full hover:bg-[#F3F4F6] focus:bg-[#F3F4F6] rounded px-1 -mx-1 cursor-text"
-                      />
+                      <div className="text-xs text-[#6B7280] mb-1">
+                        {resolveDisplay(seg.speakerDisplay, speakerLetterMap[seg.speakerLabel] ?? 'A')}
+                      </div>
                       <ConversationBubble
                         editable
                         value={seg.content}
-                        onChange={(e) => handleTranscriptChange(idx, 'content', e.target.value)}
+                        onChange={(e) => handleContentChange(idx, e.target.value)}
                         rows={Math.max(1, Math.ceil(seg.content.length / 40))}
                       />
                       <div className="text-xs text-[#9CA3AF] mt-1 text-right">{formatSec(seg.startSec)}</div>

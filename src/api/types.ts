@@ -15,6 +15,12 @@ export interface TranscriptUpdate {
   content?: string;
 }
 
+/** 화자 단위 일괄 이름 변경 — speakerLabel 이 같은 모든 발언에 적용된다. */
+export interface SpeakerRename {
+  speakerLabel: string;
+  speakerDisplay: string;
+}
+
 // 백엔드 SummaryDto — 각 필드는 Python 배열/객체를 JSON 직렬화한 문자열
 export interface SummaryDto {
   keyPoints: string;       // JSON string → string[]

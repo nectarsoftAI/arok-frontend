@@ -6,6 +6,7 @@ import {
   type MeetingResult,
   type SummaryDto,
   type TranscriptUpdate,
+  type SpeakerRename,
 } from './types';
 
 export type { MeetingListItem };
@@ -72,6 +73,10 @@ export const meetingsApi = {
 
   updateTranscripts: (meetingId: string, updates: TranscriptUpdate[]) =>
     apiClient.put(`/api/v1/meetings/${meetingId}/transcripts`, updates),
+
+  /** 화자 이름 일괄 변경 — speakerLabel 기준으로 해당 화자의 모든 발언에 적용. 204 No Content. */
+  renameSpeakers: (meetingId: string, renames: SpeakerRename[]) =>
+    apiClient.put<void>(`/api/v1/meetings/${meetingId}/speakers`, renames),
 
   delete: (meetingId: string) =>
     apiClient.delete(`/api/v1/meetings/${meetingId}`),
