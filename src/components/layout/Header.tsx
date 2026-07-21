@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import { Search, Bell, User, PanelLeftOpen } from "lucide-react";
+import { Bell, User, PanelLeftOpen } from "lucide-react";
 import logoArok from "../../assets/logo_arok.webp";
 
 interface HeaderProps {
@@ -31,22 +31,8 @@ export function Header({ isSidebarCollapsed, onExpandSidebar, displayName, onLog
         </button>
       )}
 
-      {/* 데스크톱: 검색바 */}
-      <div className="hidden lg:flex flex-1 max-w-xl">
-        <div className="relative w-full">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#6B7280]" />
-          <input
-            type="text"
-            placeholder="회의 검색, 날짜, 참여자..."
-            className="w-full pl-10 pr-4 py-2 bg-[#F3F4F6] border border-transparent rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#5B5FF5]"
-          />
-        </div>
-      </div>
-
-      <div className="flex items-center gap-2 lg:gap-4">
-        <button className="lg:hidden p-2 hover:bg-gray-100 rounded-lg">
-          <Search className="w-5 h-5 text-[#6B7280]" />
-        </button>
+      {/* 검색바를 걷어내 좌측이 비므로, 우측 그룹을 ml-auto 로 밀어 붙인다. */}
+      <div className="flex items-center gap-2 lg:gap-4 ml-auto">
         <button className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors">
           <Bell className="w-5 h-5 text-[#6B7280]" />
           <span className="absolute top-1 right-1 w-2 h-2 bg-[#5B5FF5] rounded-full" />
