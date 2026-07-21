@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Calendar, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
+import emptyStateIcon from "../../assets/icons/icon_empty_state.webp";
 import { useNavigate } from "react-router";
 import { Button } from "../common/Button";
 import { meetingsApi, type MeetingListItem } from "../../api/meetings";
@@ -144,23 +145,10 @@ export function MeetingListScreen() {
           </div>
         ) : meetings.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
-            <div className="w-14 h-14 bg-[#F3F4F6] rounded-full flex items-center justify-center mb-4">
-              <Calendar className="w-6 h-6 text-[#9CA3AF]" />
-            </div>
-            {isSearching ? (
-              <>
-                <p className="text-[#1A1D2E] font-medium mb-1">검색 결과가 없습니다</p>
-                <p className="text-sm text-[#9CA3AF]">다른 조건으로 검색해보세요.</p>
-                <button
-                  onClick={() => handleFiltersChange(emptyFilters)}
-                  className="mt-4 px-4 py-2 text-sm text-[#5B5FF5] border border-[#5B5FF5] rounded-lg hover:bg-[#EEF2FF] transition-colors"
-                >
-                  필터 초기화
-                </button>
-              </>
-            ) : (
-              <p className="text-[#1A1D2E] font-medium">저장된 회의록이 없습니다.</p>
-            )}
+            <img src={emptyStateIcon} alt="" className="w-40 h-40 object-contain mb-5" />
+            <p className="text-[#1A1D2E] font-medium">
+              {isSearching ? "검색 결과가 없습니다" : "저장된 회의록이 없습니다."}
+            </p>
           </div>
         ) : (
           <>
