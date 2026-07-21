@@ -29,7 +29,7 @@ export function MeetingCard({ meeting, onDelete, onOpen }: MeetingCardProps) {
           onOpen(meeting.meetingId);
         }
       }}
-      className="group bg-white rounded-lg border border-[#E5E7EB] shadow-sm p-6 transition-all hover:shadow-md hover:border-[#5B5FF5] hover:scale-[1.01] cursor-pointer relative text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#5B5FF5] focus-visible:ring-offset-2"
+      className="group bg-white rounded-lg border border-[#E5E7EB] shadow-sm p-5 transition-all hover:shadow-md hover:border-[#5B5FF5] hover:scale-[1.01] cursor-pointer relative text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#5B5FF5] focus-visible:ring-offset-2"
     >
       {/* Delete button — 평소엔 숨기고 호버(또는 키보드 포커스) 시 우측에서 슬라이드 인.
           호버가 없는 터치 기기에서는 항상 보이게 둔다. */}
@@ -38,15 +38,15 @@ export function MeetingCard({ meeting, onDelete, onOpen }: MeetingCardProps) {
           e.stopPropagation();
           onDelete(meeting);
         }}
-        className="absolute top-3 right-3 p-1 text-[#9CA3AF] hover:text-[#6B7280] hover:bg-[#F3F4F6] rounded-lg opacity-0 translate-x-1.5 scale-90 transition-[opacity,transform,color,background-color] duration-200 ease-[cubic-bezier(.2,.7,.3,1)] group-hover:opacity-100 group-hover:translate-x-0 group-hover:scale-100 focus-visible:opacity-100 focus-visible:translate-x-0 focus-visible:scale-100 motion-reduce:transition-none motion-reduce:translate-x-0 motion-reduce:scale-100 [@media(hover:none)]:opacity-100 [@media(hover:none)]:translate-x-0 [@media(hover:none)]:scale-100"
+        className="absolute top-5 right-5 p-1 text-[#9CA3AF] hover:text-[#6B7280] hover:bg-[#F3F4F6] rounded-lg opacity-0 translate-x-1.5 scale-90 transition-[opacity,transform,color,background-color] duration-200 ease-[cubic-bezier(.2,.7,.3,1)] group-hover:opacity-100 group-hover:translate-x-0 group-hover:scale-100 focus-visible:opacity-100 focus-visible:translate-x-0 focus-visible:scale-100 motion-reduce:transition-none motion-reduce:translate-x-0 motion-reduce:scale-100 [@media(hover:none)]:opacity-100 [@media(hover:none)]:translate-x-0 [@media(hover:none)]:scale-100"
         title="삭제"
       >
         <X className="w-4 h-4" />
       </button>
 
       {/* Date + Type — 평소엔 유형 뱃지가 우측 끝에 붙고,
-          호버 시 우측 여백이 열리며 뱃지가 밀려 삭제 버튼 자리를 내준다. */}
-      <div className="flex items-center justify-between gap-2 mb-4 pr-0 transition-[padding-right] duration-200 ease-[cubic-bezier(.2,.7,.3,1)] group-hover:pr-7 group-focus-within:pr-7 motion-reduce:transition-none [@media(hover:none)]:pr-7">
+          호버 시 우측 여백이 열리며 뱃지가 밀려 삭제 버튼(top-5 right-5, 같은 줄) 자리를 내준다. */}
+      <div className="flex items-center justify-between gap-2 mb-4 pr-0 transition-[padding-right] duration-200 ease-[cubic-bezier(.2,.7,.3,1)] group-hover:pr-9 group-focus-within:pr-9 motion-reduce:transition-none [@media(hover:none)]:pr-9">
         <Badge variant="primary" className="inline-flex items-center gap-1.5 px-2.5 py-1 font-medium">
           <Calendar className="w-3 h-3" />
           {formatDate(meeting.meetingDate)}
@@ -97,7 +97,7 @@ export function MeetingCard({ meeting, onDelete, onOpen }: MeetingCardProps) {
 
 export function MeetingCardSkeleton() {
   return (
-    <div className="bg-white rounded-lg border border-[#E5E7EB] shadow-sm p-6 relative">
+    <div className="bg-white rounded-lg border border-[#E5E7EB] shadow-sm p-5 relative">
       <div className="flex items-center justify-between gap-2 mb-4">
         <Skeleton className="h-6 w-28 bg-gray-200" />
         <Skeleton className="h-6 w-24 bg-gray-200" />
