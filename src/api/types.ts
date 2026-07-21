@@ -44,6 +44,15 @@ export interface TranscribeResponse {
   summary: SummaryDto | null;
 }
 
+// POST /rest/v1/rpc/search_meetings — 검색 필터 (null/미지정 시 해당 조건 무시)
+export interface MeetingSearchFilters {
+  keyword?: string;      // 제목 + keywords 배열 동시 검색
+  meetingType?: string;  // UPLOAD | REALTIME | GROUP
+  status?: string;       // COMPLETED | FAILED | PENDING 등
+  dateFrom?: string;     // YYYY-MM-DD (해당 일 포함)
+  dateTo?: string;       // YYYY-MM-DD (해당 일 포함)
+}
+
 export interface MeetingListResponse {
   meetings: MeetingListItem[];
   totalCount: number;
