@@ -124,9 +124,50 @@ export const meetingsApi = {
     };
   },
 
-  // 회의 상세 — 백엔드 (트랜스크립트 + 요약 조인)
-  getById: (meetingId: string) =>
-    apiClient.get<MeetingDetail>(`/api/v1/meetings/${meetingId}`),
+  // 회의 상세 — Supabase get_meeting_detail RPC 직접 조회 (백엔드 GET /api/v1/meetings/{id} 대체)
+  // SECURITY INVOKER 라 RLS 가 auth.uid() 기준으로 알아서 필터링한다.
+  getById: async (meetingId: string): Promise<{ data: MeetingDetail }> => {
+    const res = await supabaseClient.post('/rpc/get_meeting_detail', {
+      p_meeting_id: meetingId,
+    });
+
+    const row = res.data;
+    if (!row) throw new Error('회의를 찾을 수 없습니다.');
+
+    const summary: SummaryDto | null = row.summary
+      ? {
+          keyPoints:        JSON.stringify(row.summary.keyPoints   ?? []),
+          decisions:        JSON.stringify(row.summary.decisions   ?? []),
+          actionItems:      JSON.stringify(row.summary.actionItems ?? []),
+          keywords:         JSON.stringify(row.summary.keywords    ?? []),
+          processingStatus: row.summary.processingStatus ?? 'COMPLETED',
+          processedAt:      row.summary.processedAt      ?? null,
+        }
+      : null;
+
+    return {
+      data: {
+        meetingId:       row.meetingId,
+        title:           row.title,
+        meetingType:     row.meetingType,
+        status:          row.status,
+        durationSeconds: row.durationSeconds,
+        meetingDate:     row.meetingDate,
+        createdAt:       row.createdAt,
+        transcripts: (row.transcripts ?? []).map((t: any) => ({
+          transcriptId:   t.transcriptId,
+          speakerLabel:   t.speakerLabel,
+          speakerDisplay: t.speakerDisplay,
+          startSec:       t.startSec,
+          endSec:         t.endSec,
+          content:        t.content,
+          confidence:     t.confidence   ?? 1,
+          lowConfidence:  t.lowConfidence ?? false,
+        })),
+        summary,
+      },
+    };
+  },
 
   getParticipants: (meetingId: string) =>
     apiClient.get<MeetingParticipantInfo[]>(`/api/v1/meetings/${meetingId}/participants`),
