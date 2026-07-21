@@ -3,23 +3,23 @@ import { Calendar, Clock, CheckCircle, TrendingUp } from "lucide-react";
 import { WeeklyChart } from "../charts/WeeklyChart";
 import { SpeakerChart } from "../charts/SpeakerChart";
 import { KeywordChart } from "../charts/KeywordChart";
-import supabaseClient from "../../api/supabaseClient";
-
-// get_dashboard_stats RPC의 cards 부분만 — 나머지 필드는 대응 UI가 없어 다루지 않음
-interface DashboardCards {
-  meetingsThisMonth: number;
-  avgDurationMin: number;
-  aiCompletedRate: number;
-}
+import { dashboardApi, type DashboardCards } from "../../api/dashboard";
 
 export function InsightsScreen() {
   const [cards, setCards] = useState<DashboardCards | null>(null);
 
   useEffect(() => {
-    supabaseClient
-      .post("/rpc/get_dashboard_stats", {})
-      .then(({ data }) => setCards(data.cards))
-      .catch((err) => console.error("대시보드 통계 조회 실패", err));
+    const controller = new AbortController();
+
+    dashboardApi
+      .getCards(controller.signal)
+      .then(setCards)
+      .catch((err) => {
+        if (controller.signal.aborted) return;
+        console.error("대시보드 통계 조회 실패", err);
+      });
+
+    return () => controller.abort();
   }, []);
 
   const kpis = [
