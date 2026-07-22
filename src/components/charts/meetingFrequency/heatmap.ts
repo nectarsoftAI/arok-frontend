@@ -23,12 +23,25 @@ export const INTENSITY_COLORS = ["#F3F4F6", "#C7C9F9", "#9B9DF5", "#7577F2", "#5
 export const MONTH_LABELS = ["1월", "2월", "3월", "4월", "5월", "6월", "7월", "8월", "9월", "10월", "11월", "12월"];
 export const DAY_LABELS = ["일", "월", "화", "수", "목", "금", "토"];
 
-/** 한 화면에 보여 주는 개월 수 = 페이지 단위. */
-export const MONTHS_PER_PAGE = 6;
-
 export const CELL_SIZE = 14;
 export const CELL_GAP = 3;
 export const DAY_LABEL_WIDTH = 24;
+
+/**
+ * 한 페이지에 그릴 주(열) 수는 격자 폭에 맞춰 정한다 — 화면이 넓을수록 더 긴 기간을 보여 준다.
+ * 폭을 재기 전 첫 렌더에 쓸 기본값과, 너무 좁거나 넓을 때의 한계.
+ */
+export const DEFAULT_WEEKS_PER_PAGE = 26;
+export const MIN_WEEKS_PER_PAGE = 8;
+export const MAX_WEEKS_PER_PAGE = 60;
+
+/** 주어진 격자 폭에 몇 개의 열이 들어가는지. 요일 라벨 자리를 뺀 나머지로 계산한다. */
+export function weeksThatFit(gridWidth: number): number {
+  if (!gridWidth) return DEFAULT_WEEKS_PER_PAGE;
+  const usable = gridWidth - DAY_LABEL_WIDTH - CELL_GAP;
+  const fits = Math.floor(usable / (CELL_SIZE + CELL_GAP));
+  return Math.min(Math.max(fits, MIN_WEEKS_PER_PAGE), MAX_WEEKS_PER_PAGE);
+}
 
 export function intensityColor(count: number): string {
   return INTENSITY_COLORS[Math.min(Math.max(count, 0), 4)];
@@ -52,16 +65,29 @@ export function formatKoreanDate(key: string): string {
   return `${y}년 ${Number(mo)}월 ${Number(d)}일`;
 }
 
-/** pageOffset 0 = 최근 MONTHS_PER_PAGE 개월, 1 = 그 이전 … */
-export function getPageRange(today: Date, pageOffset: number): { startDate: Date; endDate: Date } {
-  const endDate = new Date(today);
-  endDate.setMonth(endDate.getMonth() - pageOffset * MONTHS_PER_PAGE);
+/**
+ * pageOffset 0 = 최근 weeksPerPage 주, 1 = 그 이전 …
+ * 시작일은 항상 일요일로 맞춘다 — 그래야 격자 열 수가 정확히 weeksPerPage 가 되고
+ * 첫 열에 빈 칸이 생기지 않는다.
+ */
+export function getPageRange(
+  today: Date,
+  pageOffset: number,
+  weeksPerPage: number,
+): { startDate: Date; endDate: Date } {
+  // 첫 페이지의 시작(= 오늘이 속한 주에서 weeksPerPage - 1 주 앞의 일요일)을 기준점으로 잡고
+  // 페이지 단위로 그만큼씩 뒤로 민다.
+  const startDate = new Date(today);
+  startDate.setDate(
+    startDate.getDate() - today.getDay() - (weeksPerPage - 1) * 7 - pageOffset * weeksPerPage * 7,
+  );
 
-  const startDate = new Date(endDate);
-  startDate.setMonth(startDate.getMonth() - MONTHS_PER_PAGE);
-  startDate.setDate(startDate.getDate() + 1);
+  // 첫 페이지는 오늘까지(마지막 주가 잘린다), 이전 페이지들은 토요일까지 꽉 채운다.
+  // 이렇게 해야 페이지 사이에 빠지는 날이 없다.
+  const endDate = new Date(startDate);
+  endDate.setDate(endDate.getDate() + weeksPerPage * 7 - 1);
 
-  return { startDate, endDate };
+  return { startDate, endDate: pageOffset === 0 ? new Date(today) : endDate };
 }
 
 /** 주(열) × 요일(행) 격자. 첫 열이 일요일에서 시작하도록 앞을 채운다. */

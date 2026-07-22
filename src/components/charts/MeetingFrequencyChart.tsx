@@ -1,15 +1,11 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { DayMeetingPanel } from "./meetingFrequency/DayMeetingPanel";
 import { HeatmapFooter } from "./meetingFrequency/HeatmapFooter";
 import { HeatmapGrid } from "./meetingFrequency/HeatmapGrid";
-import { MOCK_COUNTS, MOCK_MEETINGS } from "./meetingFrequency/mockData";
-import { buildWeeks, getPageRange, type HeatmapMeeting } from "./meetingFrequency/heatmap";
+import { buildWeeks, getPageRange, weeksThatFit } from "./meetingFrequency/heatmap";
+import { useDayMeetings, useMeetingCounts } from "./meetingFrequency/useMeetingFrequency";
 
 interface MeetingFrequencyChartProps {
-  /** 날짜(YYYY-MM-DD) → 회의 수. 격자 색만 결정한다. */
-  counts?: Record<string, number>;
-  /** 상세 패널에 뿌릴 회의 목록. 비어 있으면 건수만 노출된다. */
-  meetings?: HeatmapMeeting[];
   /** 뒤로 넘길 수 있는 한계. 기본값은 1년 전. */
   earliestDate?: Date;
 }
@@ -17,13 +13,9 @@ interface MeetingFrequencyChartProps {
 /**
  * 회의 빈도 히트맵 — GitHub 잔디 스타일. 6개월 단위로 페이지를 넘기고,
  * 날짜를 누르면 오른쪽 패널에 그 날의 회의가 뜬다.
- * 아직 API 가 없어 counts/meetings 를 생략하면 목업으로 그린다.
+ * 격자는 get_meeting_counts_by_date, 상세 패널은 search_meetings 로 각각 조회한다.
  */
-export function MeetingFrequencyChart({
-  counts = MOCK_COUNTS,
-  meetings = MOCK_MEETINGS,
-  earliestDate,
-}: MeetingFrequencyChartProps) {
+export function MeetingFrequencyChart({ earliestDate }: MeetingFrequencyChartProps) {
   // pageOffset 0 = 최근 6개월, 1 = 그 이전 6개월 …
   const [pageOffset, setPageOffset] = useState(0);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
@@ -38,16 +30,32 @@ export function MeetingFrequencyChart({
     return d;
   }, [today, earliestDate]);
 
-  const { startDate, endDate } = useMemo(() => getPageRange(today, pageOffset), [today, pageOffset]);
+  // 격자가 실제로 차지한 폭을 재서 그 폭에 들어가는 만큼 주(열)를 그린다.
+  const gridRef = useRef<HTMLDivElement>(null);
+  const [gridWidth, setGridWidth] = useState(0);
+
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el) return;
+
+    const observer = new ResizeObserver(([entry]) => setGridWidth(entry.contentRect.width));
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  const weeksPerPage = weeksThatFit(gridWidth);
+
+  const { startDate, endDate } = useMemo(
+    () => getPageRange(today, pageOffset, weeksPerPage),
+    [today, pageOffset, weeksPerPage],
+  );
+
+  const { counts } = useMeetingCounts(startDate, endDate);
+  const { meetings, isLoading: isDayLoading } = useDayMeetings(selectedDate);
 
   const weeks = useMemo(
     () => buildWeeks(startDate, endDate, today, counts),
     [startDate, endDate, today, counts],
-  );
-
-  const selectedMeetings = useMemo(
-    () => (selectedDate ? meetings.filter((m) => m.meetingDate === selectedDate) : []),
-    [meetings, selectedDate],
   );
 
   const goToPage = (offset: number) => {
@@ -57,7 +65,8 @@ export function MeetingFrequencyChart({
 
   return (
     <div className="flex items-start gap-6">
-      <div className="flex-shrink-0">
+      {/* 격자 7 : 상세 패널 3 */}
+      <div ref={gridRef} className="min-w-0 flex-[7]">
         <HeatmapGrid
           weeks={weeks}
           startDate={startDate}
@@ -78,7 +87,8 @@ export function MeetingFrequencyChart({
       <DayMeetingPanel
         selectedDate={selectedDate}
         count={selectedDate ? (counts[selectedDate] ?? 0) : 0}
-        meetings={selectedMeetings}
+        meetings={meetings}
+        isLoading={isDayLoading}
         onClose={() => setSelectedDate(null)}
       />
     </div>

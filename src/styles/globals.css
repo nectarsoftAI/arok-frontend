@@ -33,3 +33,13 @@ body,
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+
+/* 스크롤은 되지만 스크롤바는 감춘다 — 폭이 좁은 패널에서 8px 바가 레이아웃을 흔든다. */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
