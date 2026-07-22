@@ -1,18 +1,22 @@
 import { useEffect, useState } from "react";
 import { Calendar, Clock, CheckCircle, TrendingUp } from "lucide-react";
 import { MeetingFrequencyChart } from "../charts/MeetingFrequencyChart";
-import { KeywordChart } from "../charts/KeywordChart";
+import { KeywordChart, type KeywordItem } from "../charts/KeywordChart";
 import { dashboardApi, type DashboardCards } from "../../api/dashboard";
 
 export function InsightsScreen() {
   const [cards, setCards] = useState<DashboardCards | null>(null);
+  const [keywordTop, setKeywordTop] = useState<KeywordItem[]>([]);
 
   useEffect(() => {
     const controller = new AbortController();
 
     dashboardApi
-      .getCards(controller.signal)
-      .then(setCards)
+      .getStats(controller.signal)
+      .then(({ cards, keywordTop }) => {
+        setCards(cards);
+        setKeywordTop(keywordTop);
+      })
       .catch((err) => {
         if (controller.signal.aborted) return;
         console.error("대시보드 통계 조회 실패", err);
@@ -57,7 +61,7 @@ export function InsightsScreen() {
 
         <div className="bg-white rounded-lg border border-[#E5E7EB] shadow-sm p-5">
           <h3 className="font-semibold text-[#1A1D2E] mb-4">자주 언급된 키워드</h3>
-          <KeywordChart />
+          <KeywordChart data={keywordTop} />
         </div>
       </div>
     </div>
