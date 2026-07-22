@@ -31,6 +31,13 @@ export const DAY_LABEL_WIDTH = 24;
  * 한 페이지에 그릴 주(열) 수는 격자 폭에 맞춰 정한다 — 화면이 넓을수록 더 긴 기간을 보여 준다.
  * 폭을 재기 전 첫 렌더에 쓸 기본값과, 너무 좁거나 넓을 때의 한계.
  */
+/**
+ * 월 라벨이 겹치지 않으려면 필요한 열 수(1열 = 17px).
+ * 10px 폰트 기준 "12월" ≈ 21px, "2026년 1월" ≈ 51px 이라 각각 2열·4열이면 넉넉하다.
+ */
+export const LABEL_COLS = 2;
+export const LABEL_COLS_WITH_YEAR = 4;
+
 export const DEFAULT_WEEKS_PER_PAGE = 26;
 export const MIN_WEEKS_PER_PAGE = 8;
 export const MAX_WEEKS_PER_PAGE = 60;
@@ -120,7 +127,7 @@ export function buildMonthLabels(
   startDate: Date,
   endDate: Date,
 ): { label: string; col: number }[] {
-  const labels: { label: string; col: number }[] = [];
+  const candidates: { short: string; long: string | null; col: number }[] = [];
 
   weeks.forEach((week, col) => {
     const ref = week[1]; // 월요일 기준 — 주가 월을 걸칠 때 표기가 덜 튄다
@@ -132,9 +139,21 @@ export function buildMonthLabels(
     const prev = col > 0 ? parseDateKey(weeks[col - 1][1].date) : null;
     if (prev && prev.getMonth() === date.getMonth()) return;
 
+    // 연도는 해가 바뀌는 1월에만 붙인다. 첫 열에도 붙이면 바로 뒤 라벨과 겹치기 쉬운데,
+    // 어차피 하단 페이지네이션이 "2025년 12월 – 2026년 7월" 로 기간을 알려 준다.
     const month = MONTH_LABELS[date.getMonth()];
-    const withYear = col === 0 || date.getMonth() === 0;
-    labels.push({ label: withYear ? `${date.getFullYear()}년 ${month}` : month, col });
+    const isJanuary = date.getMonth() === 0;
+    candidates.push({ short: month, long: isJanuary ? `${date.getFullYear()}년 ${month}` : null, col });
+  });
+
+  // 라벨은 14px 열 밖으로 넘쳐 그려지므로, 다음 라벨(또는 격자 끝)까지 남은 자리에 맞춰
+  // 연도까지 → 월만 → 생략 순으로 줄인다. 월 중간에서 시작하는 첫 열이 주로 생략된다.
+  const labels: { label: string; col: number }[] = [];
+
+  candidates.forEach((c, i) => {
+    const room = (candidates[i + 1]?.col ?? weeks.length) - c.col;
+    if (c.long && room >= LABEL_COLS_WITH_YEAR) labels.push({ label: c.long, col: c.col });
+    else if (room >= LABEL_COLS) labels.push({ label: c.short, col: c.col });
   });
 
   return labels;
