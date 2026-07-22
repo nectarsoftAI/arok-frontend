@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Calendar, Clock, CheckCircle, TrendingUp } from "lucide-react";
-import { WeeklyChart } from "../charts/WeeklyChart";
-import { SpeakerChart } from "../charts/SpeakerChart";
+import { MeetingFrequencyChart } from "../charts/MeetingFrequencyChart";
 import { KeywordChart } from "../charts/KeywordChart";
 import { dashboardApi, type DashboardCards } from "../../api/dashboard";
 
@@ -25,7 +24,7 @@ export function InsightsScreen() {
   const kpis = [
     { label: "이번 달 회의 수", value: cards ? `${cards.meetingsThisMonth}` : "-", icon: Calendar, color: "#5B5FF5" },
     { label: "평균 회의 시간", value: cards ? `${Math.round(cards.avgDurationMin)}분` : "-", icon: Clock, color: "#22D3EE" },
-    { label: "AI 처리 완료", value: cards ? `${Math.round(cards.aiCompletedRate)}%` : "-", icon: TrendingUp, color: "#10B981" },
+    { label: "AI 요약 완료", value: cards ? `${Math.round(cards.aiCompletedRate)}%` : "-", icon: TrendingUp, color: "#10B981" },
     { label: "후속 조치 완료율", value: "67%", icon: CheckCircle, color: "#F59E0B" },
   ];
 
@@ -51,15 +50,9 @@ export function InsightsScreen() {
           ))}
         </div>
 
-        <div className="grid grid-cols-2 gap-5 mb-6">
-          <div className="bg-white rounded-lg border border-[#E5E7EB] shadow-sm p-5">
-            <h3 className="font-semibold text-[#1A1D2E] mb-4">주간 회의 빈도</h3>
-            <WeeklyChart />
-          </div>
-          <div className="bg-white rounded-lg border border-[#E5E7EB] shadow-sm p-5">
-            <h3 className="font-semibold text-[#1A1D2E] mb-4">화자별 발언 비율</h3>
-            <SpeakerChart />
-          </div>
+        <div className="bg-white rounded-lg border border-[#E5E7EB] shadow-sm p-5 mb-6">
+          <h3 className="font-semibold text-[#1A1D2E] mb-5">회의 빈도</h3>
+          <MeetingFrequencyChart />
         </div>
 
         <div className="bg-white rounded-lg border border-[#E5E7EB] shadow-sm p-5">
