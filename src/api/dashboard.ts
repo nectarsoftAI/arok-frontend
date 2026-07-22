@@ -1,10 +1,16 @@
 import supabaseClient from './supabaseClient';
+import type { KeywordItem } from '../components/charts/KeywordChart';
 
 /** get_dashboard_stats RPC의 cards 부분만 — 나머지 필드는 대응 UI가 없어 다루지 않는다. */
 export interface DashboardCards {
   meetingsThisMonth: number;
   avgDurationMin: number;
   aiCompletedRate: number;
+}
+
+export interface DashboardStats {
+  cards: DashboardCards;
+  keywordTop: KeywordItem[];
 }
 
 /** 날짜별 회의 수 한 건. 회의가 없는 날짜도 count: 0 으로 채워져 내려온다. */
@@ -18,6 +24,14 @@ export const dashboardApi = {
   getCards: async (signal?: AbortSignal): Promise<DashboardCards> => {
     const res = await supabaseClient.post('/rpc/get_dashboard_stats', {}, { signal });
     return res.data.cards;
+  },
+
+  getStats: async (signal?: AbortSignal): Promise<DashboardStats> => {
+    const res = await supabaseClient.post('/rpc/get_dashboard_stats', {}, { signal });
+    return {
+      cards: res.data.cards,
+      keywordTop: res.data.keywordTop ?? [],
+    };
   },
 
   /**

@@ -1,14 +1,10 @@
-const data = [
-  { keyword: "프로젝트", count: 18 },
-  { keyword: "개발", count: 15 },
-  { keyword: "마케팅", count: 12 },
-  { keyword: "예산", count: 10 },
-  { keyword: "일정", count: 8 },
-  { keyword: "고객", count: 7 },
-];
+export interface KeywordItem {
+  keyword: string;
+  count: number;
+}
 
-export function KeywordChart() {
-  const max = Math.max(...data.map((d) => d.count));
+export function KeywordChart({ data }: { data: KeywordItem[] }) {
+  const max = Math.max(...data.map((d) => d.count), 1);
 
   return (
     <div className="flex flex-col gap-3">
