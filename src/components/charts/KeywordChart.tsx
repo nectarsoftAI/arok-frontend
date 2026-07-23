@@ -1,3 +1,5 @@
+import { Skeleton } from "../common/Skeleton";
+
 export interface KeywordItem {
   keyword: string;
   count: number;
@@ -18,6 +20,24 @@ export function KeywordChart({ data }: { data: KeywordItem[] }) {
             >
               <span className="text-xs text-white font-medium">{d.count}</span>
             </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// 실제 차트가 상위 키워드부터 내려오는 모양이라, 막대도 점점 짧아지게 두면 덜 튄다.
+const SKELETON_BAR_WIDTHS = ["90%", "76%", "63%", "51%", "42%", "34%"];
+
+export function KeywordChartSkeleton() {
+  return (
+    <div className="flex flex-col gap-3">
+      {SKELETON_BAR_WIDTHS.map((width, i) => (
+        <div key={`kw-skeleton-${i}`} className="flex items-center gap-3">
+          <Skeleton className="h-4 w-16 flex-shrink-0 bg-gray-200" />
+          <div className="flex-1 bg-[#F3F4F6] rounded-full h-6 overflow-hidden">
+            <Skeleton className="h-full rounded-full bg-gray-200" style={{ width }} />
           </div>
         </div>
       ))}

@@ -20,12 +20,7 @@ export interface MeetingCountByDate {
 }
 
 export const dashboardApi = {
-  /** 대시보드 상단 KPI 카드 통계 — Supabase RPC(get_dashboard_stats) 직접 호출. */
-  getCards: async (signal?: AbortSignal): Promise<DashboardCards> => {
-    const res = await supabaseClient.post('/rpc/get_dashboard_stats', {}, { signal });
-    return res.data.cards;
-  },
-
+  /** 대시보드 통계(상단 KPI 카드 + 상위 키워드) — Supabase RPC(get_dashboard_stats) 직접 호출. */
   getStats: async (signal?: AbortSignal): Promise<DashboardStats> => {
     const res = await supabaseClient.post('/rpc/get_dashboard_stats', {}, { signal });
     return {

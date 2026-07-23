@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { Calendar, Clock, CheckCircle, TrendingUp } from "lucide-react";
 import { MeetingFrequencyChart } from "../charts/MeetingFrequencyChart";
-import { KeywordChart, type KeywordItem } from "../charts/KeywordChart";
+import { KeywordChart, KeywordChartSkeleton, type KeywordItem } from "../charts/KeywordChart";
 import { dashboardApi, type DashboardCards } from "../../api/dashboard";
 
 export function InsightsScreen() {
   const [cards, setCards] = useState<DashboardCards | null>(null);
   const [keywordTop, setKeywordTop] = useState<KeywordItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -20,6 +21,10 @@ export function InsightsScreen() {
       .catch((err) => {
         if (controller.signal.aborted) return;
         console.error("대시보드 통계 조회 실패", err);
+      })
+      .finally(() => {
+        if (controller.signal.aborted) return;
+        setIsLoading(false);
       });
 
     return () => controller.abort();
@@ -61,7 +66,7 @@ export function InsightsScreen() {
 
         <div className="bg-white rounded-lg border border-[#E5E7EB] shadow-sm p-5">
           <h3 className="font-semibold text-[#1A1D2E] mb-4">자주 언급된 키워드</h3>
-          <KeywordChart data={keywordTop} />
+          {isLoading ? <KeywordChartSkeleton /> : <KeywordChart data={keywordTop} />}
         </div>
       </div>
     </div>
