@@ -201,7 +201,7 @@ export function LandingScreen() {
         }`}
       >
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2.5 flex-1">
             <img src={logoArok} alt="Arok" className="h-10 w-auto" />
             <span className="font-bold text-xl text-[#1A1D2E]">Arok</span>
           </div>
@@ -219,7 +219,7 @@ export function LandingScreen() {
             ))}
           </nav>
 
-          <div className="hidden md:flex items-center gap-3">
+          <div className="hidden md:flex items-center gap-3 flex-1 justify-end">
             <button
               type="button"
               onClick={goToLogin}
