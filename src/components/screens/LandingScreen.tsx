@@ -7,16 +7,13 @@ import {
   Twitter,
   Linkedin,
   Youtube,
-  BookOpen,
-  Video,
-  GraduationCap,
   Shield,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
 import { FadeIn } from "../landing/FadeIn";
 import { Screenshot } from "../landing/Screenshot";
-import { MeetingAnimation } from "../landing/MeetingAnimation";
+import { PipelineAnimation } from "../landing/PipelineAnimation";
 import { FAQItem } from "../landing/FAQItem";
 import { SECTION_IDS, NAV_ITEMS, scrollToSection, type SectionId } from "../landing/sections";
 
@@ -99,27 +96,6 @@ const steps = [
   },
 ];
 
-const scenarios = [
-  {
-    icon: BookOpen,
-    title: "팀 정기 회의",
-    desc: "매주 반복되는 팀 스탠드업, 스프린트 회의의 회의록을 자동화하세요. 더 이상 회의록 담당자를 정할 필요가 없습니다.",
-    tag: "자동화",
-  },
-  {
-    icon: Video,
-    title: "원격 협업 미팅",
-    desc: "Zoom, Teams 등 화상 회의 녹화 파일을 업로드하거나, 그룹 회의 기능으로 온라인 미팅을 진행하세요.",
-    tag: "원격 협업",
-  },
-  {
-    icon: GraduationCap,
-    title: "강의 및 세미나",
-    desc: "강의나 세미나 녹음 파일을 업로드하면 핵심 내용을 정리해드립니다. 학습 자료 정리에도 활용할 수 있습니다.",
-    tag: "교육",
-  },
-];
-
 const faqs = [
   {
     question: "회의 데이터는 안전하게 보관되나요?",
@@ -156,7 +132,6 @@ const footerColumns: { title: string; links: { label: string; target?: SectionId
   {
     title: "회사",
     links: [
-      { label: "사용 사례", target: SECTION_IDS.useCases },
       { label: "블로그" },
       { label: "채용" },
       { label: "문의하기", target: SECTION_IDS.faq },
@@ -316,34 +291,20 @@ export function LandingScreen() {
               </div>
             </motion.div>
 
-            {/* 데모 영상 자리 — 현재는 스크린샷 placeholder */}
+            {/* 대화 → AI → 회의록 파이프라인 데모 */}
             <motion.div
-              initial={{ opacity: 0, y: 40, scale: 0.97 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.3 }}
-              className="mt-14"
+              className="mt-16"
             >
-              <Screenshot src={meetingListShot} alt="Arok 회의록 목록 화면" />
+              <PipelineAnimation />
             </motion.div>
           </div>
         </div>
       </section>
 
-      {/* ── 3. 실시간 인식 데모 ─────────────────────────── */}
-      <section className="py-20 px-6 bg-white">
-        <div className="max-w-4xl mx-auto text-center">
-          <FadeIn>
-            <p className="text-xs font-semibold text-[#5B5FF5] tracking-widest uppercase mb-4">실시간 AI 인식</p>
-            <h2 className="text-2xl md:text-3xl font-bold text-[#1A1D2E] mb-12">
-              실제 회의처럼,
-              <br className="md:hidden" /> AI가 모든 대화를 놓치지 않습니다
-            </h2>
-          </FadeIn>
-          <MeetingAnimation />
-        </div>
-      </section>
-
-      {/* ── 4. 지표 ─────────────────────────────────────── */}
+      {/* ── 3. 지표 ─────────────────────────────────────── */}
       <section className="py-16 px-6 border-y border-[#E5E7EB] bg-white">
         <div className="max-w-5xl mx-auto">
           <FadeIn>
@@ -510,37 +471,7 @@ export function LandingScreen() {
         </div>
       </section>
 
-      {/* ── 8. 사용 사례 ────────────────────────────────── */}
-      <section id={SECTION_IDS.useCases} className="scroll-mt-20 py-24 px-6 bg-white">
-        <div className="max-w-7xl mx-auto">
-          <FadeIn className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 bg-[#F5F3FF] text-[#5B5FF5] text-xs font-semibold px-4 py-2 rounded-full mb-4">
-              사용 시나리오
-            </div>
-            <h2 className="text-3xl md:text-4xl font-bold text-[#1A1D2E] mb-4">이럴 때 Arok을 써보세요</h2>
-            <p className="text-[#6B7280] text-lg max-w-xl mx-auto">다양한 상황에서 회의록 자동화의 효과를 경험해보세요.</p>
-          </FadeIn>
-
-          <div className="grid md:grid-cols-3 gap-6">
-            {scenarios.map((s, i) => (
-              <FadeIn key={s.title} delay={i * 0.1}>
-                <div className="relative bg-gradient-to-br from-[#F8F9FC] to-white border border-[#E5E7EB] rounded-2xl p-8 hover:shadow-lg hover:border-[#5B5FF5]/20 transition-all group flex flex-col h-full">
-                  <div className="w-12 h-12 bg-gradient-to-br from-[#5B5FF5] to-[#818CF8] rounded-xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
-                    <s.icon className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="absolute top-6 right-6">
-                    <span className="text-xs font-semibold bg-[#EEF2FF] text-[#5B5FF5] px-3 py-1 rounded-full">{s.tag}</span>
-                  </div>
-                  <h3 className="font-bold text-xl text-[#1A1D2E] mb-3">{s.title}</h3>
-                  <p className="text-sm text-[#6B7280] leading-relaxed flex-1">{s.desc}</p>
-                </div>
-              </FadeIn>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── 9. FAQ ──────────────────────────────────────── */}
+      {/* ── FAQ ─────────────────────────────────────────── */}
       <section id={SECTION_IDS.faq} className="scroll-mt-20 py-24 px-6 bg-[#F8F9FC]">
         <div className="max-w-3xl mx-auto">
           <FadeIn className="text-center mb-12">

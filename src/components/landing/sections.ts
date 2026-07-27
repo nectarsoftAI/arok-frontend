@@ -3,7 +3,6 @@ export const SECTION_IDS = {
   features: "features",
   howItWorks: "how-it-works",
   showcase: "showcase",
-  useCases: "use-cases",
   faq: "faq",
 } as const;
 
@@ -16,6 +15,6 @@ export function scrollToSection(id: SectionId) {
 
 export const NAV_ITEMS: { label: string; target: SectionId }[] = [
   { label: "기능", target: SECTION_IDS.features },
-  { label: "사용 사례", target: SECTION_IDS.useCases },
+  { label: "사용 방법", target: SECTION_IDS.howItWorks },
   { label: "문의", target: SECTION_IDS.faq },
 ];
