@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Sparkles, CheckCircle2, Square } from "lucide-react";
+import { CheckCircle2, Square } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { SpeakerAvatar } from "../common/SpeakerAvatar";
 import { Badge } from "../common/Badge";
@@ -175,20 +175,14 @@ export function PipelineAnimation() {
         animate={{ opacity: phase === "result" ? 1 : 0, y: phase === "result" ? 0 : 12 }}
         transition={{ duration: 0.5 }}
       >
-        <div className="px-5 py-3 border-b border-[#E5E7EB] flex items-center gap-2">
-          <span className="w-6 h-6 rounded-md bg-gradient-to-br from-[#5B5FF5] to-[#818CF8] flex items-center justify-center">
-            <Sparkles className="w-3.5 h-3.5 text-white" />
-          </span>
+        <div className="px-5 py-3 border-b border-[#E5E7EB]">
           <span className="font-semibold text-sm text-[#1A1D2E]">주간 진행 상황 회의</span>
-          <Badge variant="primary" className="ml-auto">
-            AI 회의록
-          </Badge>
         </div>
 
         <div className="grid md:grid-cols-[1fr_0.8fr]">
           {/* 좌: 대화 내용 */}
           <div className="p-4 space-y-3 md:border-r border-[#E5E7EB]">
-            <p className="text-xs font-semibold text-[#6B7280] mb-1">대화 내용</p>
+            <p className="text-xs font-semibold text-[#6B7280] mb-4">대화 내용</p>
             {PEOPLE.map((p, i) => (
               <div
                 key={p.name}

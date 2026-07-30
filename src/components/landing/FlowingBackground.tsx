@@ -77,8 +77,8 @@ const css = `
     top: -10%;
     left: -5%;
     background: radial-gradient(circle,
-      rgba(34, 211, 238, 0.12) 0%,
-      rgba(147, 197, 253, 0.08) 50%,
+      rgba(34, 211, 238, 0.20) 0%,
+      rgba(147, 197, 253, 0.14) 50%,
       transparent 70%
     );
     animation: floatOrb1 14s ease-in-out infinite;
@@ -90,8 +90,8 @@ const css = `
     bottom: -15%;
     right: -10%;
     background: radial-gradient(circle,
-      rgba(91, 95, 245, 0.10) 0%,
-      rgba(167, 139, 250, 0.07) 50%,
+      rgba(91, 95, 245, 0.18) 0%,
+      rgba(167, 139, 250, 0.12) 50%,
       transparent 70%
     );
     animation: floatOrb2 16s ease-in-out infinite;
@@ -166,19 +166,19 @@ export function FlowingBackground({ children, className = "", style }: FlowingBa
       >
         <defs>
           <linearGradient id="wave-grad-1" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#22D3EE" stopOpacity="0.08" />
-            <stop offset="50%" stopColor="#a5b4fc" stopOpacity="0.12" />
-            <stop offset="100%" stopColor="#5B5FF5" stopOpacity="0.06" />
+            <stop offset="0%" stopColor="#22D3EE" stopOpacity="0.20" />
+            <stop offset="50%" stopColor="#a5b4fc" stopOpacity="0.28" />
+            <stop offset="100%" stopColor="#5B5FF5" stopOpacity="0.16" />
           </linearGradient>
           <linearGradient id="wave-grad-2" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#c7d2fe" stopOpacity="0.10" />
-            <stop offset="50%" stopColor="#22D3EE" stopOpacity="0.08" />
-            <stop offset="100%" stopColor="#a78bfa" stopOpacity="0.07" />
+            <stop offset="0%" stopColor="#c7d2fe" stopOpacity="0.24" />
+            <stop offset="50%" stopColor="#22D3EE" stopOpacity="0.20" />
+            <stop offset="100%" stopColor="#a78bfa" stopOpacity="0.18" />
           </linearGradient>
           <linearGradient id="wave-grad-3" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#5B5FF5" stopOpacity="0.06" />
-            <stop offset="50%" stopColor="#bae6fd" stopOpacity="0.10" />
-            <stop offset="100%" stopColor="#22D3EE" stopOpacity="0.05" />
+            <stop offset="0%" stopColor="#5B5FF5" stopOpacity="0.16" />
+            <stop offset="50%" stopColor="#bae6fd" stopOpacity="0.26" />
+            <stop offset="100%" stopColor="#22D3EE" stopOpacity="0.14" />
           </linearGradient>
         </defs>
 

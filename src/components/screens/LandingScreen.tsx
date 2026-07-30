@@ -6,7 +6,6 @@ import {
   Twitter,
   Linkedin,
   Youtube,
-  Shield,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
@@ -516,11 +515,8 @@ export function LandingScreen() {
       {/* ── 10. 최종 CTA ────────────────────────────────── */}
       <section className="relative">
         <FlowingBackground>
-          <div className="py-28 px-6">
+          <div className="py-40 px-6">
             <FadeIn className="text-center max-w-3xl mx-auto">
-              <div className="w-16 h-16 bg-white/70 border border-white rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-sm backdrop-blur-sm">
-                <Shield className="w-8 h-8 text-[#5B5FF5]" />
-              </div>
               <h2 className="text-3xl md:text-5xl font-bold text-[#1A1D2E] mb-4 leading-tight">
                 지금 바로
                 <br />
@@ -587,7 +583,7 @@ export function LandingScreen() {
 
           <div className="border-t border-white/10 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="text-sm text-white/30">© 2026 Arok Inc. All rights reserved.</p>
-            <p className="text-sm text-white/30">대한민국 서울특별시 강남구 테헤란로 123</p>
+            <p className="text-sm text-white/30">🌏 상상특별시 회의구 회의록로 42</p>
           </div>
         </div>
       </footer>
