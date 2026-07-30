@@ -1,29 +1,22 @@
+# <img src="src/assets/logo_arok.webp" alt="" width="48" align="absmiddle" /> Arok - 회의록 자동화 플랫폼 [![Live Demo](https://img.shields.io/badge/🔗_Live_Demo-arok--frontend.vercel.app-5B5FF5?style=flat-square)](https://arok-frontend.vercel.app/)
+
 <div align="center">
 
-<img src="src/assets/logo_arok.webp" alt="Arok" width="96" />
-
-# Arok
-
-### AI 기반 회의록 자동화 시스템
-
-회의실, 컨퍼런스 등 **다자간/정기 회의**를 위한 웹 기반 AI 회의록 시스템입니다.<br/>
-음성인식(STT)으로 회의를 실시간 텍스트로 변환하고 LLM 요약을 결합해,<br/>
-**기록에서 끝나지 않고 실제로 활용되는 회의록**을 만드는 것을 목표로 합니다.
+<img src="docs/images/project_overview.png" alt="Arok 서비스 개요" width="100%" />
 
 <br/>
 
-[![Live Demo](https://img.shields.io/badge/🔗_Live_Demo-arok--frontend.vercel.app-5B5FF5?style=for-the-badge)](https://arok-frontend.vercel.app/)
+![React](https://img.shields.io/badge/React_19-5B5FF5?style=for-the-badge&logo=react&logoColor=white)
+![Spring Boot](https://img.shields.io/badge/Spring_Boot-6DB33F?style=for-the-badge&logo=springboot&logoColor=white)
+![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)
 
-![React](https://img.shields.io/badge/React_19-5B5FF5?style=flat-square&logo=react&logoColor=white)
-![Spring Boot](https://img.shields.io/badge/Spring_Boot-6DB33F?style=flat-square&logo=springboot&logoColor=white)
-![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=flat-square&logo=supabase&logoColor=white)
-
-![GPT-4.1](https://img.shields.io/badge/GPT--4.1-412991?style=flat-square&logo=openai&logoColor=white)
-![Deepgram](https://img.shields.io/badge/Deepgram_Nova--3-13EF95?style=flat-square&logo=deepgram&logoColor=black)
-![AssemblyAI](https://img.shields.io/badge/AssemblyAI-2545F6?style=flat-square&logo=assemblyai&logoColor=white)
-![LiveKit](https://img.shields.io/badge/LiveKit-1FD5F9?style=flat-square&logo=livekit&logoColor=black)
-![Vercel](https://img.shields.io/badge/Vercel-000000?style=flat-square&logo=vercel&logoColor=white)
-![Railway](https://img.shields.io/badge/Railway-0B0D0E?style=flat-square&logo=railway&logoColor=white)
+![LangChain](https://img.shields.io/badge/LangChain-1C3C3C?style=for-the-badge&logo=langchain&logoColor=white)
+![GPT-4.1](https://img.shields.io/badge/GPT--4.1-412991?style=for-the-badge)
+![Deepgram](https://img.shields.io/badge/Deepgram_Nova--3-13EF95?style=for-the-badge&logo=deepgram&logoColor=black)
+![AssemblyAI](https://img.shields.io/badge/AssemblyAI-2545F6?style=for-the-badge)
+![LiveKit](https://img.shields.io/badge/LiveKit-1FD5F9?style=for-the-badge&logo=livekit&logoColor=black)
+![Vercel](https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)
+![Railway](https://img.shields.io/badge/Railway-0B0D0E?style=for-the-badge&logo=railway&logoColor=white)
 
 </div>
 
@@ -35,52 +28,11 @@
 
 Arok은 이 문제의식에서 출발해 ㈜넥타르소프트의 제안을 바탕으로 기획·개발한 **웹서비스 기반 AI 회의록 요약 시스템**입니다. Microsoft Work Trend Index(2023), Flowtrace State of Meetings Report(2025)에 따르면 팬데믹 이후 회의 시간은 약 3배 늘어 직장인이 연간 근무일의 약 1/5(약 49일)을 회의에 사용합니다. Arok은 이렇게 늘어난 회의 시간을 더 생산적으로 만드는 것을 목표로 합니다.
 
-**프로젝트 특징**
-
-- 1인용 서비스가 아닌 **다자간·정기 회의에 특화**된 웹 기반 회의록 시스템
-- 단순 기록을 넘어 **LLM 기반 요약·지식 검색**을 결합해 회의록의 실질적 활용도 향상
-- **실시간 온라인 회의 / 실시간 녹음 / 파일 업로드**, 3가지 회의 생성 방식 모두 지원
-- 모드별로 지연시간·화자 분리 요구사항이 다르다는 점을 고려해 **모드별 최적 STT·LLM 모델 배치**
-- STT의 partial(중간) 결과를 즉시 반영하는 **스트리밍 방식으로 체감 지연 개선**
-
 <br/>
 
 ## 🏗️ 시스템 아키텍처
 
-```mermaid
-flowchart LR
-    FE["🖥️ Frontend<br/>React · Vercel"]
-    BE["⚙️ Backend<br/>Spring Boot · Railway"]
-    GW["🔌 Interface<br/>STT/LLM API Gateway"]
-    STT["🎧 STT 서버<br/>Deepgram Nova-3 · AssemblyAI"]
-    LLM["🧠 LLM 서버<br/>gpt-4.1"]
-    DB["🗄️ Supabase<br/>PostgreSQL"]
-
-    FE -->|"WebSocket (실시간 회의)<br/>REST (파일 업로드)"| BE
-    BE --> GW
-    GW --> STT
-    GW --> LLM
-    BE <--> DB
-```
-
-데이터는 `음성 → STT → 대화록 → 요약` 순서로 흐르고, DB에는 `audio_files → stt_results → transcripts → meeting_summaries` 순으로 적재됩니다. 사용자는 웹 UI에서 회의 모드를 선택해 회의를 생성하고, 실시간 자막과 종료 후 요약본을 한 화면에서 확인합니다.
-
-- **실시간 회의(온라인·녹음)** — WebSocket으로 음성·자막 송수신
-- **녹음 파일 업로드** — REST API로 비동기 처리
-
-<br/>
-
-## 🛠️ 기술 스택
-
-| 구분         | 사용 기술                                                                    |
-| :----------- | :--------------------------------------------------------------------------- |
-| **Frontend** | React 19, TypeScript, Vite, Tailwind CSS v4, Zustand, React Router 7, Motion |
-| **Backend**  | Spring Boot                                                                  |
-| **Database** | Supabase (PostgreSQL) — `meetings` 중심 7개 테이블 설계                      |
-| **AI**       | Deepgram Nova-3(+diarizer), AssemblyAI, gpt-4.1                              |
-| **Realtime** | LiveKit Client, WebRTC, WebSocket STT                                        |
-| **Deploy**   | Vercel (Frontend), Railway (Backend)                                         |
-| **Design**   | Figma                                                                        |
+<img src="docs/images/system_architecture.png" alt="Arok 시스템 아키텍처 및 회의 모드별 처리 방식" width="100%" />
 
 <br/>
 
@@ -139,46 +91,45 @@ flowchart LR
 
 <table>
 <tr>
-<td width="50%" valign="top">
-<img src="src/assets/images/meeting_list_screenshot.webp" alt="회의록 목록 화면" width="100%" />
-<br/><br/>
-
-**회의록 관리 및 검색**
-
-`날짜별 정렬` `키워드·유형 검색` `삭제`
-
-</td>
-<td width="50%" valign="top">
-<img src="src/assets/images/meeting_detail_screenshot.webp" alt="회의록 상세 화면" width="100%" />
-<br/><br/>
-
-**AI 회의록 상세 보기**
-
-`재요약` `파일 내보내기` `전문·화자 편집`
-
-</td>
+<th width="50%" align="center">회의록 관리 및 검색</th>
+<th width="50%" align="center">AI 회의록 상세 보기</th>
 </tr>
 <tr>
-<td width="50%" valign="top">
-<img src="src/assets/images/group_meeting_screenshot.webp" alt="온라인 그룹 회의 화면" width="100%" />
-<br/><br/>
+<td><img src="src/assets/images/meeting_list_screenshot.webp" alt="회의록 목록 화면" width="100%" /></td>
+<td><img src="src/assets/images/meeting_detail_screenshot.webp" alt="회의록 상세 화면" width="100%" /></td>
+</tr>
+<tr>
+<td valign="top">날짜 · 키워드 · 회의 유형별 검색과 목록 관리</td>
+<td valign="top">AI 요약과 대화 전문 확인, 재요약 · 내보내기 · 화자 편집</td>
+</tr>
 
-**온라인 그룹 회의**
-
-`실시간 STT 자막` `코드 참여` `종료 시 자동 공유`
-
-</td>
-<td width="50%" valign="top">
-<img src="src/assets/images/user_insight_screenshot.webp" alt="회의 인사이트 화면" width="100%" />
-<br/><br/>
-
-**회의 인사이트 분석**
-
-`키워드 차트` `발언 분포` `기간별 통계`
-
-</td>
+<tr>
+<th width="50%" align="center">온라인 그룹 회의</th>
+<th width="50%" align="center">회의 인사이트 분석</th>
+</tr>
+<tr>
+<td><img src="src/assets/images/group_meeting_screenshot.webp" alt="온라인 그룹 회의 화면" width="100%" /></td>
+<td><img src="src/assets/images/user_insight_screenshot.webp" alt="회의 인사이트 화면" width="100%" /></td>
+</tr>
+<tr>
+<td valign="top">회의 코드로 간편 참여, 발화 즉시 실시간 STT 자막 표시</td>
+<td valign="top">키워드 · 발언 분포 · 기간별 통계 시각화</td>
 </tr>
 </table>
+
+<br/>
+
+## 🛠️ 기술 스택
+
+| 구분         | 사용 기술                                                                    |
+| :----------- | :--------------------------------------------------------------------------- |
+| **Frontend** | React 19, TypeScript, Vite, Tailwind CSS v4, Zustand, React Router 7, Motion |
+| **Backend**  | Spring Boot                                                                  |
+| **Database** | Supabase (PostgreSQL) — `meetings` 중심 7개 테이블 설계                      |
+| **AI**       | Deepgram Nova-3(+diarizer), AssemblyAI, LangChain + gpt-4.1                  |
+| **Realtime** | LiveKit Client, WebRTC, WebSocket STT                                        |
+| **Deploy**   | Vercel (Frontend), Railway (Backend)                                         |
+| **Design**   | Figma                                                                        |
 
 <br/>
 
