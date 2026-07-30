@@ -1,7 +1,6 @@
 import { useState, useEffect, Fragment } from "react";
 import { useNavigate } from "react-router";
 import {
-  Zap,
   CheckCircle,
   ArrowRight,
   Twitter,
@@ -45,27 +44,24 @@ const features = [
     title: "실시간 녹음",
     desc: "마이크를 통해 회의를 실시간으로 녹음하고 즉시 텍스트로 변환합니다. 회의가 진행되는 동안 대화 내용이 실시간으로 기록됩니다.",
     tags: ["실시간 전송", "화자 분리", "자동 저장"],
-    cardBg: "bg-[#EEF2FF]",
-    badgeBg: "#5B5FF5",
-    badgeText: "#ffffff",
+    accent: "#5B5FF5",
+    glow: "radial-gradient(circle, rgba(147,197,253,0.70) 0%, rgba(167,139,250,0.45) 45%, transparent 72%)",
   },
   {
     img: iconPersonGroup,
     title: "온라인 그룹 회의",
     desc: "여러 참여자가 동시에 온라인으로 접속해 회의를 진행할 수 있습니다. 방장이 종료하면 모든 참여자에게 회의록이 공유됩니다.",
     tags: ["다인 참여", "역할 구분", "실시간 공유"],
-    cardBg: "bg-[#ECFEFF]",
-    badgeBg: "#0891B2",
-    badgeText: "#ffffff",
+    accent: "#0E8FAC",
+    glow: "radial-gradient(circle, rgba(103,232,249,0.65) 0%, rgba(147,197,253,0.42) 45%, transparent 72%)",
   },
   {
     img: iconAudioFile,
     title: "녹음 파일 업로드",
     desc: "이미 녹음된 오디오 파일을 업로드하면 AI가 자동으로 분석해 화자를 분리하고 회의록을 생성합니다.",
     tags: ["MP3/WAV 지원", "화자 식별", "배치 처리"],
-    cardBg: "bg-[#F5F3FF]",
-    badgeBg: "#6D4FBB",
-    badgeText: "#ffffff",
+    accent: "#7C5CD6",
+    glow: "radial-gradient(circle, rgba(216,180,254,0.66) 0%, rgba(196,181,253,0.42) 45%, transparent 72%)",
   },
 ];
 
@@ -265,10 +261,6 @@ export function LandingScreen() {
         <div className="relative max-w-7xl mx-auto">
           <div className="max-w-3xl mx-auto text-center">
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-              <div className="inline-flex items-center gap-2 bg-[#EEF2FF] text-[#5B5FF5] text-xs font-semibold px-4 py-2 rounded-full mb-6">
-                <Zap className="w-3.5 h-3.5" />
-                AI 기반 회의록 자동화 서비스
-              </div>
               <h1 className="text-4xl md:text-6xl font-bold text-[#1A1D2E] leading-[1.2] tracking-tight mb-6">
                 회의가 끝나기 전에,
                 <br />
@@ -324,8 +316,16 @@ export function LandingScreen() {
       </section>
 
       {/* ── 5. 핵심 기능 ────────────────────────────────── */}
-      <section id={SECTION_IDS.features} className="scroll-mt-20 py-24 px-6 bg-[#F8F9FC]">
-        <div className="max-w-7xl mx-auto">
+      <section
+        id={SECTION_IDS.features}
+        className="relative scroll-mt-20 py-24 px-6 overflow-hidden bg-gradient-to-b from-[#F3F4FF] via-[#F7F8FF] to-white"
+      >
+        {/* 유리 카드가 비쳐 보이도록 은은한 컬러 필드 */}
+        <div className="pointer-events-none absolute -top-10 left-[8%] w-[420px] h-[420px] rounded-full blur-3xl bg-[#A78BFA]/20" />
+        <div className="pointer-events-none absolute top-24 right-[6%] w-[380px] h-[380px] rounded-full blur-3xl bg-[#67E8F9]/20" />
+        <div className="pointer-events-none absolute bottom-0 left-1/2 -translate-x-1/2 w-[460px] h-[300px] rounded-full blur-3xl bg-[#C4B5FD]/20" />
+
+        <div className="relative max-w-7xl mx-auto">
           <FadeIn className="text-center mb-16">
             <div className="inline-flex items-center gap-2 bg-white text-[#5B5FF5] text-xs font-semibold px-4 py-2 rounded-full border border-[#E5E7EB] mb-4">
               핵심 기능
@@ -337,20 +337,30 @@ export function LandingScreen() {
           <div className="grid md:grid-cols-3 gap-6">
             {features.map((f, i) => (
               <FadeIn key={f.title} delay={i * 0.1}>
-                <div className={`${f.cardBg} rounded-2xl p-8 border border-[#E5E7EB] hover:shadow-lg transition-all h-full`}>
-                  <img src={f.img} alt="" className="w-20 h-20 object-contain mb-5" />
-                  <h3 className="font-bold text-xl text-[#1A1D2E] mb-3">{f.title}</h3>
-                  <p className="text-[#4B5563] text-sm leading-relaxed mb-5">{f.desc}</p>
-                  <div className="flex flex-wrap gap-2">
-                    {f.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="text-xs px-3 py-1 rounded-full font-medium"
-                        style={{ backgroundColor: f.badgeBg, color: f.badgeText }}
-                      >
-                        {tag}
-                      </span>
-                    ))}
+                <div
+                  className="group relative h-full overflow-hidden rounded-3xl p-8 border border-white/60 bg-white/40 backdrop-blur-xl transition-all duration-300 hover:-translate-y-1"
+                  style={{ boxShadow: "0 8px 32px rgba(91,95,245,0.10), inset 0 1px 0 rgba(255,255,255,0.7)" }}
+                >
+                  {/* 카드별 소프트 그라디언트 글로우 */}
+                  <div
+                    className="pointer-events-none absolute -top-16 -right-12 w-56 h-56 rounded-full blur-2xl opacity-80 transition-opacity duration-300 group-hover:opacity-100"
+                    style={{ background: f.glow }}
+                  />
+                  <div className="relative">
+                    <img src={f.img} alt="" className="w-20 h-20 object-contain mb-5 drop-shadow-sm" />
+                    <h3 className="font-bold text-xl text-[#1A1D2E] mb-3">{f.title}</h3>
+                    <p className="text-[#4B5563] text-sm leading-relaxed mb-5">{f.desc}</p>
+                    <div className="flex flex-wrap gap-2">
+                      {f.tags.map((tag) => (
+                        <span
+                          key={tag}
+                          className="text-xs px-3 py-1 rounded-full font-medium bg-white/55 border border-white/70 backdrop-blur-sm"
+                          style={{ color: f.accent }}
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </FadeIn>
