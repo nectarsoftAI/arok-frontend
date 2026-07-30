@@ -1,9 +1,10 @@
-# <img src="src/assets/logo_arok.webp" alt="" width="48" align="absmiddle" /> Arok - 회의록 자동화 플랫폼 [![Live Demo](https://img.shields.io/badge/🔗_Live_Demo-arok--frontend.vercel.app-5B5FF5?style=flat-square)](https://arok-frontend.vercel.app/)
+# <img src="src/assets/logo_arok.webp" alt="" width="48" align="absmiddle" /> 에이록 - AI 기반 회의록 자동화 플랫폼 [![Live Demo](https://img.shields.io/badge/🔗_Live_Demo-arok--frontend.vercel.app-5B5FF5?style=flat-square)](https://arok-frontend.vercel.app/)
 
 <div align="center">
 
-<img src="docs/images/project_overview.png" alt="Arok 서비스 개요" width="100%" />
+<img src="docs/images/project_overview.webp" alt="Arok 서비스 개요" width="100%" />
 
+<br/>
 <br/>
 
 ![React](https://img.shields.io/badge/React_19-5B5FF5?style=for-the-badge&logo=react&logoColor=white)
@@ -32,7 +33,7 @@ Arok은 이 문제의식에서 출발해 ㈜넥타르소프트의 제안을 바�
 
 ## 🏗️ 시스템 아키텍처
 
-<img src="docs/images/system_architecture.png" alt="Arok 시스템 아키텍처 및 회의 모드별 처리 방식" width="100%" />
+<img src="docs/images/system_architecture.webp" alt="Arok 시스템 아키텍처 및 회의 모드별 처리 방식" width="100%" />
 
 <br/>
 
@@ -42,30 +43,33 @@ Arok은 이 문제의식에서 출발해 ㈜넥타르소프트의 제안을 바�
 <tr>
 <td width="33%" valign="top">
 
-### 🔴 실시간 녹음
+### <img src="src/assets/icons/mic_icon.webp" alt="" width="32" align="absmiddle" /> 실시간 녹음
 
 마이크를 통해 회의를 실시간으로 녹음하고 즉시 텍스트로 변환합니다. 회의가 진행되는 동안 대화 내용이 실시간으로 기록됩니다.
 
 `실시간 전송` `화자 분리` `자동 저장`
 
+<br/>
 </td>
 <td width="33%" valign="top">
 
-### 👥 온라인 그룹 회의
+### <img src="src/assets/icons/person_group_icon.webp" alt="" width="32" align="absmiddle" /> 온라인 그룹 회의
 
 여러 참여자가 동시에 온라인으로 접속해 회의를 진행합니다. 방장이 종료하면 모든 참여자에게 회의록이 공유됩니다.
 
-`다인 참여` `역할 구분` `실시간 공유`
+`여러명 참여` `역할 구분` `실시간 공유`
 
+<br/>
 </td>
 <td width="33%" valign="top">
 
-### 🎧 녹음 파일 업로드
+### <img src="src/assets/icons/upload_file_icon.webp" alt="" width="32" align="absmiddle" /> 녹음 파일 업로드
 
 이미 녹음된 오디오 파일을 업로드하면 AI가 자동으로 분석해 화자를 분리하고 회의록을 생성합니다.
 
 `MP3/WAV 지원` `화자 식별` `배치 처리`
 
+<br/>
 </td>
 </tr>
 </table>
@@ -75,7 +79,7 @@ Arok은 이 문제의식에서 출발해 ㈜넥타르소프트의 제안을 바�
 ## 🚀 사용 흐름
 
 ```
-  ① 회의 방식 선택  ┄┄▶  ② 회의 시작  ┄┄▶  ③ AI 요약 생성  ┄┄▶  ④ 확인 및 공유
+  회의 방식 선택  ┄┄▶  회의 시작  ┄┄▶  AI 요약 생성  ┄┄▶  확인 및 공유
 ```
 
 |  단계  | 내용           | 설명                                                                 |
@@ -87,32 +91,49 @@ Arok은 이 문제의식에서 출발해 ㈜넥타르소프트의 제안을 바�
 
 <br/>
 
-## 💻 주요 화면 소개
+## 💻 주요 화면
+
+<table>
+<tr>
+<th width="50%" align="center">새 회의 시작</th>
+<th width="50%" align="center">온라인 그룹 회의</th>
+</tr>
+<tr>
+<td><img src="src/assets/images/new_meeting_screenshot.webp" alt="새 회의 시작 화면" width="100%" /></td>
+<td><img src="src/assets/images/group_meeting_screenshot.webp" alt="온라인 그룹 회의 화면" width="100%" /></td>
+</tr>
+<tr>
+<td valign="top">팝업으로 새 회의 시작 · 회의 유형 선택</td>
+<td valign="top">회의 코드로 간편 참여, 발화 즉시 실시간 STT 자막 표시</td>
+</tr>
+</table>
+
+<table>
+<tr>
+<th width="50%" align="center">실시간 녹음 회의</th>
+<th width="50%" align="center">AI 회의록 상세 보기</th>
+</tr>
+<tr>
+<td><img src="src/assets/images/live_meeting_screenshot.webp" alt="실시간 녹음 회의 화면" width="100%" /></td>
+<td><img src="src/assets/images/meeting_detail_screenshot.webp" alt="회의록 상세 화면" width="100%" /></td>
+</tr>
+<tr>
+<td valign="top">발화 즉시 화자별로 구분되어 자막으로 기록</td>
+<td valign="top">AI 요약과 대화 전문 확인, 재요약 · 내보내기 · 화자 편집</td>
+</tr>
+</table>
 
 <table>
 <tr>
 <th width="50%" align="center">회의록 관리 및 검색</th>
-<th width="50%" align="center">AI 회의록 상세 보기</th>
-</tr>
-<tr>
-<td><img src="src/assets/images/meeting_list_screenshot.webp" alt="회의록 목록 화면" width="100%" /></td>
-<td><img src="src/assets/images/meeting_detail_screenshot.webp" alt="회의록 상세 화면" width="100%" /></td>
-</tr>
-<tr>
-<td valign="top">날짜 · 키워드 · 회의 유형별 검색과 목록 관리</td>
-<td valign="top">AI 요약과 대화 전문 확인, 재요약 · 내보내기 · 화자 편집</td>
-</tr>
-
-<tr>
-<th width="50%" align="center">온라인 그룹 회의</th>
 <th width="50%" align="center">회의 인사이트 분석</th>
 </tr>
 <tr>
-<td><img src="src/assets/images/group_meeting_screenshot.webp" alt="온라인 그룹 회의 화면" width="100%" /></td>
+<td><img src="src/assets/images/meeting_list_screenshot.webp" alt="회의록 목록 화면" width="100%" /></td>
 <td><img src="src/assets/images/user_insight_screenshot.webp" alt="회의 인사이트 화면" width="100%" /></td>
 </tr>
 <tr>
-<td valign="top">회의 코드로 간편 참여, 발화 즉시 실시간 STT 자막 표시</td>
+<td valign="top">날짜 · 키워드 · 회의 유형별 검색과 목록 관리</td>
 <td valign="top">키워드 · 발언 분포 · 기간별 통계 시각화</td>
 </tr>
 </table>
