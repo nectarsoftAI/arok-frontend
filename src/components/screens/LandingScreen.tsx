@@ -3,9 +3,7 @@ import { useNavigate } from "react-router";
 import {
   CheckCircle,
   ArrowRight,
-  Twitter,
-  Linkedin,
-  Youtube,
+  Github,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
@@ -514,19 +512,19 @@ export function LandingScreen() {
 
       {/* ── 10. 최종 CTA ────────────────────────────────── */}
       <section className="relative">
-        <FlowingBackground>
-          <div className="py-40 px-6">
+        <FlowingBackground variant="dark">
+          <div className="py-56 px-6">
             <FadeIn className="text-center max-w-3xl mx-auto">
-              <h2 className="text-3xl md:text-5xl font-bold text-[#1A1D2E] mb-4 leading-tight">
+              <h2 className="text-3xl md:text-5xl font-bold text-white mb-4 leading-tight">
                 지금 바로
                 <br />
                 회의록 걱정 끝내기
               </h2>
-              <p className="text-[#4B5563] text-lg mb-8 max-w-xl mx-auto">지금 바로 Arok을 시작하고 회의록 작성에서 해방되세요.</p>
+              <p className="text-white/70 text-lg mb-8 max-w-xl mx-auto">지금 바로 Arok을 시작하고 회의록 작성에서 해방되세요.</p>
               <button
                 type="button"
                 onClick={goToSignup}
-                className="inline-flex items-center gap-2 bg-[#5B5FF5] hover:bg-[#4F53E8] text-white font-bold px-8 py-4 rounded-xl transition-all shadow-lg shadow-[#5B5FF5]/25 hover:shadow-xl hover:shadow-[#5B5FF5]/30 hover:-translate-y-0.5 text-base"
+                className="inline-flex items-center gap-2 bg-white text-[#5B5FF5] font-bold px-8 py-4 rounded-xl hover:bg-white/90 transition-all shadow-xl hover:shadow-2xl hover:-translate-y-0.5 text-base"
               >
                 계정 생성
                 <ArrowRight className="w-5 h-5" />
@@ -549,11 +547,15 @@ export function LandingScreen() {
                 AI가 자동으로 회의록을 만들고 요약해주는 스마트한 회의 관리 서비스입니다.
               </p>
               <div className="flex items-center gap-3">
-                {[Twitter, Linkedin, Youtube].map((Icon, i) => (
-                  <span key={i} className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
-                    <Icon className="w-4 h-4 text-white/60" />
-                  </span>
-                ))}
+                <a
+                  href="https://github.com/nectarsoftAI"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="GitHub"
+                  className="w-9 h-9 rounded-lg bg-white/10 hover:bg-white/20 text-white/70 hover:text-white flex items-center justify-center transition-colors"
+                >
+                  <Github className="w-4 h-4" />
+                </a>
               </div>
             </div>
 

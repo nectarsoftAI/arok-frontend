@@ -127,16 +127,42 @@ const css = `
     width: 100%;
     height: 100%;
   }
+
+  /* ── 다크(비비드 파스텔) 변형 ─────────────────── */
+  .flowing-bg-dark .flowing-bg-gradient {
+    background: linear-gradient(135deg,
+      #6a6fe0 0%,
+      #8478e6 28%,
+      #7d8fe6 55%,
+      #9585e6 80%,
+      #6a6fe0 100%
+    );
+    background-size: 400% 400%;
+  }
+  .flowing-bg-dark .flowing-bg-orb-1 {
+    background: radial-gradient(circle, rgba(34,211,238,0.28) 0%, rgba(147,197,253,0.16) 50%, transparent 70%);
+  }
+  .flowing-bg-dark .flowing-bg-orb-2 {
+    background: radial-gradient(circle, rgba(129,140,248,0.30) 0%, rgba(167,139,250,0.16) 50%, transparent 70%);
+  }
+  .flowing-bg-dark .flowing-bg-orb-3 {
+    background: radial-gradient(circle, rgba(199,210,254,0.22) 0%, rgba(167,139,250,0.12) 50%, transparent 70%);
+  }
+  .flowing-bg-dark .flowing-bg-wave-1 { fill: url(#wave-grad-1-dark); }
+  .flowing-bg-dark .flowing-bg-wave-2 { fill: url(#wave-grad-2-dark); }
+  .flowing-bg-dark .flowing-bg-wave-3 { fill: url(#wave-grad-3-dark); }
 `;
 
 type FlowingBackgroundProps = {
   children?: React.ReactNode;
   className?: string;
   style?: React.CSSProperties;
+  /** light: 밝은 파스텔(기본) / dark: 진한 인디고 (흰 글씨용) */
+  variant?: "light" | "dark";
 };
 
-/** 흐르는 웨이브 + 떠다니는 광구가 있는 몽환적 파스텔 배경 래퍼 */
-export function FlowingBackground({ children, className = "", style }: FlowingBackgroundProps) {
+/** 흐르는 웨이브 + 떠다니는 광구가 있는 몽환적 배경 래퍼 */
+export function FlowingBackground({ children, className = "", style, variant = "light" }: FlowingBackgroundProps) {
   // keyframes 는 전역 <style> 로 1회만 주입
   useEffect(() => {
     if (document.getElementById("flowing-bg-css")) return;
@@ -147,7 +173,7 @@ export function FlowingBackground({ children, className = "", style }: FlowingBa
   }, []);
 
   return (
-    <div className={`flowing-bg-root ${className}`} style={style}>
+    <div className={`flowing-bg-root ${variant === "dark" ? "flowing-bg-dark" : ""} ${className}`} style={style}>
       {/* 베이스 그라디언트 */}
       <div className="flowing-bg-gradient" />
 
@@ -179,6 +205,23 @@ export function FlowingBackground({ children, className = "", style }: FlowingBa
             <stop offset="0%" stopColor="#5B5FF5" stopOpacity="0.16" />
             <stop offset="50%" stopColor="#bae6fd" stopOpacity="0.26" />
             <stop offset="100%" stopColor="#22D3EE" stopOpacity="0.14" />
+          </linearGradient>
+
+          {/* 다크(비비드 파스텔) 변형용 — 밝은 진주빛 물결 */}
+          <linearGradient id="wave-grad-1-dark" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#e0f2fe" stopOpacity="0.16" />
+            <stop offset="50%" stopColor="#c7d2fe" stopOpacity="0.22" />
+            <stop offset="100%" stopColor="#a5b4fc" stopOpacity="0.16" />
+          </linearGradient>
+          <linearGradient id="wave-grad-2-dark" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#ede9fe" stopOpacity="0.20" />
+            <stop offset="50%" stopColor="#bae6fd" stopOpacity="0.17" />
+            <stop offset="100%" stopColor="#ddd6fe" stopOpacity="0.18" />
+          </linearGradient>
+          <linearGradient id="wave-grad-3-dark" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#c7d2fe" stopOpacity="0.16" />
+            <stop offset="50%" stopColor="#e0f2fe" stopOpacity="0.24" />
+            <stop offset="100%" stopColor="#a5f3fc" stopOpacity="0.15" />
           </linearGradient>
         </defs>
 
