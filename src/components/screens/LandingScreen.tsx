@@ -11,6 +11,7 @@ import {
 import { motion, AnimatePresence } from "motion/react";
 
 import { FadeIn } from "../landing/FadeIn";
+import { FlowingBackground } from "../landing/FlowingBackground";
 import { Screenshot } from "../landing/Screenshot";
 import { PipelineAnimation } from "../landing/PipelineAnimation";
 import { FAQItem } from "../landing/FAQItem";
@@ -503,29 +504,30 @@ export function LandingScreen() {
       </section>
 
       {/* ── 10. 최종 CTA ────────────────────────────────── */}
-      <section className="py-24 px-6 bg-gradient-to-br from-[#5B5FF5] to-[#818CF8] relative overflow-hidden">
-        <div className="absolute -top-16 -left-16 w-64 h-64 bg-white/5 rounded-full" />
-        <div className="absolute -bottom-20 -right-10 w-80 h-80 bg-white/5 rounded-full" />
-
-        <FadeIn className="relative z-10 text-center max-w-3xl mx-auto">
-          <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-6 backdrop-blur-sm">
-            <Shield className="w-8 h-8 text-white" />
+      <section className="relative">
+        <FlowingBackground>
+          <div className="py-28 px-6">
+            <FadeIn className="text-center max-w-3xl mx-auto">
+              <div className="w-16 h-16 bg-white/70 border border-white rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-sm backdrop-blur-sm">
+                <Shield className="w-8 h-8 text-[#5B5FF5]" />
+              </div>
+              <h2 className="text-3xl md:text-5xl font-bold text-[#1A1D2E] mb-4 leading-tight">
+                지금 바로
+                <br />
+                회의록 걱정 끝내기
+              </h2>
+              <p className="text-[#4B5563] text-lg mb-8 max-w-xl mx-auto">지금 바로 Arok을 시작하고 회의록 작성에서 해방되세요.</p>
+              <button
+                type="button"
+                onClick={goToSignup}
+                className="inline-flex items-center gap-2 bg-[#5B5FF5] hover:bg-[#4F53E8] text-white font-bold px-8 py-4 rounded-xl transition-all shadow-lg shadow-[#5B5FF5]/25 hover:shadow-xl hover:shadow-[#5B5FF5]/30 hover:-translate-y-0.5 text-base"
+              >
+                계정 생성
+                <ArrowRight className="w-5 h-5" />
+              </button>
+            </FadeIn>
           </div>
-          <h2 className="text-3xl md:text-5xl font-bold text-white mb-4 leading-tight">
-            지금 바로
-            <br />
-            회의록 걱정 끝내기
-          </h2>
-          <p className="text-white/70 text-lg mb-8 max-w-xl mx-auto">지금 바로 Arok을 시작하고 회의록 작성에서 해방되세요.</p>
-          <button
-            type="button"
-            onClick={goToSignup}
-            className="inline-flex items-center gap-2 bg-white text-[#5B5FF5] font-bold px-8 py-4 rounded-xl hover:bg-white/90 transition-all shadow-xl hover:shadow-2xl hover:-translate-y-0.5 text-base"
-          >
-            계정 생성
-            <ArrowRight className="w-5 h-5" />
-          </button>
-        </FadeIn>
+        </FlowingBackground>
       </section>
 
       {/* ── 11. 푸터 ────────────────────────────────────── */}
