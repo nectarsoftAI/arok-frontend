@@ -20,6 +20,8 @@ import { SECTION_IDS, NAV_ITEMS, scrollToSection, type SectionId } from "../land
 import logoArok from "../../assets/logo_arok.webp";
 import meetingListShot from "../../assets/images/meeting_list_screenshot.webp";
 import meetingDetailShot from "../../assets/images/meeting_detail_screenshot.webp";
+import groupMeetingShot from "../../assets/images/group_meeting_screenshot.webp";
+import userInsightShot from "../../assets/images/user_insight_screenshot.webp";
 import iconClock from "../../assets/icons/clock_icon.webp";
 import iconTarget from "../../assets/icons/target_icon.webp";
 import iconLayers from "../../assets/icons/layers_icon.webp";
@@ -90,6 +92,42 @@ const steps = [
     title: "확인 및 공유",
     desc: "생성된 회의록을 검토하고 팀과 공유하거나 문서로 내보내세요.",
     iconImg: iconCheck,
+  },
+];
+
+// 제품 소개 — 이미지 행. 렌더 시 index 짝/홀로 이미지 좌/우 교차
+const showcaseRows = [
+  {
+    img: meetingListShot,
+    alt: "회의록 목록 화면",
+    accent: "#5B5FF5",
+    title: "회의록 관리 및 검색",
+    desc: "모든 회의록이 한 곳에 정리됩니다. 날짜, 키워드, 회의 유형으로 빠르게 검색하고 원하는 회의록을 찾아보세요.",
+    points: ["날짜별 정렬", "키워드 및 유형 검색", "원클릭 삭제"],
+  },
+  {
+    img: meetingDetailShot,
+    alt: "회의록 상세 화면",
+    accent: "#A855F7",
+    title: "AI 회의록 상세 보기",
+    desc: "AI가 자동 생성한 요약을 한 화면에서 확인하고, 필요하면 다시 요약하거나 파일로 내보낼 수 있습니다. 대화 내용과 화자 이름도 직접 편집할 수 있습니다.",
+    points: ["AI 요약 · 재요약 지원", "요약 파일 내보내기", "대화 내용 · 화자 편집"],
+  },
+  {
+    img: groupMeetingShot,
+    alt: "온라인 그룹 회의 화면",
+    accent: "#22D3EE",
+    title: "온라인 그룹 회의",
+    desc: "회의 코드만 있으면 여러 참여자가 실시간으로 접속합니다. 발화하는 즉시 STT로 대화가 자막처럼 올라오고, 방장이 종료하면 모든 참여자에게 회의록이 자동으로 공유됩니다.",
+    points: ["발화 즉시 STT 자막", "회의 코드로 간편 참여", "종료 시 자동 공유", "안정적인 실시간 환경"],
+  },
+  {
+    img: userInsightShot,
+    alt: "회의 인사이트 화면",
+    accent: "#F59E0B",
+    title: "회의 인사이트 분석",
+    desc: "쌓인 회의 데이터를 분석해 자주 등장한 키워드와 논의 흐름을 시각화합니다. 팀의 대화 패턴을 한눈에 파악하세요.",
+    points: ["키워드 차트", "발언 분포 분석", "기간별 통계"],
   },
 ];
 
@@ -421,63 +459,35 @@ export function LandingScreen() {
           </FadeIn>
 
           <div className="space-y-20">
-            <FadeIn delay={0.1}>
-              <div className="grid md:grid-cols-2 gap-12 items-center">
-                <div className="md:order-2">
-                  <div
-                    className="inline-flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full mb-4"
-                    style={{ backgroundColor: "#5B5FF520", color: "#5B5FF5" }}
-                  >
-                    <CheckCircle className="w-3.5 h-3.5" />
-                    핵심 기능
+            {showcaseRows.map((row, i) => {
+              const imageLeft = i % 2 === 0; // 짝수 행: 이미지 왼쪽 / 홀수 행: 이미지 오른쪽
+              return (
+                <FadeIn key={row.title} delay={0.1}>
+                  <div className="grid md:grid-cols-2 gap-12 items-center">
+                    <div className={imageLeft ? "md:order-2" : ""}>
+                      <h3 className="text-2xl font-bold text-white mb-4">{row.title}</h3>
+                      <p className="text-white/50 leading-relaxed mb-6">{row.desc}</p>
+                      <ul className="space-y-2.5">
+                        {row.points.map((pt) => (
+                          <li key={pt} className="flex items-center gap-3 text-white/70 text-sm">
+                            <div
+                              className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
+                              style={{ backgroundColor: `${row.accent}30` }}
+                            >
+                              <CheckCircle className="w-3 h-3" style={{ color: row.accent }} />
+                            </div>
+                            {pt}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div className={imageLeft ? "md:order-1" : ""}>
+                      <Screenshot src={row.img} alt={row.alt} variant="dark" />
+                    </div>
                   </div>
-                  <h3 className="text-2xl font-bold text-white mb-4">회의록 관리 및 검색</h3>
-                  <p className="text-white/50 leading-relaxed mb-6">모든 회의록이 한 곳에 정리됩니다. 날짜, 참여자, 키워드로 빠르게 검색하고 원하는 회의록을 찾아보세요.</p>
-                  <ul className="space-y-2.5">
-                    {["날짜별 정렬", "키워드 검색", "원클릭 삭제"].map((pt) => (
-                      <li key={pt} className="flex items-center gap-3 text-white/70 text-sm">
-                        <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: "#5B5FF530" }}>
-                          <CheckCircle className="w-3 h-3 text-[#5B5FF5]" />
-                        </div>
-                        {pt}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                <div className="md:order-1">
-                  <Screenshot src={meetingListShot} alt="회의록 목록 화면" variant="dark" />
-                </div>
-              </div>
-            </FadeIn>
-
-            <FadeIn delay={0.1}>
-              <div className="grid md:grid-cols-2 gap-12 items-center">
-                <div>
-                  <div
-                    className="inline-flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full mb-4"
-                    style={{ backgroundColor: "#818CF820", color: "#818CF8" }}
-                  >
-                    <CheckCircle className="w-3.5 h-3.5" />
-                    AI 요약
-                  </div>
-                  <h3 className="text-2xl font-bold text-white mb-4">AI 회의록 상세 보기</h3>
-                  <p className="text-white/50 leading-relaxed mb-6">AI가 자동 생성한 요약과 전체 대화 내용을 한 화면에서 확인하세요. 화자별 발언과 핵심 액션 아이템이 깔끔하게 정리됩니다.</p>
-                  <ul className="space-y-2.5">
-                    {["AI 자동 요약", "화자별 발언 정리", "액션 아이템 추출"].map((pt) => (
-                      <li key={pt} className="flex items-center gap-3 text-white/70 text-sm">
-                        <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: "#818CF830" }}>
-                          <CheckCircle className="w-3 h-3 text-[#818CF8]" />
-                        </div>
-                        {pt}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                <div>
-                  <Screenshot src={meetingDetailShot} alt="회의록 상세 화면" variant="dark" />
-                </div>
-              </div>
-            </FadeIn>
+                </FadeIn>
+              );
+            })}
           </div>
         </div>
       </section>
