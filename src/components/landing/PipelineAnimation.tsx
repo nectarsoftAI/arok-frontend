@@ -3,6 +3,7 @@ import { Sparkles, CheckCircle2, Square } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { SpeakerAvatar } from "../common/SpeakerAvatar";
 import { Badge } from "../common/Badge";
+import { DreamBlob } from "./DreamBlob";
 
 import avatarFemale from "../../assets/avatars/avatar_female.webp";
 import avatarMale from "../../assets/avatars/avatar_male.webp";
@@ -244,9 +245,9 @@ export function PipelineAnimation() {
                 className="flex flex-col gap-4"
                 style={{
                   transition: "opacity 500ms ease, transform 500ms ease, filter 500ms ease",
-                  opacity: processing ? 0.25 : 1,
-                  transform: processing ? "scale(0.94)" : "scale(1)",
-                  filter: processing ? "blur(1px)" : "none",
+                  opacity: processing ? 0.1 : 1,
+                  transform: processing ? "scale(0.9)" : "scale(1)",
+                  filter: processing ? "blur(4px)" : "none",
                 }}
               >
                 {PEOPLE.map((p, i) => {
@@ -285,23 +286,18 @@ export function PipelineAnimation() {
                 })}
               </div>
 
-              {/* AI 처리 오버레이 */}
+              {/* AI 처리 연출 */}
               <AnimatePresence>
                 {processing && (
                   <motion.div
-                    className="absolute inset-0 flex flex-col items-center justify-center gap-3"
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
+                    className="absolute inset-0 flex flex-col items-center justify-center"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    transition={{ duration: 0.35 }}
+                    transition={{ duration: 0.4 }}
                   >
-                    <div className="relative">
-                      <span className="absolute inset-0 rounded-full bg-[#5B5FF5]/30 animate-ping" />
-                      <div className="relative w-16 h-16 rounded-full bg-gradient-to-br from-[#5B5FF5] to-[#818CF8] flex items-center justify-center shadow-lg shadow-[#5B5FF5]/40">
-                        <Sparkles className="w-7 h-7 text-white" />
-                      </div>
-                    </div>
-                    <p className="text-sm font-medium text-[#5B5FF5]">AI가 회의록을 정리하고 있어요…</p>
+                    <DreamBlob size={150} />
+                    <p className="-mt-2 text-sm font-medium text-[#4F53E8]">AI가 회의록을 정리하고 있어요…</p>
                   </motion.div>
                 )}
               </AnimatePresence>
